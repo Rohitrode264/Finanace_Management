@@ -4,6 +4,7 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 import Bull from 'bull';
+import cron from 'node-cron';
 import nodemailer from 'nodemailer';
 import puppeteer from 'puppeteer';
 import { env } from '../config/env';
@@ -40,7 +41,20 @@ import { SystemSetting } from '../models/SystemSetting.model';
  */
 export async function processDailyReport(date: string, triggeredBy: string): Promise<void> {
     try {
-        const reportDate = new Date(date);
+        // If system-triggered (automated), always use current date.
+        // If manually triggered (API), use the provided date.
+        const reportDate = triggeredBy === 'system' ? new Date() : new Date(date);
+
+        // Check if auto-send is enabled (ONLY IF TRIGGERED BY SYSTEM)
+        if (triggeredBy === 'system') {
+            const autoSendSetting = await SystemSetting.findOne({ key: 'DAILY_REPORT_AUTO_SEND' });
+            const isAutoSendEnabled = autoSendSetting?.value === 'true' || autoSendSetting?.value === true;
+            if (!isAutoSendEnabled) {
+                console.log('ℹ️  Skipping automated daily report: DAILY_REPORT_AUTO_SEND is disabled.');
+                return;
+            }
+        }
+
         const summary = await reportService.getDailyReport(reportDate);
 
         // Fetch target email from system settings
@@ -200,27 +214,37 @@ if (reportQueue) {
 }
 
 /**
- * Schedule the daily report job (Bull only).
+ * Schedule the daily report job.
+ * Prioritizes Bull (Redis) for production consistency, 
+ * but falls back to node-cron for simple EC2/local dev setups.
  */
 export async function scheduleDailyReport(): Promise<void> {
-    if (!reportQueue) {
-        console.log('ℹ️  Skipping job scheduling: Redis is not configured.');
-        return;
-    }
+    const cronSchedule = '0 19 * * *'; // 7 PM daily
 
-    const existing = await reportQueue.getRepeatableJobs();
-    for (const job of existing) {
-        if (job.name === 'daily-report') {
-            await reportQueue.removeRepeatableByKey(job.key);
+    if (reportQueue) {
+        // --- Option A: Bull (Redis is available) ---
+        const existing = await reportQueue.getRepeatableJobs();
+        for (const job of existing) {
+            if (job.name === 'daily-report') {
+                await reportQueue.removeRepeatableByKey(job.key);
+            }
         }
+
+        await reportQueue.add(
+            'daily-report',
+            { date: 'scheduled', triggeredBy: 'system' },
+            { repeat: { cron: cronSchedule } }
+        );
+
+        console.log(`📅 Daily report JOB scheduled (7 PM via Bull queue)`);
+    } else {
+        // --- Option B: node-cron (Fallback for EC2/No Redis) ---
+        cron.schedule(cronSchedule, async () => {
+            console.log('[NODE-CRON] Starting scheduled daily report...');
+            // The processDailyReport function will calculate 'today' internally because triggeredBy='system'
+            await processDailyReport('today', 'system');
+        });
+
+        console.log(`📅 Daily report CRON scheduled (7 PM via node-cron)`);
     }
-
-    // Schedule for 19:00 (7 PM) daily
-    await reportQueue.add(
-        'daily-report',
-        { date: new Date().toISOString(), triggeredBy: 'system' },
-        { repeat: { cron: '0 19 * * *' } }
-    );
-
-    console.log('📅 Daily report job scheduled (19:00 daily via Bull)');
 }
