@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { ClipboardList, Filter, ChevronLeft, ChevronRight, X, Calendar } from 'lucide-react';
+import { ClipboardList, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import apiClient from '../../api/client';
 import { format } from 'date-fns';

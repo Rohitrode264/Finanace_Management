@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     LayoutDashboard, Users, GraduationCap,
-    CreditCard, Receipt, School, BarChart3, ClipboardList,
+    CreditCard, School, BarChart3, ClipboardList,
     ShieldCheck, Settings, ChevronLeft, ChevronRight,
     BookOpen,
 } from 'lucide-react';

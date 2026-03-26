@@ -1,4 +1,5 @@
-$base_url = "http://localhost:3000"
+# $base_url = "http://localhost:3000"
+$base_url = "https://65.2.38.246.nip.io"
 
 Write-Host "--- Finance Management API Test ---" -ForegroundColor Cyan
 

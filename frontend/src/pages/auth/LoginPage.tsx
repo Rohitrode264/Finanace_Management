@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, Building2, ShieldCheck, ChevronRight, Activity, TrendingUp, PieChart } from 'lucide-react';
+import { Eye, EyeOff, ShieldCheck, ChevronRight, Activity, TrendingUp, PieChart } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 import { authService } from '../../api/services/auth.service';
 import { useThemeStore } from '../../store/themeStore';

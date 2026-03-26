@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft } from 'lucide-react';
 import { receiptService } from '../../api/services/receipt.service';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
-import type { Student, AcademicClass } from '../../types';
 
 // Backend Receipt model: { receiptNumber, paymentId, enrollmentId, printedBy,
 //   printedAt, reprintCount, isCancelled, locked, createdAt }
