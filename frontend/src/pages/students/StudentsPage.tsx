@@ -126,8 +126,8 @@ export function StudentsPage() {
         queryFn: () => studentsService.list({ limit: LIMIT, skip, search: dSearch || undefined, program: program || undefined }),
     });
 
-    const students: Student[] = (studentsRes?.data?.data as Student[] | undefined) ?? [];
-    const total: number = (studentsRes?.data as any)?.total ?? students.length;
+    const students: Student[] = studentsRes?.data?.data?.students ?? [];
+    const total: number = studentsRes?.data?.data?.total ?? 0;
     const totalPages = Math.ceil(total / LIMIT);
     const page = Math.floor(skip / LIMIT) + 1;
 

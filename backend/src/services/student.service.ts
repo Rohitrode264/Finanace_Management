@@ -119,11 +119,11 @@ export class StudentService {
         return Student.findById(id).populate('createdBy', 'name') as any;
     }
 
-    async search(query: string, limit = 20, program?: string): Promise<IStudent[]> {
-        if (!query || query.trim().length === 0) return [];
+    async search(query: string, limit = 20, skip = 0, program?: string): Promise<{ students: IStudent[]; total: number }> {
+        if (!query || query.trim().length === 0) return { students: [], total: 0 };
 
         const searchRegex = new RegExp(query.trim(), 'i');
-        const filter: any = {
+        const searchFilter: any = {
             $or: [
                 { firstName: searchRegex },
                 { lastName: searchRegex },
@@ -131,18 +131,28 @@ export class StudentService {
             ]
         };
 
+        const filter: any = { ...searchFilter };
         if (program) filter.program = program;
 
-        return Student.find(filter)
-            .sort({ createdAt: -1 })
-            .limit(limit) as unknown as Promise<IStudent[]>;
+        const [students, total] = await Promise.all([
+            Student.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec() as unknown as IStudent[],
+            Student.countDocuments(filter).exec()
+        ]);
+
+        return { students, total };
     }
 
-    async listAll(status?: IStudent['status'], program?: string, limit = 50, skip = 0): Promise<IStudent[]> {
+    async listAll(status?: IStudent['status'], program?: string, limit = 50, skip = 0): Promise<{ students: IStudent[]; total: number }> {
         const filter: any = {};
         if (status) filter.status = status;
         if (program) filter.program = program;
-        return Student.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit) as unknown as Promise<IStudent[]>;
+
+        const [students, total] = await Promise.all([
+            Student.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec() as unknown as IStudent[],
+            Student.countDocuments(filter).exec()
+        ]);
+
+        return { students, total };
     }
 }
 

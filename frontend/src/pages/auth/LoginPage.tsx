@@ -83,16 +83,16 @@ export function LoginPage() {
                 }} />
 
                 <div style={{ position: 'relative', zIndex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 64 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 64 }} className='flex'>
                         <div style={{
                             width: 32, height: 32,
                             background: '#fff',
                             borderRadius: '50%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                         }}>
-                            <Building2 size={18} color="#000" />
+                            <img src="/images/logo_red.jpg" alt="Logo" className='rounded-sm' />
                         </div>
-                        <span style={{ fontSize: '1.25rem', fontWeight: 600, letterSpacing: '-0.02em' }}>New Career Point</span>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 600, letterSpacing: '-0.02em' }}>New Career Point</div>
                     </div>
 
                     <motion.div
@@ -154,7 +154,7 @@ export function LoginPage() {
                             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                             marginBottom: 24
                         }}>
-                            <Building2 size={24} color="#fff" />
+                            <img src="/images/logo_red.jpg" alt="Logo" className='rounded-sm' />
                         </div>
                         <h2 style={{ fontSize: '1.75rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '-0.02em' }}>
                             Sign in to your account

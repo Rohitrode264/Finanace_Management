@@ -56,11 +56,49 @@ export class AuditService {
             .limit(limit) as unknown as Promise<IAuditLog[]>;
     }
 
-    async listAll(limit = 100): Promise<IAuditLog[]> {
-        return AuditLog.find({})
-            .sort({ timestamp: -1 })
-            .limit(limit)
-            .populate('actorId', 'name email role') as unknown as Promise<IAuditLog[]>;
+    async listAll(params: {
+        actorId?: string;
+        action?: string;
+        entityType?: string;
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{ logs: IAuditLog[]; total: number }> {
+        const { actorId, action, entityType, startDate, endDate, page = 1, limit = 50 } = params;
+        const query: any = {};
+
+        if (actorId) query.actorId = new Types.ObjectId(actorId);
+        if (action) query.action = action;
+        if (entityType) query.entityType = entityType.toUpperCase();
+
+        if (startDate || endDate) {
+            query.timestamp = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.timestamp.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.timestamp.$lte = end;
+            }
+        }
+
+        const skip = (page - 1) * limit;
+
+        const [logs, total] = await Promise.all([
+            AuditLog.find(query)
+                .sort({ timestamp: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate('actorId', 'name email role')
+                .lean(),
+            AuditLog.countDocuments(query)
+        ]);
+
+        return { logs: logs as unknown as IAuditLog[], total };
     }
 }
 

@@ -21,11 +21,11 @@ const NAV_ITEMS: NavItem[] = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: null, section: 'MAIN' },
     { label: 'Students', icon: GraduationCap, path: '/students', permission: 'VIEW_STUDENT', section: 'ACADEMIC' },
     { label: 'Programs & Fees', icon: School, path: '/classes', permission: 'VIEW_CLASS', section: 'ACADEMIC' },
-    { label: 'Categories', icon: ClipboardList, path: '/categories', permission: 'VIEW_CLASS', section: 'ACADEMIC' },
+    // { label: 'Categories', icon: ClipboardList, path: '/categories', permission: 'VIEW_CLASS', section: 'ACADEMIC' },
     { label: 'Enrollments', icon: BookOpen, path: '/enrollments', permission: 'VIEW_ENROLLMENT', section: 'ACADEMIC' },
     { label: 'Collect Payment', icon: CreditCard, path: '/payments', permission: 'CREATE_PAYMENT', section: 'FINANCE' },
     { label: 'Ledger', icon: ClipboardList, path: '/ledger', permission: 'VIEW_ENROLLMENT', section: 'FINANCE' },
-    { label: 'Receipts', icon: Receipt, path: '/receipts', permission: 'VIEW_RECEIPT', section: 'FINANCE' },
+    // { label: 'Receipts', icon: Receipt, path: '/receipts', permission: 'VIEW_RECEIPT', section: 'FINANCE' },
     { label: 'Reports', icon: BarChart3, path: '/reports', permission: 'VIEW_REPORT', section: 'FINANCE' },
     { label: 'Users', icon: Users, path: '/users', permission: 'MANAGE_PERMISSIONS', section: 'ADMIN' },
     { label: 'Roles & RBAC', icon: ShieldCheck, path: '/rbac', permission: 'MANAGE_ROLES', section: 'ADMIN' },
@@ -105,18 +105,17 @@ export function SidebarNav({ collapsed, onCollapse, mobileOpen, setMobileOpen }:
             {/* ── Logo / Brand ─────────────────────────────── */}
             <div className="sidebar-logo" style={{ overflow: 'hidden', paddingRight: collapsed ? 12 : 16 }}>
                 {/* Monogram */}
-                <div
+                <img
+                    src="/images/logo_red.jpg"
+                    alt="NCP Logo"
                     style={{
-                        width: 34, height: 34, flexShrink: 0,
-                        background: 'linear-gradient(135deg, #4f6ef7 0%, #7c3aed 100%)',
-                        borderRadius: 9,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 38, height: 38, flexShrink: 0,
+                        borderRadius: 10,
+                        objectFit: 'cover',
                         border: '1px solid rgba(255,255,255,0.12)',
-                        boxShadow: '0 2px 8px rgba(79,110,247,0.35)',
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.25)',
                     }}
-                >
-                    <span style={{ color: '#fff', fontSize: '0.8125rem', fontWeight: 800, letterSpacing: '-0.03em' }}>NCP</span>
-                </div>
+                />
 
                 <AnimatePresence>
                     {!collapsed && (

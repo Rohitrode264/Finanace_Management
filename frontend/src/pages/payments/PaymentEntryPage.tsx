@@ -46,7 +46,7 @@ export function PaymentEntryPage() {
         enabled: dSearch.length >= 2,
     });
 
-    const students: Student[] = (studentsRes?.data?.data as Student[] | undefined) ?? [];
+    const students: Student[] = (studentsRes?.data?.data as any)?.students ?? [];
     const numericAmount = parseFloat(amount) || 0;
 
     // Fetch enrollments by student ID automatically

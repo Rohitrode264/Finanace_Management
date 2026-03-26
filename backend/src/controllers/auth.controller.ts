@@ -3,6 +3,7 @@ import { authService } from '../services/auth.service';
 import { auditService } from '../services/audit.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
 import { z } from 'zod';
+import { transporter } from '../jobs/dailyReport.job';
 
 const loginSchema = z.object({
     email: z.string().email(),
@@ -111,8 +112,13 @@ export class AuthController {
         if (!parsed.success) { sendError(res, 'Invalid email', 422); return; }
         try {
             const otp = await authService.generateResetOTP(parsed.data.email);
-            // In real app, send OTP via email/SMS. For demo, we return it or log it.
-            console.log(`[AUTH] Reset OTP for ${parsed.data.email}: ${otp}`);
+            const mailOptions: import('nodemailer/lib/mailer').Options = {
+                from: process.env.SMTP_FROM,
+                to: req.body.email,
+                subject: `Reset Password OTP`,
+                html: `<h1>Your OTP is: ${otp}</h1>`,
+            };
+            await transporter.sendMail(mailOptions);
             sendSuccess(res, { message: 'OTP sent to your email' }, 200);
         } catch (err) {
             sendError(res, err instanceof Error ? err.message : 'Feature unavailable', 400);

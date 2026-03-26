@@ -92,8 +92,8 @@ export function EnrollmentsPage() {
         queryFn: () => enrollmentService.list({ limit: LEDGER_LIMIT, skip: ledgerSkip, program: program || undefined }),
     });
 
-    const students: Student[] = (studentsRes?.data?.data as Student[] | undefined) ?? [];
-    const ledgerStudents: Student[] = (ledgerStudentsRes?.data?.data as Student[] | undefined) ?? [];
+    const students: Student[] = (studentsRes?.data?.data as any)?.students ?? [];
+    const ledgerStudents: Student[] = (ledgerStudentsRes?.data?.data as any)?.students ?? [];
     const classes: AcademicClass[] = (classesRes?.data?.data as AcademicClass[] | undefined) ?? [];
     const allEnrollments: (Enrollment & { outstandingBalance?: number })[] = (allEnrollmentsRes?.data?.data as any) ?? [];
 

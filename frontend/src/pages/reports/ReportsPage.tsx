@@ -153,7 +153,7 @@ export function ReportsPage() {
         queryFn: () => studentsService.list({ search: dLedgerSearch, limit: 5 }),
         enabled: dLedgerSearch.length >= 2,
     });
-    const ledgerStudents: any[] = (ledgerStudentsRes?.data?.data as any) ?? [];
+    const ledgerStudents: any[] = (ledgerStudentsRes?.data?.data as { students: any[] })?.students ?? [];
 
     // Fetch payment dates for calendar highlighting
     const { data: paymentDatesRes } = useQuery({

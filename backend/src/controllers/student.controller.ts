@@ -85,20 +85,25 @@ export class StudentController {
 
     async listStudents(req: Request, res: Response): Promise<void> {
         try {
-            const { q, status, program, limit = '50', skip = '0' } = req.query as Record<string, string>;
-            let students;
+            const { q, status, program, limit = '20', skip = '0' } = req.query as Record<string, string>;
+            const l = parseInt(limit, 10);
+            const s = parseInt(skip, 10);
+
+            let result;
             if (q) {
-                students = await studentService.search(q, parseInt(limit), program);
+                result = await studentService.search(q, l, s, program);
             } else {
-                students = await studentService.listAll(
+                result = await studentService.listAll(
                     status as 'ACTIVE' | 'DROPPED' | 'PASSED_OUT' | undefined,
                     program,
-                    parseInt(limit),
-                    parseInt(skip)
+                    l,
+                    s
                 );
             }
-            sendSuccess(res, students);
-        } catch { sendError(res, 'Failed to list students', 500); }
+            sendSuccess(res, result);
+        } catch (err) {
+            sendError(res, 'Failed to list students', 500);
+        }
     }
 
     async updateStatus(req: Request, res: Response): Promise<void> {

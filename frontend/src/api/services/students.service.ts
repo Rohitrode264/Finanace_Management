@@ -5,7 +5,7 @@ export const studentsService = {
     // GET /students?q=...&status=...&limit=...&skip=...
     list: (params?: { limit?: number; skip?: number; search?: string; status?: StudentStatus; program?: string }) => {
         const { search, ...rest } = params ?? {};
-        return apiClient.get<ApiResponse<Student[]>>('/students', {
+        return apiClient.get<ApiResponse<{ students: Student[]; total: number }>>('/students', {
             params: { ...rest, ...(search ? { q: search } : {}) },
         });
     },

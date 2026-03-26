@@ -86,7 +86,7 @@ export function LedgerPage() {
         queryFn: () => studentsService.list({ search: dSearch || undefined, limit: 10 }),
         enabled: dSearch.length > 2,
     });
-    const students = studentsRes?.data?.data || [];
+    const students = studentsRes?.data?.data?.students || [];
 
     // Get student enrollments
     const { data: enrollmentsRes, isLoading: loadingEnrollments } = useQuery({
@@ -403,35 +403,40 @@ export function LedgerPage() {
 
             <style>{`
                 @media print {
-                    nav, aside, .page-header, .btn-primary, .no-print, [role="button"], button {
+                    /* Hide everything by default */
+                    body > *, #root > *, .modal-overlay, .modal-header, .no-print, nav, aside, footer, button, .btn-primary, .btn-secondary {
                         display: none !important;
                     }
-                    body, html {
-                        background: #fff !important;
+                    /* ONLY show the receipt container and its ancestors if needed, 
+                       but since Modal is a portal, it is at the end of body. 
+                    */
+                    body > .modal-overlay {
+                        display: block !important;
+                        position: static !important;
                         padding: 0 !important;
                         margin: 0 !important;
+                        background: none !important;
                     }
-                    .card {
-                        box-shadow: none !important;
-                        border: 1px solid #000 !important;
+                    .modal-content {
+                        display: block !important;
+                        position: static !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        max-width: none !important;
                         padding: 0 !important;
-                    }
-                    .table-container {
+                        margin: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: none !important;
+                        transform: none !important;
                         overflow: visible !important;
                     }
-                    .data-table {
-                        width: 100% !important;
-                    }
-                    .data-table th, .data-table td {
-                        border: 0.5px solid #eee !important;
-                    }
-                    /* Ensure specific sections are hidden if needed */
-                    div[style*="grid-template-columns: 350px 1fr"] > div:first-child {
-                        display: none !important;
-                    }
-                    div[style*="grid-template-columns: 350px 1fr"] {
+                    .receipt-premium-container {
                         display: block !important;
                     }
+                    /* Ensure background graphics are printed */
+                    * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+                    @page { size: A5 landscape; margin: 0; }
                 }
             `}</style>
         </div>

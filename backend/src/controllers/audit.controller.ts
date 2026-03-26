@@ -5,9 +5,27 @@ import { sendSuccess, sendError } from '../utils/apiResponse';
 export class AuditController {
     async listLogs(req: Request, res: Response): Promise<void> {
         try {
-            const limit = parseInt(req.query.limit as string) || 100;
-            const logs = await auditService.listAll(limit);
-            sendSuccess(res, logs);
+            const {
+                actorId,
+                action,
+                entityType,
+                startDate,
+                endDate,
+                page,
+                limit
+            } = req.query;
+
+            const logsData = await auditService.listAll({
+                actorId: actorId as string,
+                action: action as string,
+                entityType: entityType as string,
+                startDate: startDate as string,
+                endDate: endDate as string,
+                page: page ? parseInt(page as string) : 1,
+                limit: limit ? parseInt(limit as string) : 50
+            });
+
+            sendSuccess(res, logsData);
         } catch (err) {
             sendError(res, 'Failed to fetch audit logs', 500);
         }

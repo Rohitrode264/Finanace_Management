@@ -9,7 +9,7 @@ export class PaymentRepository {
     }
 
     async findById(id: string | Types.ObjectId): Promise<IPayment | null> {
-        return Payment.findById(id) as unknown as Promise<IPayment | null>;
+        return Payment.findById(id).populate('receivedBy', 'name firstName lastName') as unknown as Promise<IPayment | null>;
     }
 
     async findByEnrollment(enrollmentId: string | Types.ObjectId): Promise<IPayment[]> {

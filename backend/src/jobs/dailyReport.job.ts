@@ -25,7 +25,7 @@ export const reportQueue = env.REDIS_HOST ? new Bull('daily-report', {
 }) : null;
 
 // ── Email transporter ──
-const transporter = nodemailer.createTransport({
+export const transporter = nodemailer.createTransport({
     host: env.SMTP_HOST,
     port: parseInt(env.SMTP_PORT, 10),
     secure: false,
