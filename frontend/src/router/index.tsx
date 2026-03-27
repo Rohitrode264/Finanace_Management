@@ -1,10 +1,9 @@
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
-
-// Pages — lazy imports for code splitting
 import { lazy, Suspense } from 'react';
 
+// Pages — lazy imports for code splitting
 const LoginPage = lazy(() => import('../pages/auth/LoginPage').then(m => ({ default: m.LoginPage })));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
@@ -51,11 +50,13 @@ export const router = createBrowserRouter([
     },
     {
         // Protected area — all children require authentication
+        path: '/',
         element: <ProtectedRoute />,
         children: [
             {
                 element: <AppLayout />,
                 children: [
+                    { index: true, element: <Navigate to="/dashboard" replace /> },
                     { path: '/dashboard', element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
                     { path: '/students', element: <SuspenseWrapper><StudentsPage /></SuspenseWrapper> },
                     { path: '/classes', element: <SuspenseWrapper><ClassesPage /></SuspenseWrapper> },
@@ -73,6 +74,5 @@ export const router = createBrowserRouter([
             },
         ],
     },
-    { path: '/', element: <ProtectedRoute />, children: [{ index: true, element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> }] },
-    { path: '*', element: <SuspenseWrapper><LoginPage /></SuspenseWrapper> },
+    { path: '*', element: <Navigate to="/dashboard" replace /> },
 ]);
