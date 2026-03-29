@@ -3,6 +3,12 @@ import { env } from './config/env'; // System Config
 import { seedPermissions } from './utils/seeder';
 import app from './app';
 import { scheduleDailyReport } from './jobs/dailyReport.job';
+import dns from 'node:dns';
+
+// Force Node.js to prefer IPv4 for DNS lookups. 
+// This fixes querySrv ECONNREFUSED on some networks (like Jio/Reliance) 
+// where SRV over IPv6 is flaky.
+dns.setDefaultResultOrder('ipv4first');
 
 async function main(): Promise<void> {
     // 1. Connect to MongoDB (with retry logic in db.ts)

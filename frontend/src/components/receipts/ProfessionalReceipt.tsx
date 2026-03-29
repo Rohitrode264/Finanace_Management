@@ -13,25 +13,22 @@ interface ProfessionalReceiptProps {
 
 export function ProfessionalReceipt({ receipt, payment, enrollment, student, academicClass }: ProfessionalReceiptProps) {
     // Calculations
-    const originalFee = enrollment.totalFee;
-    const concessionAmount = originalFee - enrollment.netFee;
-    const netPayable = enrollment.netFee;
-    const amountReceivedThisTime = payment.amount;
-    const balanceRemaining = enrollment.outstandingBalance ?? 0;
-    const totalPaidToDate = netPayable - balanceRemaining;
+    const amountPaid = payment.amount;
+    const balanceAfter = enrollment.outstandingBalance ?? 0;
+    const balanceBefore = balanceAfter + amountPaid;
 
     const template = typeof academicClass?.templateId === 'object' ? academicClass.templateId as ClassTemplate : null;
     const className = template ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} - ${template.board}` : 'N/A';
 
     const formattedDate = receipt?.createdAt ? format(new Date(receipt.createdAt), 'dd MMMM yyyy') : 'N/A';
-    const amountInWords = numberToWords(amountReceivedThisTime);
+    const amountInWords = numberToWords(amountPaid);
 
     // Receiver name from populated payment object
     const receivedByObj = (payment as any)?.receivedBy;
     const receiverName =
-        receivedByObj?.name ||
-        (receivedByObj?.firstName ? `${receivedByObj.firstName} ${receivedByObj.lastName || ''}`.trim() : null) ||
-        'Authorized Clerk';
+        typeof receivedByObj === 'object'
+            ? (receivedByObj?.name || (receivedByObj?.firstName ? `${receivedByObj.firstName} ${receivedByObj.lastName || ''}`.trim() : null))
+            : (typeof receivedByObj === 'string' ? receivedByObj : null) || 'Authorized Collector';
 
     const paymentModeLabels: Record<string, string> = {
         CASH: '💷 Cash',
@@ -139,39 +136,29 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
                         <tbody>
                             <tr>
                                 <td style={{ padding: '10px 0', fontSize: '12px' }}>Academic Tuition Fee</td>
-                                <td style={{ padding: '10px 0', fontSize: '12px', textAlign: 'right' }}>{formatCurrency(originalFee)}</td>
-                            </tr>
-                            {concessionAmount > 0 && (
-                                <tr>
-                                    <td style={{ padding: '6px 0', fontSize: '12px', color: '#666' }}>Concession / Scholarship (-)</td>
-                                    <td style={{ padding: '6px 0', fontSize: '12px', textAlign: 'right', color: '#666' }}>- {formatCurrency(concessionAmount)}</td>
-                                </tr>
-                            )}
-                            <tr style={{ borderTop: '1px double #000', fontWeight: 700 }}>
-                                <td style={{ padding: '10px 0', fontSize: '12px' }}>Net Total Payable</td>
-                                <td style={{ padding: '10px 0', fontSize: '12px', textAlign: 'right' }}>{formatCurrency(netPayable)}</td>
+                                <td style={{ padding: '10px 0', fontSize: '12px', textAlign: 'right' }}>{formatCurrency(enrollment.netFee)}</td>
                             </tr>
                         </tbody>
                     </table>
                     <div style={{ marginTop: '12px', padding: '10px', background: '#f9fafb', borderRadius: '6px' }}>
                         <p style={{ fontSize: '10px', color: '#666', marginBottom: '4px', fontStyle: 'italic' }}>Amount in words:</p>
-                        <p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>Rupees {amountInWords} Only</p>
+                        <p style={{ fontSize: '12px', fontWeight: 700, margin: 0 }}>Rupees {amountInWords}</p>
                     </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ padding: '16px', border: '2px solid #000', borderRadius: '8px', textAlign: 'center' }}>
-                        <label style={{ fontSize: '9px', fontWeight: 800, textTransform: 'uppercase', display: 'block', marginBottom: '4px' }}>Amount Received Now</label>
-                        <div style={{ fontSize: '28px', fontWeight: 900 }}>{formatCurrency(amountReceivedThisTime)}</div>
-                    </div>
                     <div style={{ padding: '12px', backgroundColor: '#faf9f6', borderRadius: '8px', fontSize: '11px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span>Total Paid till date:</span>
-                            <span style={{ fontWeight: 700 }}>{formatCurrency(totalPaidToDate)}</span>
+                            <span>Previous Balance Due:</span>
+                            <span style={{ fontWeight: 600 }}>{formatCurrency(balanceBefore)}</span>
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', color: '#ef4444', fontWeight: 800 }}>
-                            <span>Balance Due:</span>
-                            <span>{formatCurrency(balanceRemaining)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                            <span>Amount Paid Now:</span>
+                            <span style={{ fontWeight: 700, color: '#10b981' }}>{formatCurrency(amountPaid)}</span>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #ddd', paddingTop: '4px', color: '#ef4444', fontWeight: 800 }}>
+                            <span>Remaining Balance:</span>
+                            <span>{formatCurrency(balanceAfter)}</span>
                         </div>
                     </div>
                 </div>

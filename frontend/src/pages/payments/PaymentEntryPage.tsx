@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
     Search, CreditCard, CheckCircle2,
-    X, Printer, UserCheck
+    X, Printer, UserCheck, Download
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -14,8 +14,10 @@ import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import type { Student, Enrollment, PaymentMode, ProcessPaymentResult, AcademicClass, ClassTemplate } from '../../types';
 import apiClient from '../../api/client';
-import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/authStore';
+import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
 
 const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
     { value: 'CASH', label: 'Cash' },
@@ -26,7 +28,6 @@ const PAYMENT_MODES: { value: PaymentMode; label: string }[] = [
 ];
 
 export function PaymentEntryPage() {
-    const navigate = useNavigate();
     const user = useAuthStore((s) => s.user);
 
     const [studentSearch, setStudentSearch] = useState('');
@@ -35,10 +36,15 @@ export function PaymentEntryPage() {
     const [amount, setAmount] = useState('');
     const [paymentMode, setPaymentMode] = useState<PaymentMode>('CASH');
     const [transactionRef, setTransactionRef] = useState('');
+    const [bankName, setBankName] = useState('');
+    const [chequeNumber, setChequeNumber] = useState('');
+    const [chequeDate, setChequeDate] = useState('');
     const [step, setStep] = useState<'search' | 'enrollment' | 'pay' | 'success'>('search');
     const [result, setResult] = useState<ProcessPaymentResult | null>(null);
     const [selectedInsts, setSelectedInsts] = useState<number[]>([]);
     const dSearch = useDebounce(studentSearch, 500);
+    const receiptRef = useRef<HTMLDivElement>(null);
+    const [downloading, setDownloading] = useState(false);
 
     const { data: studentsRes, isLoading: sLoading } = useQuery({
         queryKey: ['student-search', dSearch],
@@ -69,6 +75,9 @@ export function PaymentEntryPage() {
                 amount: numericAmount,
                 paymentMode,
                 transactionRef: transactionRef || undefined,
+                bankName: paymentMode === 'CHEQUE' ? bankName : undefined,
+                chequeNumber: paymentMode === 'CHEQUE' ? chequeNumber : undefined,
+                chequeDate: paymentMode === 'CHEQUE' ? chequeDate : undefined,
                 fingerprintVerified: false,
             }),
         onSuccess: (res) => {
@@ -83,8 +92,29 @@ export function PaymentEntryPage() {
     const resetFlow = () => {
         setStudentSearch(''); setSelectedStudent(null);
         setEnrollment(null); setAmount(''); setPaymentMode('CASH'); setTransactionRef('');
+        setBankName(''); setChequeNumber(''); setChequeDate('');
         setStep('search'); setResult(null);
         setSelectedInsts([]);
+    };
+
+    const downloadPDF = async () => {
+        if (!receiptRef.current || !result || !enrollment || !selectedStudent) return;
+        setDownloading(true);
+        try {
+            const element = receiptRef.current;
+            const canvas = await html2canvas(element, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgWidth = 210;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
+            pdf.save(`Receipt_${result.receiptNumber}.pdf`);
+        } catch (error) {
+            console.error('PDF Generation Error:', error);
+            toast.error('Failed to generate PDF');
+        } finally {
+            setDownloading(false);
+        }
     };
 
     const steps = ['search', 'enrollment', 'pay', 'success'] as const;
@@ -459,15 +489,47 @@ export function PaymentEntryPage() {
                                             ))}
                                         </select>
                                     </div>
-                                    <div style={{ gridColumn: '1 / -1' }}>
-                                        <label className="form-label">Transaction Reference (optional)</label>
-                                        <input
-                                            value={transactionRef}
-                                            onChange={e => setTransactionRef(e.target.value)}
-                                            className="form-input"
-                                            placeholder="UPI ref, cheque no., bank ref..."
-                                        />
-                                    </div>
+                                    {paymentMode === 'CHEQUE' ? (
+                                        <>
+                                            <div>
+                                                <label className="form-label">Bank Name *</label>
+                                                <input
+                                                    value={bankName}
+                                                    onChange={e => setBankName(e.target.value)}
+                                                    className="form-input"
+                                                    placeholder="e.g. SBI, HDFC"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label">Cheque Number *</label>
+                                                <input
+                                                    value={chequeNumber}
+                                                    onChange={e => setChequeNumber(e.target.value)}
+                                                    className="form-input"
+                                                    placeholder="6-digit number"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="form-label">Cheque Date *</label>
+                                                <input
+                                                    type="date"
+                                                    value={chequeDate}
+                                                    onChange={e => setChequeDate(e.target.value)}
+                                                    className="form-input"
+                                                />
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div style={{ gridColumn: '1 / -1' }}>
+                                            <label className="form-label">Transaction Reference (optional)</label>
+                                            <input
+                                                value={transactionRef}
+                                                onChange={e => setTransactionRef(e.target.value)}
+                                                className="form-input"
+                                                placeholder={paymentMode === 'UPI' ? "UPI Ref / Transaction ID" : "Payment reference..."}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Collected By badge */}
@@ -499,7 +561,11 @@ export function PaymentEntryPage() {
 
                                 <button
                                     className="btn-primary"
-                                    disabled={numericAmount <= 0 || createPaymentMutation.isPending}
+                                    disabled={
+                                        numericAmount <= 0 ||
+                                        createPaymentMutation.isPending ||
+                                        (paymentMode === 'CHEQUE' && (!bankName || !chequeNumber || !chequeDate))
+                                    }
                                     onClick={() => createPaymentMutation.mutate()}
                                     style={{ width: '100%', justifyContent: 'center' }}
                                 >
@@ -512,35 +578,77 @@ export function PaymentEntryPage() {
             )}
 
             {/* Step 4: Success */}
-            {step === 'success' && (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="card" style={{ padding: 40, textAlign: 'center' }}>
-                    <div style={{
-                        width: 72, height: 72, background: 'rgba(16,185,129,0.12)',
-                        borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        margin: '0 auto 20px',
-                    }}>
-                        <CheckCircle2 size={36} color="#10b981" />
-                    </div>
-                    <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: 8 }}>Payment Successful!</h3>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 8 }}>
-                        {formatCurrency(numericAmount)} collected via {paymentMode}.
-                    </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.8125rem', marginBottom: 8 }}>
-                        Authorized Receiver: <strong style={{ color: '#6366f1' }}>{user?.name}</strong>
-                    </p>
-                    {result?.receiptNumber && (
-                        <p style={{ fontWeight: 700, fontSize: '1rem', color: '#6366f1', marginBottom: 24 }}>
-                            Receipt: {result.receiptNumber}
+            {step === 'success' && result && selectedStudent && enrollment && (
+                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
+                    <div className="card" style={{ padding: 24, textAlign: 'center', marginBottom: 24, background: 'rgba(16,185,129,0.04)' }}>
+                        <div style={{
+                            width: 56, height: 56, background: 'rgba(16,185,129,0.12)',
+                            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            margin: '0 auto 12px',
+                        }}>
+                            <CheckCircle2 size={28} color="#10b981" />
+                        </div>
+                        <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: 4 }}>Payment Successful!</h3>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 16 }}>
+                            Receipt <strong style={{ color: '#6366f1' }}>{result.receiptNumber}</strong> has been generated.
                         </p>
-                    )}
-                    <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
-                        <button className="btn-secondary" onClick={resetFlow}>New Payment</button>
-                        {result?.receipt._id && (
-                            <button className="btn-primary" onClick={() => navigate(`/receipts/${result.receipt._id}`)}>
-                                <Printer size={15} /> View Receipt
+                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+                            <button className="btn-secondary" onClick={resetFlow} style={{ fontSize: '0.8125rem' }}>
+                                Record New Payment
                             </button>
-                        )}
+                            <button className="btn-secondary" onClick={downloadPDF} disabled={downloading} style={{ fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Download size={14} /> {downloading ? 'Generating...' : 'Download PDF'}
+                            </button>
+                            <button className="btn-primary" onClick={() => window.print()} style={{ fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Printer size={14} /> Print Receipt
+                            </button>
+                        </div>
                     </div>
+
+                    <div id="receipt-print-area" ref={receiptRef} className="card" style={{
+                        padding: 0,
+                        overflow: 'hidden',
+                        background: '#fff',
+                        border: '1px solid var(--border)',
+                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
+                    }}>
+                        <ProfessionalReceipt
+                            receipt={result.receipt}
+                            payment={{
+                                ...result.payment,
+                                receivedBy: {
+                                    name: user?.name,
+                                    firstName: user?.name?.split(' ')[0]
+                                }
+                            } as any}
+                            enrollment={{
+                                ...enrollment,
+                                outstandingBalance: (enrollment.outstandingBalance ?? 0) - result.payment.amount
+                            } as any}
+                            student={selectedStudent}
+                            academicClass={(enrollment.academicClassId as any)}
+                        />
+                    </div>
+
+                    <style>{`
+                        @media print {
+                            body > *, #root > *, nav, aside, footer, .PageHeader, .btn-primary, .btn-secondary, h3, p, [role="status"] {
+                                display: none !important;
+                            }
+                            #receipt-print-area {
+                                display: block !important;
+                                position: fixed !important;
+                                top: 0 !important;
+                                left: 0 !important;
+                                width: 100% !important;
+                                border: none !important;
+                                box-shadow: none !important;
+                                padding: 0 !important;
+                                margin: 0 !important;
+                            }
+                            @page { size: A5 landscape; margin: 0; }
+                        }
+                    `}</style>
                 </motion.div>
             )}
         </div>

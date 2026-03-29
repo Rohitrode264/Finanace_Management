@@ -280,13 +280,6 @@ export function LedgerPage() {
                                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Detailed ledger for academic year {selectedEnrollment.academicYear}</p>
                                 </div>
                                 <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                                    <button
-                                        className="btn-secondary"
-                                        onClick={() => window.print()}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 6, height: 36 }}
-                                    >
-                                        <Printer size={15} /> Print History
-                                    </button>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>OUTSTANDING BALANCE</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: balance > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(balance)}</div>

@@ -26,9 +26,8 @@ const studentSchema = z.object({
     admissionNumber: z.string().min(3, 'Admission number must be at least 3 characters').max(20),
     firstName: z.string().min(1, 'First name required').max(100),
     lastName: z.string().min(1, 'Last name required').max(100),
-    phone: z.string().min(10, 'Min 10 digits'),
-    alternatePhone: z.string().max(15).optional().or(z.literal('')),
-    motherPhone: z.string().max(15).optional().or(z.literal('')),
+    phone: z.string().min(10, "Father's phone must be 10 digits"),
+    motherPhone: z.string().min(10, "Mother's phone must be 10 digits").optional().or(z.literal('')),
     email: z.string().email('Invalid email format').optional().or(z.literal('')),
     fatherName: z.string().min(1, "Father's name required").max(100),
     motherName: z.string().min(1, "Mother's name required").max(100),
@@ -83,7 +82,7 @@ export function StudentsPage() {
     // Step 1: Student details form
     const { register, handleSubmit, formState: { errors }, reset, getValues } = useForm<StudentForm>({
         resolver: zodResolver(studentSchema),
-        defaultValues: { email: '', bloodGroup: '', address: { street: '', city: '', state: '', zipCode: '' } }
+        defaultValues: { email: '', bloodGroup: '', phone: '', motherPhone: '', address: { street: '', city: '', state: '', zipCode: '' } }
     });
 
     useEffect(() => {
@@ -438,17 +437,14 @@ export function StudentsPage() {
                                             {errors.lastName && <p className="form-error">{errors.lastName.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="form-label">Phone *</label>
+                                            <label className="form-label">Father's Phone *</label>
                                             <input {...register('phone')} className={`form-input ${errors.phone ? 'error' : ''}`} placeholder="10-digit mobile number" />
                                             {errors.phone && <p className="form-error">{errors.phone.message}</p>}
                                         </div>
                                         <div>
-                                            <label className="form-label">Alternate Phone</label>
-                                            <input {...register('alternatePhone')} className="form-input" placeholder="Emergency contact" />
-                                        </div>
-                                        <div>
                                             <label className="form-label">Mother's Phone</label>
-                                            <input {...register('motherPhone')} className="form-input" placeholder="Mother's cell" />
+                                            <input {...register('motherPhone')} className={`form-input ${errors.motherPhone ? 'error' : ''}`} placeholder="10-digit mobile number" />
+                                            {errors.motherPhone && <p className="form-error">{errors.motherPhone.message}</p>}
                                         </div>
                                         <div>
                                             <label className="form-label">Email</label>
@@ -753,9 +749,8 @@ export function StudentsPage() {
                             <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
                                 <h4 style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9375rem' }}>Contact Details</h4>
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.875rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Primary Phone:</span> <strong>{selectedStudentForView.phone}</strong></div>
-                                    {selectedStudentForView.alternatePhone && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Alternate:</span> <strong>{selectedStudentForView.alternatePhone}</strong></div>}
-                                    {selectedStudentForView.motherPhone && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother's Cell:</span> <strong>{selectedStudentForView.motherPhone}</strong></div>}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father's Phone:</span> <strong>{selectedStudentForView.phone}</strong></div>
+                                    {selectedStudentForView.motherPhone && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother's Phone:</span> <strong>{selectedStudentForView.motherPhone}</strong></div>}
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father:</span> <strong>{selectedStudentForView.fatherName}</strong></div>
                                     <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother:</span> <strong>{selectedStudentForView.motherName}</strong></div>
                                     {selectedStudentForView.email && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Email:</span> <strong>{selectedStudentForView.email}</strong></div>}

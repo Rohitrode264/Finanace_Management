@@ -21,6 +21,9 @@ export interface IPayment extends Document {
     cancelledBy: Types.ObjectId | null;
     cancelledAt: Date | null;
     transactionRef: string | null;
+    bankName: string | null;
+    chequeNumber: string | null;
+    chequeDate: Date | null;
     createdAt: Date;
 }
 
@@ -98,6 +101,20 @@ const PaymentSchema = new Schema<IPayment>(
             default: null,
             trim: true,
             // UPI ref, cheque number, transaction ID etc.
+        },
+        bankName: {
+            type: String,
+            default: null,
+            trim: true,
+        },
+        chequeNumber: {
+            type: String,
+            default: null,
+            trim: true,
+        },
+        chequeDate: {
+            type: Date,
+            default: null,
         },
     },
     {

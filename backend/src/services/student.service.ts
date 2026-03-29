@@ -74,17 +74,23 @@ export class StudentService {
 
     async generateAdmissionNumber(): Promise<string> {
         const year = new Date().getFullYear();
-        const prefix = `ADM-${year}-`;
+        const prefix = `CP${year}`;
+        // Find the student with the highest admission number for the current year
         const lastStudent = await Student.findOne({ admissionNumber: new RegExp(`^${prefix}`) })
             .sort({ admissionNumber: -1 });
 
         if (!lastStudent || !lastStudent.admissionNumber) {
-            return `${prefix}0001`;
+            // First student of the year starts from a base + jump
+            return `${prefix}1117`;
         }
 
-        const lastSequence = parseInt(lastStudent.admissionNumber.replace(prefix, ''), 10);
-        const nextSequence = isNaN(lastSequence) ? 1 : lastSequence + 1;
-        return `${prefix}${nextSequence.toString().padStart(4, '0')}`;
+        // Extract the numeric part (everything after CPXXXX)
+        const lastPart = lastStudent.admissionNumber.replace(prefix, '');
+        const lastVal = parseInt(lastPart, 10);
+
+        // Non-unit increment (jump) to make it look less like a simple count
+        const nextVal = isNaN(lastVal) ? 1117 : lastVal + 17;
+        return `${prefix}${nextVal}`;
     }
 
     async updateStudentStatus(params: {

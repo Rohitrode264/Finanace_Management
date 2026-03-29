@@ -6,6 +6,9 @@ export interface CreatePaymentDto {
     amount: number;
     paymentMode: PaymentMode;   // 'CASH' | 'UPI' | 'CARD' | 'CHEQUE' | 'BANK_TRANSFER'
     transactionRef?: string;
+    bankName?: string;
+    chequeNumber?: string;
+    chequeDate?: string;
     fingerprintVerified?: boolean;
 }
 

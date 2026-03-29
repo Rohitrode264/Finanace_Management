@@ -126,7 +126,7 @@ export function SidebarNav({ collapsed, onCollapse, mobileOpen, setMobileOpen }:
                             transition={{ duration: 0.15 }}
                             style={{ overflow: 'hidden', minWidth: 0 }}
                         >
-                            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#dce4f5', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                            <div style={{ fontSize: '0.8125rem', fontWeight: 700, color: '#999595ff', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
                                 New Career Point
                             </div>
                             <div style={{

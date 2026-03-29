@@ -24,6 +24,9 @@ export interface ProcessPaymentInput {
     ipAddress: string;
     userAgent: string;
     transactionRef?: string;
+    bankName?: string;
+    chequeNumber?: string;
+    chequeDate?: Date;
     fingerprintVerified?: boolean;
 }
 
@@ -124,6 +127,9 @@ export class PaymentService {
                     isCancelled: false,
                     receiptId: null,
                     transactionRef: input.transactionRef ?? null,
+                    bankName: input.bankName ?? null,
+                    chequeNumber: input.chequeNumber ?? null,
+                    chequeDate: input.chequeDate ?? null,
                 },
                 session
             );
@@ -181,6 +187,7 @@ export class PaymentService {
                 userAgent: input.userAgent,
             });
 
+            await (payment as any).populate('receivedBy', 'name firstName lastName');
             return { payment, receipt, receiptNumber, allocation };
         } catch (err) {
             await session.abortTransaction();

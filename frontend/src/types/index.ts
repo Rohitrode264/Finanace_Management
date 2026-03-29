@@ -76,7 +76,6 @@ export interface Student {
     firstName: string;
     lastName: string;
     phone: string;
-    alternatePhone?: string;
     motherPhone?: string;
     fatherName: string;
     motherName: string;
@@ -182,6 +181,9 @@ export interface Payment {
     cancelledBy: string | null;
     cancelledAt: string | null;
     transactionRef: string | null;
+    bankName: string | null;
+    chequeNumber: string | null;
+    chequeDate: string | null;
     createdAt: string;
 }
 
