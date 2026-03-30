@@ -667,109 +667,111 @@ export function StudentsPage() {
 
             {/* Student Profile Detail Drawer */}
             <AnimatePresence>
-                {viewProfileDrawer && selectedStudentForView && (
-                    <>
-                        <motion.div
-                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                            className="modal-overlay"
-                            onClick={() => setViewProfileDrawer(false)}
-                            style={{ zIndex: 1000 }}
-                        />
-                        <motion.div
-                            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                            style={{
-                                position: 'fixed', right: 0, top: 0, bottom: 0, width: 480,
-                                background: 'var(--bg-surface)', zIndex: 1001,
-                                boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
-                                padding: '32px 24px', overflowY: 'auto', borderLeft: '1px solid var(--border)'
-                            }}
-                        >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Student Profile</h3>
-                                <button onClick={() => setViewProfileDrawer(false)} className="btn-secondary" style={{ padding: 8, borderRadius: '50%' }}>
-                                    <X size={18} />
-                                </button>
-                            </div>
-
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, padding: 20, background: 'var(--bg-subtle)', borderRadius: 16 }}>
-                                <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', fontWeight: 800 }}>
-                                    {selectedStudentForView.firstName.charAt(0)}
+                {
+                    viewProfileDrawer && selectedStudentForView && (
+                        <>
+                            <motion.div
+                                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                                className="modal-overlay"
+                                onClick={() => setViewProfileDrawer(false)}
+                                style={{ zIndex: 1000 }}
+                            />
+                            <motion.div
+                                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                style={{
+                                    position: 'fixed', right: 0, top: 0, bottom: 0, width: 480,
+                                    background: 'var(--bg-surface)', zIndex: 1001,
+                                    boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
+                                    padding: '32px 24px', overflowY: 'auto', borderLeft: '1px solid var(--border)'
+                                }}
+                            >
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Student Profile</h3>
+                                    <button onClick={() => setViewProfileDrawer(false)} className="btn-secondary" style={{ padding: 8, borderRadius: '50%' }}>
+                                        <X size={18} />
+                                    </button>
                                 </div>
-                                <div>
-                                    <div style={{ fontSize: '1.125rem', fontWeight: 700 }}>{selectedStudentForView.firstName} {selectedStudentForView.lastName}</div>
-                                    <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>ID: {selectedStudentForView.admissionNumber}</div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, padding: 20, background: 'var(--bg-subtle)', borderRadius: 16 }}>
+                                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', fontWeight: 800 }}>
+                                        {selectedStudentForView.firstName.charAt(0)}
+                                    </div>
+                                    <div>
+                                        <div style={{ fontSize: '1.125rem', fontWeight: 700 }}>{selectedStudentForView.firstName} {selectedStudentForView.lastName}</div>
+                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>ID: {selectedStudentForView.admissionNumber}</div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <h4 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <BookOpen size={18} color="var(--accent)" /> Enrollment History
-                            </h4>
+                                <h4 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <BookOpen size={18} color="var(--accent)" /> Enrollment History
+                                </h4>
 
-                            {profileEnrollments.length === 0 ? (
-                                <div style={{ padding: 32, textAlign: 'center', background: 'var(--bg-muted)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                                    No enrollment records found for this student.
-                                </div>
-                            ) : (
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                    {profileEnrollments.map(e => (
-                                        <div key={e._id} style={{ padding: 20, border: '1px solid var(--border)', borderRadius: 16, background: 'var(--bg-surface)' }}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                                                <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{e.academicYear} Enrollment</span>
-                                                <span style={{
-                                                    padding: '2px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700,
-                                                    ...STATUS_STYLE[e.status]
-                                                }}>{e.status}</span>
-                                            </div>
-
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: '0.8125rem', marginBottom: 16 }}>
-                                                <div><span style={{ color: 'var(--text-muted)' }}>Net Payable:</span> <strong style={{ marginLeft: 4 }}>{formatCurrency(e.netFee)}</strong></div>
-                                                <div><span style={{ color: 'var(--text-muted)' }}>Outstanding:</span> <strong style={{ marginLeft: 4, color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(e.outstandingBalance ?? 0)}</strong></div>
-                                            </div>
-
-                                            {/* Clarity about Concessions */}
-                                            {e.concessionType !== 'NONE' && (
-                                                <div style={{ padding: '8px 12px', background: 'rgba(245,158,11,0.06)', borderRadius: 8, fontSize: '0.75rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                                                    <Tag size={12} />
-                                                    Applied {e.concessionValue}{e.concessionType === 'PERCENTAGE' ? '%' : '₹'} flat concession (Reduction from original fee)
+                                {profileEnrollments.length === 0 ? (
+                                    <div style={{ padding: 32, textAlign: 'center', background: 'var(--bg-muted)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                                        No enrollment records found for this student.
+                                    </div>
+                                ) : (
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                                        {profileEnrollments.map(e => (
+                                            <div key={e._id} style={{ padding: 20, border: '1px solid var(--border)', borderRadius: 16, background: 'var(--bg-surface)' }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                                                    <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{e.academicYear} Enrollment</span>
+                                                    <span style={{
+                                                        padding: '2px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700,
+                                                        ...STATUS_STYLE[e.status]
+                                                    }}>{e.status}</span>
                                                 </div>
-                                            )}
 
-                                            <div style={{ display: 'flex', gap: 8 }}>
-                                                <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '6px 0' }} onClick={() => {
-                                                    setViewProfileDrawer(false);
-                                                    navigate(`/enrollments`); // Link to more detail if needed
-                                                }}>View Ledger</button>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: '0.8125rem', marginBottom: 16 }}>
+                                                    <div><span style={{ color: 'var(--text-muted)' }}>Net Payable:</span> <strong style={{ marginLeft: 4 }}>{formatCurrency(e.netFee)}</strong></div>
+                                                    <div><span style={{ color: 'var(--text-muted)' }}>Outstanding:</span> <strong style={{ marginLeft: 4, color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(e.outstandingBalance ?? 0)}</strong></div>
+                                                </div>
+
+                                                {/* Clarity about Concessions */}
+                                                {e.concessionType !== 'NONE' && (
+                                                    <div style={{ padding: '8px 12px', background: 'rgba(245,158,11,0.06)', borderRadius: 8, fontSize: '0.75rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+                                                        <Tag size={12} />
+                                                        Applied {e.concessionValue}{e.concessionType === 'PERCENTAGE' ? '%' : '₹'} flat concession (Reduction from original fee)
+                                                    </div>
+                                                )}
+
+                                                <div style={{ display: 'flex', gap: 8 }}>
+                                                    <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '6px 0' }} onClick={() => {
+                                                        setViewProfileDrawer(false);
+                                                        navigate(`/enrollments`); // Link to more detail if needed
+                                                    }}>View Ledger</button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-
-                            <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-                                <h4 style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9375rem' }}>Contact Details</h4>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.875rem' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father's Phone:</span> <strong>{selectedStudentForView.phone}</strong></div>
-                                    {selectedStudentForView.motherPhone && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother's Phone:</span> <strong>{selectedStudentForView.motherPhone}</strong></div>}
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father:</span> <strong>{selectedStudentForView.fatherName}</strong></div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother:</span> <strong>{selectedStudentForView.motherName}</strong></div>
-                                    {selectedStudentForView.email && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Email:</span> <strong>{selectedStudentForView.email}</strong></div>}
-                                </div>
-                                {selectedStudentForView.history?.previousSchool && (
-                                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px dashed var(--border)' }}>
-                                        <h5 style={{ fontWeight: 700, fontSize: '0.8125rem', marginBottom: 8 }}>Previous Academic History</h5>
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.75rem' }}>
-                                            <div><span style={{ color: 'var(--text-muted)' }}>School:</span> <strong>{selectedStudentForView.history.previousSchool}</strong></div>
-                                            <div><span style={{ color: 'var(--text-muted)' }}>Last Score:</span> <strong>{selectedStudentForView.history.percentage}</strong> ({selectedStudentForView.history.yearPassout})</div>
-                                            {selectedStudentForView.history.extraNote && <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 4 }}>"{selectedStudentForView.history.extraNote}"</div>}
-                                        </div>
+                                        ))}
                                     </div>
                                 )}
-                            </div>
-                        </motion.div>
-                    </>
-                )}
-            </AnimatePresence>
-        </div>
+
+                                <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
+                                    <h4 style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9375rem' }}>Contact Details</h4>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.875rem' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father's Phone:</span> <strong>{selectedStudentForView.phone}</strong></div>
+                                        {selectedStudentForView.motherPhone && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother's Phone:</span> <strong>{selectedStudentForView.motherPhone}</strong></div>}
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father:</span> <strong>{selectedStudentForView.fatherName}</strong></div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother:</span> <strong>{selectedStudentForView.motherName}</strong></div>
+                                        {selectedStudentForView.email && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Email:</span> <strong>{selectedStudentForView.email}</strong></div>}
+                                    </div>
+                                    {selectedStudentForView.history?.previousSchool && (
+                                        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px dashed var(--border)' }}>
+                                            <h5 style={{ fontWeight: 700, fontSize: '0.8125rem', marginBottom: 8 }}>Previous Academic History</h5>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.75rem' }}>
+                                                <div><span style={{ color: 'var(--text-muted)' }}>School:</span> <strong>{selectedStudentForView.history.previousSchool}</strong></div>
+                                                <div><span style={{ color: 'var(--text-muted)' }}>Last Score:</span> <strong>{selectedStudentForView.history.percentage}</strong> ({selectedStudentForView.history.yearPassout})</div>
+                                                {selectedStudentForView.history.extraNote && <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 4 }}>"{selectedStudentForView.history.extraNote}"</div>}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            </motion.div>
+                        </>
+                    )
+                }
+            </AnimatePresence >
+        </div >
     );
 }

@@ -132,7 +132,7 @@ export function SidebarNav({ collapsed, onCollapse, mobileOpen, setMobileOpen }:
                             <div style={{
                                 fontSize: '0.65rem', fontWeight: 600, color: '#4d5e7a',
                                 whiteSpace: 'nowrap', marginTop: 2, letterSpacing: '0.03em', textTransform: 'uppercase',
-                            }}>
+                            }}> 
                                 Finance Suite
                             </div>
                         </motion.div>

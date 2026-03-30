@@ -88,8 +88,8 @@ export class StudentService {
         const lastPart = lastStudent.admissionNumber.replace(prefix, '');
         const lastVal = parseInt(lastPart, 10);
 
-        // Non-unit increment (jump) to make it look less like a simple count
-        const nextVal = isNaN(lastVal) ? 1117 : lastVal + 17;
+        // Increment sequentially from the base value
+        const nextVal = isNaN(lastVal) ? 1117 : lastVal + 7;
         return `${prefix}${nextVal}`;
     }
 

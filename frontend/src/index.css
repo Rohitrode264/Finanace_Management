@@ -819,13 +819,14 @@ a {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: var(--bg-overlay);
+  background: rgba(0, 0, 0, 0.5);
+  /* override var(--bg-overlay) for solid contrast independent of page bg */
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  z-index: 99999;
   padding: 24px;
 }
 
@@ -841,6 +842,8 @@ a {
   padding: 28px;
   position: relative;
   font-size: 0.9375rem;
+  margin: auto;
+  /* Ensures it stays centered even if flex gets weird */
 }
 
 .modal-header {
