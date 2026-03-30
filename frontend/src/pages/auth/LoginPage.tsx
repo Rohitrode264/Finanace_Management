@@ -20,6 +20,7 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export function LoginPage() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [loginError, setLoginError] = useState<string | null>(null);
     const navigate = useNavigate();
     const { setAuth, isAuthenticated, isTokenExpired, logout } = useAuthStore();
     const applyTheme = useThemeStore((s) => s.applyTheme);
@@ -44,6 +45,7 @@ export function LoginPage() {
 
     const onSubmit = async (data: LoginFormData) => {
         setIsLoading(true);
+        setLoginError(null);
         try {
             const response = await authService.login(data.email, data.password);
             const { accessToken, user, permissions } = response.data.data;
@@ -51,7 +53,9 @@ export function LoginPage() {
             toast.success(`Welcome back, ${user.name}!`);
         } catch (err: unknown) {
             const error = err as { response?: { status: number; data?: { error?: string } } };
-            toast.error(error.response?.data?.error || 'Invalid email or password.');
+            const msg = error.response?.data?.error || 'Invalid email or password.';
+            setLoginError(msg);
+            toast.error(msg);
         } finally {
             setIsLoading(false);
         }
@@ -163,6 +167,21 @@ export function LoginPage() {
                             Enter your credentials to continue
                         </p>
                     </div>
+
+                    {loginError && (
+                        <div style={{
+                            marginBottom: 24,
+                            padding: '12px 16px',
+                            background: 'rgba(239,68,68,0.1)',
+                            borderLeft: '4px solid #ef4444',
+                            borderRadius: '4px',
+                            color: '#ef4444',
+                            fontSize: '0.875rem',
+                            fontWeight: 500
+                        }}>
+                            {loginError}
+                        </div>
+                    )}
 
                     <form onSubmit={handleSubmit(onSubmit)} noValidate>
                         <div style={{ marginBottom: 20 }}>
