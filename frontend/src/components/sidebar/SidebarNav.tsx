@@ -13,7 +13,7 @@ interface NavItem {
     label: string;
     icon: React.ElementType;
     path: string;
-    permission: string | null;
+    permission: string | string[] | null;
     section: string;
 }
 
@@ -27,7 +27,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: 'Ledger', icon: ClipboardList, path: '/ledger', permission: 'VIEW_ENROLLMENT', section: 'FINANCE' },
     // { label: 'Receipts', icon: Receipt, path: '/receipts', permission: 'VIEW_RECEIPT', section: 'FINANCE' },
     { label: 'Reports', icon: BarChart3, path: '/reports', permission: 'VIEW_REPORT', section: 'FINANCE' },
-    { label: 'Users', icon: Users, path: '/users', permission: 'MANAGE_PERMISSIONS', section: 'ADMIN' },
+    { label: 'Users', icon: Users, path: '/users', permission: ['MANAGE_USERS', 'CREATE_USER'], section: 'ADMIN' },
     { label: 'Roles & RBAC', icon: ShieldCheck, path: '/rbac', permission: 'MANAGE_ROLES', section: 'ADMIN' },
     { label: 'Audit Logs', icon: ClipboardList, path: '/audit', permission: 'VIEW_AUDIT_LOG', section: 'ADMIN' },
     { label: 'Settings', icon: Settings, path: '/settings', permission: null, section: 'SYSTEM' },
@@ -132,7 +132,7 @@ export function SidebarNav({ collapsed, onCollapse, mobileOpen, setMobileOpen }:
                             <div style={{
                                 fontSize: '0.65rem', fontWeight: 600, color: '#4d5e7a',
                                 whiteSpace: 'nowrap', marginTop: 2, letterSpacing: '0.03em', textTransform: 'uppercase',
-                            }}> 
+                            }}>
                                 Finance Suite
                             </div>
                         </motion.div>

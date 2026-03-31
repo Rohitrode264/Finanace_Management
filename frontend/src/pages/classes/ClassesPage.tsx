@@ -147,17 +147,17 @@ export function ClassesPage() {
 
             {/* Tabs */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                <button style={tabStyle(tab === 'classes')} onClick={() => setTab('classes')}>
+                <button style={tabStyle(tab === 'classes')} onClick={() => setTab('classes')} className="flex items-center">
                     <Calendar size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                     Academic Classes
                 </button>
                 {canCreate && (
                     <>
-                        <button style={tabStyle(tab === 'create-template')} onClick={() => setTab('create-template')}>
+                        <button style={tabStyle(tab === 'create-template')} onClick={() => setTab('create-template')} className="flex items-center">
                             <School size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                             Create Template
                         </button>
-                        <button style={tabStyle(tab === 'create-class')} onClick={() => setTab('create-class')}>
+                        <button style={tabStyle(tab === 'create-class')} onClick={() => setTab('create-class')} className="flex items-center">
                             <Plus size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
                             Create Class
                         </button>

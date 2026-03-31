@@ -68,14 +68,53 @@
   --radius-xl: 20px;
   --radius-full: 9999px;
 
+  /* Layout dimensions */
+  --header-h: 56px;
+
   /* Typography */
-  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
 
   /* Transitions */
-  --transition-fast: 0.12s ease;
-  --transition-base: 0.2s ease;
-  --transition-slow: 0.35s ease;
+  --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-base: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --transition-slow: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE STRUCTURES (ADDED)
+══════════════════════════════════════════════════════════════════════════════ */
+.page-content {
+  padding: 24px 24px 40px;
+}
+
+@media (max-width: 640px) {
+  .page-content {
+    padding: 16px 16px 24px;
+  }
+}
+
+.page-header {
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .page-header>div:last-child {
+    width: 100%;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -233,17 +272,18 @@ a {
    TABLES
 ══════════════════════════════════════════════════════════════════════════════ */
 .table-container {
-  overflow-x: auto;
-  border-radius: var(--radius-lg);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
   background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  box-shadow: var(--shadow-sm);
 }
 
 .data-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--bg-surface);
+  text-align: left;
+  white-space: nowrap;
 }
 
 .data-table thead {
@@ -846,6 +886,13 @@ a {
   /* Ensures it stays centered even if flex gets weird */
 }
 
+@media (max-width: 640px) {
+  .modal-content {
+    padding: 16px;
+    max-height: calc(100vh - 24px);
+  }
+}
+
 .modal-header {
   display: flex;
   align-items: center;
@@ -1024,7 +1071,7 @@ a {
   gap: 16px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .form-grid {
     grid-template-columns: 1fr;
   }

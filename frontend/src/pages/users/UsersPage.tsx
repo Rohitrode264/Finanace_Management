@@ -28,6 +28,7 @@ export function UsersPage() {
     const [fingerprintKey, setFingerprintKey] = useState('');
 
     const canManage = usePermission('MANAGE_USERS');
+    const canCreate = usePermission(['MANAGE_USERS', 'CREATE_USER']);
 
     const { data: usersRes, isLoading } = useQuery({
         queryKey: ['users'],
@@ -90,7 +91,7 @@ export function UsersPage() {
             <PageHeader
                 title="User Management"
                 subtitle="Manage staff accounts, roles, and biometric credentials."
-                actions={canManage ? (
+                actions={canCreate ? (
                     <button className="btn-primary" onClick={() => setShowCreate(true)}>
                         <UserPlus size={15} /> New User
                     </button>
@@ -237,7 +238,7 @@ export function UsersPage() {
                                         <label className="form-label">Role *</label>
                                         <select {...register('roleId')} className={`form-select ${errors.roleId ? 'error' : ''}`}>
                                             <option value="">— Select role —</option>
-                                            {roles.map(r => (
+                                            {roles.filter(r => canManage || !['ADMIN', 'SUPER_ADMIN'].includes(r.name)).map(r => (
                                                 <option key={r._id} value={r._id}>{r.name} — {r.description}</option>
                                             ))}
                                         </select>

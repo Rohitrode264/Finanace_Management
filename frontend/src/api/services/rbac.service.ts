@@ -19,6 +19,10 @@ export const rbacService = {
     grantPermission: (roleId: string, permissionId: string) =>
         apiClient.post<ApiResponse<null>>(`/rbac/roles/${roleId}/permissions`, { permissionId }),
 
+    // DELETE /rbac/roles/:id/permissions/:permId
+    revokePermission: (roleId: string, permissionId: string) =>
+        apiClient.delete<ApiResponse<null>>(`/rbac/roles/${roleId}/permissions/${permissionId}`),
+
     // ── Permissions ───────────────────────────────────────────────────────────
     // GET /rbac/permissions
     listPermissions: () =>

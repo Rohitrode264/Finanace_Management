@@ -36,18 +36,18 @@ export function RBACPage() {
         mutationFn: (permId: string) => {
             const isAssigned = activeRolePerms.includes(permId);
             if (isAssigned) {
-                toast('Permission revoke not supported yet — contact an admin.', { icon: 'ℹ️' });
-                return Promise.resolve(null as any);
+                return rbacService.revokePermission(selectedRole!._id, permId);
             }
             return rbacService.grantPermission(selectedRole!._id, permId);
         },
-        onSuccess: (res) => {
+        onSuccess: (res, permId) => {
             if (res !== null) {
                 refetchRolePerms();
-                toast.success('Permission granted');
+                const isAssigned = activeRolePerms.includes(permId);
+                toast.success(isAssigned ? 'Permission revoked' : 'Permission granted');
             }
         },
-        onError: () => toast.error('Failed to grant permission'),
+        onError: () => toast.error('Failed to update permission'),
     });
 
     const createRoleMutation = useMutation({

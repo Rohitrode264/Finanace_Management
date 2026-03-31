@@ -7,20 +7,14 @@ interface PageHeaderProps {
 
 export function PageHeader({ title, subtitle, actions, tabs }: PageHeaderProps) {
     return (
-        <div style={{ marginBottom: 24 }}>
-            <div style={{
-                display: 'flex',
-                alignItems: 'flex-start',
-                justifyContent: 'space-between',
-                gap: 16,
-                flexWrap: 'wrap',
-            }}>
+        <div>
+            <div className="page-header">
                 <div style={{ minWidth: 0 }}>
                     <h2 className="page-title">{title}</h2>
                     <p className="page-subtitle">{subtitle}</p>
                 </div>
                 {actions && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0, flexWrap: 'wrap' }}>
+                    <div>
                         {actions}
                     </div>
                 )}
