@@ -77,7 +77,7 @@ const StudentSchema = new Schema<IStudent>(
         },
         motherName: {
             type: String,
-            required: true,
+            required: false,
             trim: true,
             maxlength: 100,
         },

@@ -15,6 +15,7 @@ import { ProfessionalReceipt } from '../../components/receipts/ProfessionalRecei
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Modal } from '../../components/ui/Modal';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 
 export function LedgerPage() {
     const [searchParams] = useSearchParams();
@@ -149,7 +150,7 @@ export function LedgerPage() {
                 subtitle="Search for a student to view their complete financial history and download past receipts."
             />
 
-            <div style={{ display: 'grid', gridTemplateColumns: '350px 1fr', gap: 24 }}>
+            <div className="ledger-grid-layout" style={{ display: 'grid', gap: 24 }}>
                 {/* Left Panel: Search & Student Info */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <div className="card" style={{ padding: 20 }}>
@@ -313,8 +314,12 @@ export function LedgerPage() {
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{format(new Date(entry.createdAt), 'hh:mm a')}</div>
                                                     </td>
                                                     <td>
-                                                        <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>{entry.description}</div>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>ID: {entry.referenceId}</div>
+                                                        <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>
+                                                            <TruncatedText text={entry.description} maxWidth="180px" modalTitle="Transaction Description" />
+                                                        </div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                                            <TruncatedText text={`ID: ${entry.referenceId}`} maxWidth="120px" modalTitle="Reference ID" />
+                                                        </div>
                                                     </td>
                                                     <td>
                                                         <span style={{

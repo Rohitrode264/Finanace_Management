@@ -12,6 +12,7 @@ import { categoryService } from '../../api/services/category.service';
 import { useDebounce } from '../../hooks/useDebounce';
 import { formatCurrency } from '../../utils/currency';
 import { format } from 'date-fns';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 import toast from 'react-hot-toast';
 import type { Enrollment, Student, AcademicClass, ClassTemplate } from '../../types';
 import { useForm } from 'react-hook-form';
@@ -250,7 +251,9 @@ export function EnrollmentsPage() {
                                                 <tr key={e._id}>
                                                     <td><code style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e._id.toString().slice(-6)}</code></td>
                                                     <td>
-                                                        <div style={{ fontWeight: 600 }}>{student?.firstName} {student?.lastName}</div>
+                                                        <div style={{ fontWeight: 600 }}>
+                                                            <TruncatedText text={`${student?.firstName} ${student?.lastName}`} maxWidth="150px" modalTitle="Student Name" />
+                                                        </div>
                                                     </td>
                                                     <td>
                                                         <div style={{ fontSize: '0.8125rem' }}>{e.academicYear}</div>

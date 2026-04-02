@@ -2,7 +2,12 @@ import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, ChevronLeft, ChevronRight, X, BookOpen, Tag } from 'lucide-react';
+import {
+    Plus, ChevronLeft, ChevronRight, X, BookOpen, Tag,
+    Phone, User, MapPin, GraduationCap,
+    Calendar, Info
+} from 'lucide-react';
+import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +16,7 @@ import { SearchInput } from '../../components/ui/SearchInput';
 import { ConfirmModal } from '../../components/ui/ConfirmModal';
 import { usePermission } from '../../hooks/usePermission';
 import { useDebounce } from '../../hooks/useDebounce';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 import { studentsService } from '../../api/services/students.service';
 import { categoryService } from '../../api/services/category.service';
 import { enrollmentService } from '../../api/services/enrollment.service';
@@ -19,6 +25,22 @@ import apiClient from '../../api/client';
 import type { Student, StudentStatus, AcademicClass, ClassTemplate, Enrollment } from '../../types';
 import { formatCurrency } from '../../utils/currency';
 import toast from 'react-hot-toast';
+
+const DetailField = ({ label, value, icon: Icon }: { label: string; value: string | number | undefined; icon?: any }) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 4 }}>
+        {Icon && <div style={{
+            width: 32, height: 32, borderRadius: 8, background: 'var(--bg-surface)',
+            border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)', flexShrink: 0
+        }}><Icon size={14} /></div>}
+        <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.02em', marginBottom: 1 }}>{label}</div>
+            <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value || '—'}</div>
+        </div>
+    </div>
+);
+
+
 
 const CURRENT_YEAR = `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`;
 
@@ -30,7 +52,7 @@ const studentSchema = z.object({
     motherPhone: z.string().min(10, "Mother's phone must be 10 digits").optional().or(z.literal('')),
     email: z.string().email('Invalid email format').optional().or(z.literal('')),
     fatherName: z.string().min(1, "Father's name required").max(100),
-    motherName: z.string().min(1, "Mother's name required").max(100),
+    motherName: z.string().max(100).optional().or(z.literal('')),
     program: z.string().optional(),
     schoolName: z.string().max(200).optional().or(z.literal('')),
     bloodGroup: z.string().optional(),
@@ -61,11 +83,23 @@ const STATUS_STYLE: Record<string, { bg: string; color: string }> = {
     CANCELLED: { bg: 'rgba(239,68,68,0.1)', color: '#ef4444' },
 };
 
+// Helper: Title case formatting (e.g. "rohit rode" -> "Rohit Rode")
+const formatName = (name: string) => {
+    if (!name) return '';
+    return name
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 export function StudentsPage() {
     const qc = useQueryClient();
     const navigate = useNavigate();
     const [viewProfileDrawer, setViewProfileDrawer] = useState<boolean>(false);
     const [selectedStudentForView, setSelectedStudentForView] = useState<Student | null>(null);
+    const [profileTab, setProfileTab] = useState<'overview' | 'academic' | 'personal'>('overview');
 
     // Filter state
     const [search, setSearch] = useState('');
@@ -132,8 +166,20 @@ export function StudentsPage() {
 
     const admissionMutation = useMutation({
         mutationFn: async (studentData: StudentForm) => {
+            // Apply auto-formatting to name fields
+            const formattedData = {
+                ...studentData,
+                admissionNumber: studentData.admissionNumber.trim(),
+                firstName: formatName(studentData.firstName),
+                lastName: formatName(studentData.lastName),
+                fatherName: formatName(studentData.fatherName),
+                motherName: studentData.motherName ? formatName(studentData.motherName) : '',
+                phone: studentData.phone.trim(),
+                motherPhone: studentData.motherPhone ? studentData.motherPhone.trim() : '',
+            };
+
             // 1. Create student
-            const studentRes = await studentsService.create(studentData as any);
+            const studentRes = await studentsService.create(formattedData as any);
             const newStudentId = studentRes.data?.data?._id;
             if (!newStudentId) throw new Error('Failed to create student record');
 
@@ -216,6 +262,7 @@ export function StudentsPage() {
     const handleViewStudent = (student: Student) => {
         setSelectedStudentForView(student);
         setViewProfileDrawer(true);
+        setProfileTab('overview');
     };
 
     return (
@@ -224,28 +271,26 @@ export function StudentsPage() {
                 title="Student Management"
                 subtitle="Create, view, and manage student records in the system."
                 actions={
-                    <>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <SearchInput value={search} onChange={setSearch} placeholder="Search students..." />
-                            <select
-                                value={program}
-                                onChange={(e) => { setProgram(e.target.value); setSkip(0); }}
-                                className="form-select"
-                                style={{ width: 140 }}
-                            >
-                                <option value="">All Programs</option>
-                                {categories.map((c: any) => (
-                                    <option key={c._id} value={c.name}>{c.name}</option>
-                                ))}
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+                        <SearchInput value={search} onChange={setSearch} placeholder="Search students..." />
+                        <select
+                            value={program}
+                            onChange={(e) => { setProgram(e.target.value); setSkip(0); }}
+                            className="form-select"
+                            style={{ width: 'auto', minWidth: 140 }}
+                        >
+                            <option value="">All Programs</option>
+                            {categories.map((c: any) => (
+                                <option key={c._id} value={c.name}>{c.name}</option>
+                            ))}
+                            <option value="Other">Other</option>
+                        </select>
                         {canCreate && (
-                            <button className="btn-primary" onClick={() => setShowCreate(true)}>
-                                <Plus size={15} /> New Admission
+                            <button className="btn-primary" onClick={() => setShowCreate(true)} style={{ height: 42 }}>
+                                <Plus size={18} /> New Admission
                             </button>
                         )}
-                    </>
+                    </div>
                 }
             />
 
@@ -255,8 +300,8 @@ export function StudentsPage() {
                     <thead>
                         <tr>
                             <th>Student Details</th>
-                            <th>Phone</th>
-                            <th>Father / Mother</th>
+                            <th>Father Details</th>
+                            <th>Mother Details</th>
                             <th>School</th>
                             <th>Blood Group</th>
                             <th>City</th>
@@ -281,10 +326,16 @@ export function StudentsPage() {
                                 return (
                                     <tr
                                         key={s._id}
-                                        style={{ cursor: 'pointer', transition: 'background 0.2s' }}
+                                        style={{ cursor: 'pointer', transition: 'all 0.2s', borderLeft: '3px solid transparent' }}
                                         onClick={() => handleViewStudent(s)}
-                                        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-subtle)'}
-                                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.background = 'rgba(99,102,241,0.03)';
+                                            e.currentTarget.style.borderLeftColor = 'var(--accent)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.background = 'transparent';
+                                            e.currentTarget.style.borderLeftColor = 'transparent';
+                                        }}
                                     >
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -300,12 +351,21 @@ export function StudentsPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td>{s.phone}</td>
                                         <td>
-                                            <div style={{ fontSize: '0.8125rem' }}>{s.fatherName}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.motherName}</div>
+                                            <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{s.phone}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                <TruncatedText text={s.fatherName} maxWidth="120px" modalTitle="Father's Name" />
+                                            </div>
                                         </td>
-                                        <td>{s.schoolName || '-'}</td>
+                                        <td>
+                                            <div style={{ fontSize: '0.875rem', fontWeight: 600 }}>{s.motherPhone || '-'}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                <TruncatedText text={s.motherName || '-'} maxWidth="120px" modalTitle="Mother's Name" />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <TruncatedText text={s.schoolName || '-'} maxWidth="140px" modalTitle="School Name" />
+                                        </td>
                                         <td>{s.bloodGroup || '-'}</td>
                                         <td>{s.address?.city || '-'}</td>
                                         <td>
@@ -396,18 +456,15 @@ export function StudentsPage() {
                                     <h4 style={{ fontWeight: 600, fontSize: '0.9375rem', marginBottom: 16 }}>Step 1: Student Details</h4>
                                     <div className="form-grid" style={{ overflowY: 'auto', maxHeight: '50vh', paddingRight: 8 }}>
                                         <div>
-                                            <label className="form-label">Admission Number *</label>
+                                            <label className="form-label">Admission Number (Auto-Generated)</label>
                                             <div style={{ display: 'flex', gap: 8 }}>
-                                                <input {...register('admissionNumber')} className={`form-input ${errors.admissionNumber ? 'error' : ''}`} placeholder="e.g. ADM-2024-0001" />
-                                                <button type="button" className="btn-secondary" onClick={() => {
-                                                    studentsService.generateAdmissionId().then(res => {
-                                                        if (res.data?.data?.admissionId) {
-                                                            reset({ ...getValues(), admissionNumber: res.data.data.admissionId });
-                                                        }
-                                                    });
-                                                }} title="Auto-Generate">
-                                                    ↻
-                                                </button>
+                                                <input
+                                                    {...register('admissionNumber')}
+                                                    className={`form-input ${errors.admissionNumber ? 'error' : ''}`}
+                                                    placeholder="Generating ID..."
+                                                    readOnly
+                                                    style={{ background: 'var(--bg-subtle)', cursor: 'not-allowed', color: 'var(--text-muted)', fontWeight: 600 }}
+                                                />
                                             </div>
                                             {errors.admissionNumber && <p className="form-error">{errors.admissionNumber.message}</p>}
                                         </div>
@@ -436,34 +493,35 @@ export function StudentsPage() {
                                             <input {...register('lastName')} className={`form-input ${errors.lastName ? 'error' : ''}`} placeholder="Last name" />
                                             {errors.lastName && <p className="form-error">{errors.lastName.message}</p>}
                                         </div>
-                                        <div>
-                                            <label className="form-label">Father's Phone *</label>
-                                            <input {...register('phone')} className={`form-input ${errors.phone ? 'error' : ''}`} placeholder="10-digit mobile number" />
-                                            {errors.phone && <p className="form-error">{errors.phone.message}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="form-label">Mother's Phone</label>
-                                            <input {...register('motherPhone')} className={`form-input ${errors.motherPhone ? 'error' : ''}`} placeholder="10-digit mobile number" />
-                                            {errors.motherPhone && <p className="form-error">{errors.motherPhone.message}</p>}
-                                        </div>
-                                        <div>
-                                            <label className="form-label">Email</label>
-                                            <input {...register('email')} className={`form-input ${errors.email ? 'error' : ''}`} placeholder="Email address" />
-                                            {errors.email && <p className="form-error">{errors.email.message}</p>}
-                                        </div>
-                                        <div style={{ gridColumn: '1 / -1' }}>
-                                            <label className="form-label">School Name (Optional)</label>
-                                            <input {...register('schoolName')} className="form-input" placeholder="Previous or current school name" />
-                                        </div>
-                                        <div>
+                                        <div style={{ gridColumn: 'span 1' }}>
                                             <label className="form-label">Father's Name *</label>
                                             <input {...register('fatherName')} className={`form-input ${errors.fatherName ? 'error' : ''}`} placeholder="Father's name" />
                                             {errors.fatherName && <p className="form-error">{errors.fatherName.message}</p>}
                                         </div>
-                                        <div>
-                                            <label className="form-label">Mother's Name *</label>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <label className="form-label">Father's Phone *</label>
+                                            <input {...register('phone')} className={`form-input ${errors.phone ? 'error' : ''}`} placeholder="10-digit mobile number" />
+                                            {errors.phone && <p className="form-error">{errors.phone.message}</p>}
+                                        </div>
+
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <label className="form-label">Mother's Name (Optional)</label>
                                             <input {...register('motherName')} className={`form-input ${errors.motherName ? 'error' : ''}`} placeholder="Mother's name" />
                                             {errors.motherName && <p className="form-error">{errors.motherName.message}</p>}
+                                        </div>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <label className="form-label">Mother's Phone (Optional)</label>
+                                            <input {...register('motherPhone')} className={`form-input ${errors.motherPhone ? 'error' : ''}`} placeholder="10-digit mobile number" />
+                                            {errors.motherPhone && <p className="form-error">{errors.motherPhone.message}</p>}
+                                        </div>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <label className="form-label">Email</label>
+                                            <input {...register('email')} className={`form-input ${errors.email ? 'error' : ''}`} placeholder="Email address" />
+                                            {errors.email && <p className="form-error">{errors.email.message}</p>}
+                                        </div>
+                                        <div style={{ gridColumn: 'span 1' }}>
+                                            <label className="form-label">School Name (Optional)</label>
+                                            <input {...register('schoolName')} className="form-input" placeholder="Current school name" />
                                         </div>
                                         <div style={{ gridColumn: '1 / -1', marginTop: 8 }}>
                                             <h5 style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 8, color: 'var(--text-muted)' }}>Previous History (Optional)</h5>
@@ -674,100 +732,258 @@ export function StudentsPage() {
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                                 className="modal-overlay"
                                 onClick={() => setViewProfileDrawer(false)}
-                                style={{ zIndex: 1000 }}
+                                style={{ zIndex: 1000, backdropFilter: 'blur(4px)' }}
                             />
                             <motion.div
                                 initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
                                 style={{
-                                    position: 'fixed', right: 0, top: 0, bottom: 0, width: 480,
+                                    position: 'fixed', right: 0, top: 0, bottom: 0, width: 'min(600px, 100vw)',
                                     background: 'var(--bg-surface)', zIndex: 1001,
-                                    boxShadow: '-10px 0 30px rgba(0,0,0,0.1)',
-                                    padding: '32px 24px', overflowY: 'auto', borderLeft: '1px solid var(--border)'
+                                    boxShadow: 'var(--shadow-xl)',
+                                    overflowY: 'hidden', borderLeft: '1px solid var(--border)',
+                                    display: 'flex', flexDirection: 'column'
                                 }}
                             >
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-                                    <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Student Profile</h3>
-                                    <button onClick={() => setViewProfileDrawer(false)} className="btn-secondary" style={{ padding: 8, borderRadius: '50%' }}>
+                                {/* Industrial Header */}
+                                <div style={{
+                                    padding: '24px 32px',
+                                    background: 'var(--bg-surface)',
+                                    borderBottom: '1px solid var(--border)',
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                        <div style={{
+                                            width: 48, height: 48, borderRadius: 12,
+                                            background: 'linear-gradient(135deg, var(--accent), #8b5cf6)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#fff', fontSize: '1.25rem', fontWeight: 800
+                                        }}>
+                                            {selectedStudentForView.firstName.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                {selectedStudentForView.firstName} {selectedStudentForView.lastName}
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: 99, fontSize: '0.65rem', fontWeight: 800,
+                                                    background: STATUS_COLORS[selectedStudentForView.status].bg,
+                                                    color: STATUS_COLORS[selectedStudentForView.status].color,
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {selectedStudentForView.status}
+                                                </span>
+                                            </h3>
+                                            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>ID: {selectedStudentForView.admissionNumber}</p>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setViewProfileDrawer(false)} className="btn-secondary" style={{ width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         <X size={18} />
                                     </button>
                                 </div>
 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 32, padding: 20, background: 'var(--bg-subtle)', borderRadius: 16 }}>
-                                    <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, var(--accent), #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '1.5rem', fontWeight: 800 }}>
-                                        {selectedStudentForView.firstName.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <div style={{ fontSize: '1.125rem', fontWeight: 700 }}>{selectedStudentForView.firstName} {selectedStudentForView.lastName}</div>
-                                        <div style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>ID: {selectedStudentForView.admissionNumber}</div>
-                                    </div>
+                                {/* Industry Standard Tabs */}
+                                <div style={{
+                                    display: 'flex', gap: 0, padding: '0 32px',
+                                    borderBottom: '1px solid var(--border)',
+                                    background: 'var(--bg-surface)'
+                                }}>
+                                    {[
+                                        { id: 'overview', label: 'Overview', icon: BookOpen },
+                                        { id: 'academic', label: 'Academic History', icon: GraduationCap },
+                                        { id: 'personal', label: 'Personal & Advanced', icon: User }
+                                    ].map((tab) => (
+                                        <button
+                                            key={tab.id}
+                                            onClick={() => setProfileTab(tab.id as any)}
+                                            style={{
+                                                padding: '16px 20px', fontSize: '0.875rem', fontWeight: 600,
+                                                color: profileTab === tab.id ? 'var(--accent)' : 'var(--text-secondary)',
+                                                borderBottom: `2px solid ${profileTab === tab.id ? 'var(--accent)' : 'transparent'}`,
+                                                display: 'flex', alignItems: 'center', gap: 8,
+                                                transition: 'all 0.2s',
+                                                background: 'transparent',
+                                                cursor: 'pointer'
+                                            }}
+                                        >
+                                            <tab.icon size={16} />
+                                            {tab.label}
+                                        </button>
+                                    ))}
                                 </div>
 
-                                <h4 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <BookOpen size={18} color="var(--accent)" /> Enrollment History
-                                </h4>
-
-                                {profileEnrollments.length === 0 ? (
-                                    <div style={{ padding: 32, textAlign: 'center', background: 'var(--bg-muted)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                                        No enrollment records found for this student.
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                                        {profileEnrollments.map(e => (
-                                            <div key={e._id} style={{ padding: 20, border: '1px solid var(--border)', borderRadius: 16, background: 'var(--bg-surface)' }}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
-                                                    <span style={{ fontWeight: 700, fontSize: '0.9375rem' }}>{e.academicYear} Enrollment</span>
-                                                    <span style={{
-                                                        padding: '2px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 700,
-                                                        ...STATUS_STYLE[e.status]
-                                                    }}>{e.status}</span>
-                                                </div>
-
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, fontSize: '0.8125rem', marginBottom: 16 }}>
-                                                    <div><span style={{ color: 'var(--text-muted)' }}>Net Payable:</span> <strong style={{ marginLeft: 4 }}>{formatCurrency(e.netFee)}</strong></div>
-                                                    <div><span style={{ color: 'var(--text-muted)' }}>Outstanding:</span> <strong style={{ marginLeft: 4, color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(e.outstandingBalance ?? 0)}</strong></div>
-                                                </div>
-
-                                                {/* Clarity about Concessions */}
-                                                {e.concessionType !== 'NONE' && (
-                                                    <div style={{ padding: '8px 12px', background: 'rgba(245,158,11,0.06)', borderRadius: 8, fontSize: '0.75rem', color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-                                                        <Tag size={12} />
-                                                        Applied {e.concessionValue}{e.concessionType === 'PERCENTAGE' ? '%' : '₹'} flat concession (Reduction from original fee)
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+                                    <AnimatePresence mode="wait">
+                                        {profileTab === 'overview' && (
+                                            <motion.div
+                                                key="overview"
+                                                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
+                                                transition={{ duration: 0.15 }}
+                                                style={{ display: 'flex', flexDirection: 'column', gap: 32 }}
+                                            >
+                                                {/* Financial Summary Card */}
+                                                <div style={{
+                                                    display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 16,
+                                                    padding: '24px', borderRadius: 20, background: 'var(--bg-subtle)',
+                                                    border: '1px solid var(--border)'
+                                                }}>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Current Session Paid</div>
+                                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--success)' }}>
+                                                            {formatCurrency(profileEnrollments.reduce((sum, e) => sum + (e.netFee - (e.outstandingBalance ?? 0)), 0))}
+                                                        </div>
                                                     </div>
-                                                )}
-
-                                                <div style={{ display: 'flex', gap: 8 }}>
-                                                    <button className="btn-secondary" style={{ flex: 1, fontSize: '0.75rem', padding: '6px 0' }} onClick={() => {
-                                                        setViewProfileDrawer(false);
-                                                        navigate(`/enrollments`); // Link to more detail if needed
-                                                    }}>View Ledger</button>
+                                                    <div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Outstanding Balance</div>
+                                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--danger)' }}>
+                                                            {formatCurrency(profileEnrollments.reduce((sum, e) => sum + (e.outstandingBalance ?? 0), 0))}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
 
-                                <div style={{ marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)' }}>
-                                    <h4 style={{ fontWeight: 700, marginBottom: 12, fontSize: '0.9375rem' }}>Contact Details</h4>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: '0.875rem' }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father's Phone:</span> <strong>{selectedStudentForView.phone}</strong></div>
-                                        {selectedStudentForView.motherPhone && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother's Phone:</span> <strong>{selectedStudentForView.motherPhone}</strong></div>}
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Father:</span> <strong>{selectedStudentForView.fatherName}</strong></div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Mother:</span> <strong>{selectedStudentForView.motherName}</strong></div>
-                                        {selectedStudentForView.email && <div style={{ display: 'flex', justifyContent: 'space-between' }}><span style={{ color: 'var(--text-muted)' }}>Email:</span> <strong>{selectedStudentForView.email}</strong></div>}
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+                                                    <h4 style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--accent-light)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <Calendar size={14} color="var(--accent)" />
+                                                        </div>
+                                                        Active Enrollments
+                                                    </h4>
+
+                                                    {profileEnrollments.map((e) => (
+                                                        <div key={e._id} style={{
+                                                            padding: '20px', borderRadius: 16, border: '1px solid var(--border)',
+                                                            background: 'var(--bg-surface)', boxShadow: 'var(--shadow-sm)'
+                                                        }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 16 }}>
+                                                                <div>
+                                                                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{e.academicYear} Academic Year</div>
+                                                                    <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 2 }}>{templateLabel(e.academicClassId as any)}</div>
+                                                                </div>
+                                                                <span style={{
+                                                                    padding: '4px 10px', borderRadius: 99, fontSize: '0.65rem', fontWeight: 800,
+                                                                    ...STATUS_STYLE[e.status], textTransform: 'uppercase'
+                                                                }}>{e.status}</span>
+                                                            </div>
+                                                            <div style={{ display: 'flex', gap: 12 }}>
+                                                                <button className="btn-primary" style={{ flex: 1, padding: '8px 12px', fontSize: '0.8125rem' }} onClick={() => navigate(`/ledger?studentId=${selectedStudentForView._id}`)}>
+                                                                    Statement
+                                                                </button>
+                                                                <button className="btn-secondary" style={{ flex: 1, padding: '8px 12px', fontSize: '0.8125rem' }} onClick={() => navigate(`/payments`)}>
+                                                                    Pay Fee
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {profileTab === 'academic' && (
+                                            <motion.div
+                                                key="academic"
+                                                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
+                                                transition={{ duration: 0.15 }}
+                                                style={{ display: 'flex', flexDirection: 'column', gap: 32 }}
+                                            >
+                                                <div style={{ background: 'var(--bg-subtle)', borderRadius: 24, padding: '24px', border: '1px solid var(--border)' }}>
+                                                    <h4 style={{ fontWeight: 800, fontSize: '0.9375rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(245,158,11,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <GraduationCap size={16} color="var(--warning)" />
+                                                        </div>
+                                                        Previous Academic Background
+                                                    </h4>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+                                                        <DetailField label="Previous School" value={selectedStudentForView.history?.previousSchool} icon={BookOpen} />
+                                                        <DetailField label="Percentage/Grade" value={selectedStudentForView.history?.percentage} icon={Info} />
+                                                        <DetailField label="Year of Passing" value={selectedStudentForView.history?.yearPassout} icon={Calendar} />
+                                                        <DetailField label="Current Program" value={selectedStudentForView.program} icon={Tag} />
+                                                    </div>
+                                                    {selectedStudentForView.history?.extraNote && (
+                                                        <div style={{ marginTop: 20, padding: '16px', borderRadius: 12, background: 'var(--bg-surface)', border: '1px solid var(--border)', fontSize: '0.8125rem', fontStyle: 'italic', color: 'var(--text-secondary)' }}>
+                                                            "{selectedStudentForView.history?.extraNote}"
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div style={{ background: 'var(--bg-subtle)', borderRadius: 24, padding: '24px', border: '1px solid var(--border)' }}>
+                                                    <h4 style={{ fontWeight: 800, fontSize: '0.9375rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(139,92,246,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <Info size={16} color="#8b5cf6" />
+                                                        </div>
+                                                        System Records
+                                                    </h4>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+                                                        <DetailField label="First Registered" value={format(new Date(selectedStudentForView.createdAt), 'dd MMM yyyy HH:mm')} icon={Calendar} />
+                                                        <DetailField label="Last Updated" value={format(new Date(selectedStudentForView.updatedAt), 'dd MMM yyyy HH:mm')} icon={Info} />
+                                                        <DetailField label="School Record" value={selectedStudentForView.schoolName} icon={GraduationCap} />
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {profileTab === 'personal' && (
+                                            <motion.div
+                                                key="personal"
+                                                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
+                                                transition={{ duration: 0.15 }}
+                                                style={{ display: 'flex', flexDirection: 'column', gap: 32 }}
+                                            >
+                                                {/* Parent Info Expanded */}
+                                                <div style={{ background: 'var(--bg-subtle)', borderRadius: 24, padding: '24px', border: '1px solid var(--border)' }}>
+                                                    <h4 style={{ fontWeight: 800, fontSize: '0.9375rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(99,102,241,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <User size={16} color="var(--accent)" />
+                                                        </div>
+                                                        Family Information
+                                                    </h4>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+                                                        <DetailField label="Father's Name" value={selectedStudentForView.fatherName} />
+                                                        <DetailField label="Primary Phone" value={selectedStudentForView.phone} icon={Phone} />
+                                                        <DetailField label="Mother's Name" value={selectedStudentForView.motherName} />
+                                                        <DetailField label="Mother's Phone" value={selectedStudentForView.motherPhone} icon={Phone} />
+                                                        {(selectedStudentForView as any).alternatePhone && (
+                                                            <DetailField label="Alternate Phone" value={(selectedStudentForView as any).alternatePhone} icon={Phone} />
+                                                        )}
+                                                        <DetailField label="Email Address" value={selectedStudentForView.email} icon={Info} />
+                                                    </div>
+                                                </div>
+
+                                                {/* Address Details */}
+                                                <div style={{ background: 'var(--bg-subtle)', borderRadius: 24, padding: '24px', border: '1px solid var(--border)' }}>
+                                                    <h4 style={{ fontWeight: 800, fontSize: '0.9375rem', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <div style={{ width: 28, height: 28, borderRadius: 8, background: 'rgba(16,185,129,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                                            <MapPin size={16} color="var(--success)" />
+                                                        </div>
+                                                        Residential Details
+                                                    </h4>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24 }}>
+                                                        <div style={{ gridColumn: 'span 2' }}>
+                                                            <DetailField label="Street/Address" value={selectedStudentForView.address?.street} />
+                                                        </div>
+                                                        <DetailField label="City" value={selectedStudentForView.address?.city} />
+                                                        <DetailField label="State" value={selectedStudentForView.address?.state} />
+                                                        <DetailField label="Zip Code" value={selectedStudentForView.address?.zipCode} />
+                                                        <DetailField label="Blood Group" value={selectedStudentForView.bloodGroup} icon={Info} />
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+
+                                {/* Industry Footer */}
+                                <div style={{
+                                    padding: '20px 32px',
+                                    borderTop: '1px solid var(--border)',
+                                    background: 'var(--bg-subtle)',
+                                    display: 'flex', justifyContent: 'center'
+                                }}>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+                                        NCP Finance Management Suite • Record Locked
                                     </div>
-                                    {selectedStudentForView.history?.previousSchool && (
-                                        <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px dashed var(--border)' }}>
-                                            <h5 style={{ fontWeight: 700, fontSize: '0.8125rem', marginBottom: 8 }}>Previous Academic History</h5>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, fontSize: '0.75rem' }}>
-                                                <div><span style={{ color: 'var(--text-muted)' }}>School:</span> <strong>{selectedStudentForView.history.previousSchool}</strong></div>
-                                                <div><span style={{ color: 'var(--text-muted)' }}>Last Score:</span> <strong>{selectedStudentForView.history.percentage}</strong> ({selectedStudentForView.history.yearPassout})</div>
-                                                {selectedStudentForView.history.extraNote && <div style={{ color: 'var(--text-muted)', fontStyle: 'italic', marginTop: 4 }}>"{selectedStudentForView.history.extraNote}"</div>}
-                                            </div>
-                                        </div>
-                                    )}
                                 </div>
                             </motion.div>
+
+
                         </>
                     )
                 }

@@ -22,6 +22,7 @@ export const PERMISSION_ACTIONS = [
     'MANAGE_ROLES',
     'MANAGE_PERMISSIONS',
     'MANAGE_USERS',
+    'CREATE_USER',
     'VIEW_AUDIT_LOG',
     'UPDATE_SETTING',
 ] as const;

@@ -26,78 +26,78 @@ export function ConfirmModal({
         return () => window.removeEventListener('keydown', handler);
     }, [open, onClose]);
 
-    if (!open) return null;
-
     const Icon = variant === 'danger' ? AlertTriangle : CheckCircle2;
     const iconColor = variant === 'danger' ? 'var(--danger)' : 'var(--accent)';
     const iconBg = variant === 'danger' ? 'var(--danger-light)' : 'var(--accent-light)';
 
     return createPortal(
         <AnimatePresence>
-            <div className="modal-overlay">
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{ position: 'absolute', inset: 0 }}
-                    onClick={onClose}
-                />
-                <motion.div
-                    className="modal-content"
-                    initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    transition={{ type: 'spring', damping: 28, stiffness: 360 }}
-                    style={{ maxWidth: 440 }}
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                            <div style={{
-                                width: 40, height: 40,
-                                background: iconBg,
-                                borderRadius: 'var(--radius-sm)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                flexShrink: 0,
-                            }}>
-                                <Icon size={20} color={iconColor} />
+            {open && (
+                <div className="modal-overlay">
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        style={{ position: 'absolute', inset: 0 }}
+                        onClick={onClose}
+                    />
+                    <motion.div
+                        className="modal-content"
+                        initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                        animate={{ scale: 1, opacity: 1, y: 0 }}
+                        exit={{ scale: 0.95, opacity: 0 }}
+                        transition={{ type: 'spring', damping: 28, stiffness: 360 }}
+                        style={{ maxWidth: 440, width: '95%', margin: '0 10px' }}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                <div style={{
+                                    width: 40, height: 40,
+                                    background: iconBg,
+                                    borderRadius: 'var(--radius-sm)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    flexShrink: 0,
+                                }}>
+                                    <Icon size={20} color={iconColor} />
+                                </div>
+                                <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                                    {title}
+                                </h3>
                             </div>
-                            <h3 style={{ fontSize: '0.9375rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                                {title}
-                            </h3>
+                            <button onClick={onClose} className="btn-icon" style={{ width: 28, height: 28, flexShrink: 0 }} disabled={loading}>
+                                <X size={13} />
+                            </button>
                         </div>
-                        <button onClick={onClose} className="btn-icon" style={{ width: 28, height: 28, flexShrink: 0 }} disabled={loading}>
-                            <X size={13} />
-                        </button>
-                    </div>
 
-                    {/* Message */}
-                    <p style={{
-                        fontSize: '0.875rem',
-                        color: 'var(--text-secondary)',
-                        lineHeight: 1.65,
-                        marginBottom: 24,
-                        paddingLeft: 52, // align with title text
-                    }}>
-                        {message}
-                    </p>
+                        {/* Message */}
+                        <p style={{
+                            fontSize: '0.875rem',
+                            color: 'var(--text-secondary)',
+                            lineHeight: 1.65,
+                            marginBottom: 24,
+                            // paddingLeft: 52, // alignment removed for better mobile width
+                        }}>
+                            {message}
+                        </p>
 
-                    {/* Actions */}
-                    <div className="modal-footer" style={{ marginTop: 0 }}>
-                        <button className="btn-secondary" onClick={onClose} disabled={loading}>
-                            {cancelLabel}
-                        </button>
-                        <button
-                            className={variant === 'danger' ? 'btn-danger' : 'btn-primary'}
-                            onClick={onConfirm}
-                            disabled={loading}
-                        >
-                            {loading ? 'Processing...' : confirmLabel}
-                        </button>
-                    </div>
-                </motion.div>
-            </div>
+                        {/* Actions */}
+                        <div className="modal-footer" style={{ marginTop: 0 }}>
+                            <button className="btn-secondary" onClick={onClose} disabled={loading}>
+                                {cancelLabel}
+                            </button>
+                            <button
+                                className={variant === 'danger' ? 'btn-danger' : 'btn-primary'}
+                                onClick={onConfirm}
+                                disabled={loading}
+                            >
+                                {loading ? 'Processing...' : confirmLabel}
+                            </button>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
         </AnimatePresence>,
         document.body
     );

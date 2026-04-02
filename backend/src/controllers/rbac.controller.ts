@@ -129,6 +129,16 @@ export class RBACController {
         } catch (err) { sendError(res, err instanceof Error ? err.message : 'Failed', 400); }
     }
 
+    async revokePermission(req: Request, res: Response): Promise<void> {
+        const permissionId = req.params['permId'];
+        if (!permissionId || permissionId.length !== 24) { sendError(res, 'Invalid permission ID', 400); return; }
+        try {
+            const meta = auditService.extractRequestMeta(req);
+            await rbacService.revokePermission({ roleId: req.params['id']!, permissionId, revokedBy: req.user!.userId, ...meta });
+            sendSuccess(res, null, 200, 'Permission revoked');
+        } catch (err) { sendError(res, err instanceof Error ? err.message : 'Failed', 400); }
+    }
+
     async getRolePermissions(req: Request, res: Response): Promise<void> {
         try { sendSuccess(res, await rbacService.getRolePermissions(req.params['id']!)); }
         catch { sendError(res, 'Failed to fetch role permissions', 500); }

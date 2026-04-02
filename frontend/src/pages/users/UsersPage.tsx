@@ -11,6 +11,7 @@ import { usersService } from '../../api/services/users.service';
 import { rbacService } from '../../api/services/rbac.service';
 import type { User, Role } from '../../types';
 import { format } from 'date-fns';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 import toast from 'react-hot-toast';
 
 const createUserSchema = z.object({
@@ -139,10 +140,14 @@ export function UsersPage() {
                                             }}>
                                                 {u.name.charAt(0).toUpperCase()}
                                             </div>
-                                            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>{u.name}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.875rem' }}>
+                                                <TruncatedText text={u.name} maxWidth="140px" modalTitle="Staff Member Name" />
+                                            </div>
                                         </div>
                                     </td>
-                                    <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>{u.email}</td>
+                                    <td style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
+                                        <TruncatedText text={u.email} maxWidth="180px" modalTitle="Email Address" />
+                                    </td>
                                     <td>
                                         <span style={{
                                             display: 'inline-flex', alignItems: 'center', gap: 4,

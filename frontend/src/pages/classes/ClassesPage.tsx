@@ -10,6 +10,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { classesService } from '../../api/services/classes.service';
 import { formatCurrency } from '../../utils/currency';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 import toast from 'react-hot-toast';
 import type { AcademicClass, ClassTemplate, Board } from '../../types';
 
@@ -210,7 +211,11 @@ export function ClassesPage() {
                                         return (
                                             <tr key={c._id} onClick={() => navigate(`/classes/${c._id}/students`)} style={{ cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-subtle)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                                 <td style={{ fontWeight: 600 }}>
-                                                    {tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''} (${tmpl.board})` : c._id}
+                                                    <TruncatedText
+                                                        text={tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''} (${tmpl.board})` : c._id}
+                                                        maxWidth="200px"
+                                                        modalTitle="Class Template Details"
+                                                    />
                                                 </td>
                                                 <td>{c.academicYear}</td>
                                                 <td>{c.section}</td>

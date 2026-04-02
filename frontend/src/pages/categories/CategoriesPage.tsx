@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { categoryService } from '../../api/services/category.service';
 import { usePermission } from '../../hooks/usePermission';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 import toast from 'react-hot-toast';
 
 const categorySchema = z.object({
@@ -115,7 +116,9 @@ export function CategoriesPage() {
                                 categories.map(cat => (
                                     <tr key={cat._id}>
                                         <td style={{ fontWeight: 600 }}>{cat.name}</td>
-                                        <td style={{ color: 'var(--text-muted)' }}>{cat.description || '—'}</td>
+                                        <td style={{ color: 'var(--text-muted)' }}>
+                                            <TruncatedText text={cat.description || '—'} maxWidth="300px" modalTitle="Category Description" />
+                                        </td>
                                         <td>
                                             <span style={{
                                                 padding: '4px 10px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600,

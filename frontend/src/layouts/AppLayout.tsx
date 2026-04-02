@@ -59,7 +59,7 @@ export function AppLayout() {
                     onMenuClick={() => setMobileOpen(true)}
                 />
 
-                <main className="page-content" style={{ flex: 1, overflowY: 'auto' }}>
+                <main className="page-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
                     <div className="page-enter" key={location.pathname}>
                         <Outlet />
                     </div>

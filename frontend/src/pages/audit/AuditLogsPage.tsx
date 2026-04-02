@@ -5,6 +5,7 @@ import { PageHeader } from '../../components/ui/PageHeader';
 import apiClient from '../../api/client';
 import { format } from 'date-fns';
 import { usePermission } from '../../hooks/usePermission';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 
 const AUDIT_ACTIONS = [
     'USER_LOGIN', 'USER_LOGOUT', 'USER_CREATED', 'USER_ACTIVATED', 'USER_DEACTIVATED',
@@ -206,13 +207,17 @@ export function AuditLogsPage() {
                                             </span>
                                         </td>
                                         <td>
-                                            <div style={{ fontWeight: 600, fontSize: '0.8125rem' }}>{log.actorId?.name || 'System / Auto'}</div>
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{log.actorId?.email || 'N/A'}</div>
+                                            <div style={{ fontWeight: 600, fontSize: '0.8125rem' }}>
+                                                <TruncatedText text={log.actorId?.name || 'System / Auto'} maxWidth="130px" modalTitle="Actor Name" />
+                                            </div>
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                                <TruncatedText text={log.actorId?.email || 'N/A'} maxWidth="150px" modalTitle="Actor Email" />
+                                            </div>
                                         </td>
                                         <td>
                                             <div style={{ fontWeight: 600, fontSize: '0.75rem' }}>{log.entityType}</div>
                                             <code style={{ fontSize: '0.65rem', color: 'var(--text-muted)', background: 'var(--bg-muted)', padding: '2px 4px', borderRadius: 4 }}>
-                                                {log.entityId}
+                                                <TruncatedText text={log.entityId} maxWidth="100px" modalTitle="Entity ID" />
                                             </code>
                                         </td>
                                         <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>

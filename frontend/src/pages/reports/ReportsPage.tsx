@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 import { useDebounce } from '../../hooks/useDebounce';
 import { studentsService } from '../../api/services/students.service';
 import apiClient from '../../api/client';
+import { TruncatedText } from '../../components/ui/TruncatedText';
 import toast from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
@@ -402,7 +403,9 @@ export function ReportsPage() {
                                             <tbody>
                                                 {daily.newAdmissions.students.map((s: any, i: number) => (
                                                     <tr key={i}>
-                                                        <td style={{ fontWeight: 600 }}>{s.name}</td>
+                                                        <td style={{ fontWeight: 600 }}>
+                                                            <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                        </td>
                                                         <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</td>
                                                         <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(s.deposited)}</td>
                                                         <td className="financial-value">{formatCurrency(s.totalPaid)}</td>
@@ -437,7 +440,9 @@ export function ReportsPage() {
                                             <tbody>
                                                 {daily.existingStudentsActivity.map((s: any, i: number) => (
                                                     <tr key={i}>
-                                                        <td style={{ fontWeight: 600 }}>{s.name}</td>
+                                                        <td style={{ fontWeight: 600 }}>
+                                                            <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                        </td>
                                                         <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</td>
                                                         <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(s.deposited)}</td>
                                                         <td className="financial-value">{formatCurrency(s.totalPaid)}</td>
@@ -585,7 +590,9 @@ export function ReportsPage() {
                                                         </span>
                                                     </td>
                                                     <td style={{ fontSize: '0.8125rem' }}>{entry.referenceType}</td>
-                                                    <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>{entry.description}</td>
+                                                    <td style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                                                        <TruncatedText text={entry.description} maxWidth="160px" modalTitle="Transaction Description" />
+                                                    </td>
                                                     <td className="financial-value" style={{ color: entry.type === 'CREDIT' ? '#10b981' : '#ef4444' }}>
                                                         {entry.type === 'CREDIT' ? '+' : '-'}{formatCurrency(entry.amount)}
                                                     </td>
