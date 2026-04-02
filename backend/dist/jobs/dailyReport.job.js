@@ -7,10 +7,11 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reportQueue = void 0;
+exports.transporter = exports.reportQueue = void 0;
 exports.processDailyReport = processDailyReport;
 exports.scheduleDailyReport = scheduleDailyReport;
 const bull_1 = __importDefault(require("bull"));
+const node_cron_1 = __importDefault(require("node-cron"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const puppeteer_1 = __importDefault(require("puppeteer"));
 const env_1 = require("../config/env");
@@ -30,7 +31,7 @@ exports.reportQueue = env_1.env.REDIS_HOST ? new bull_1.default('daily-report', 
     },
 }) : null;
 // ── Email transporter ──
-const transporter = nodemailer_1.default.createTransport({
+exports.transporter = nodemailer_1.default.createTransport({
     host: env_1.env.SMTP_HOST,
     port: parseInt(env_1.env.SMTP_PORT, 10),
     secure: false,
@@ -43,7 +44,18 @@ const SystemSetting_model_1 = require("../models/SystemSetting.model");
  */
 async function processDailyReport(date, triggeredBy) {
     try {
-        const reportDate = new Date(date);
+        // If system-triggered (automated), always use current date.
+        // If manually triggered (API), use the provided date.
+        const reportDate = triggeredBy === 'system' ? new Date() : new Date(date);
+        // Check if auto-send is enabled (ONLY IF TRIGGERED BY SYSTEM)
+        if (triggeredBy === 'system') {
+            const autoSendSetting = await SystemSetting_model_1.SystemSetting.findOne({ key: 'DAILY_REPORT_AUTO_SEND' });
+            const isAutoSendEnabled = autoSendSetting?.value === 'true' || autoSendSetting?.value === true;
+            if (!isAutoSendEnabled) {
+                console.log('ℹ️  Skipping automated daily report: DAILY_REPORT_AUTO_SEND is disabled.');
+                return;
+            }
+        }
         const summary = await report_service_1.reportService.getDailyReport(reportDate);
         // Fetch target email from system settings
         const emailSetting = await SystemSetting_model_1.SystemSetting.findOne({ key: 'DAILY_REPORT_EMAIL' });
@@ -167,7 +179,7 @@ async function processDailyReport(date, triggeredBy) {
                 }
             ];
         }
-        await transporter.sendMail(mailOptions);
+        await exports.transporter.sendMail(mailOptions);
         // Audit: log report generation
         audit_service_1.auditService.logAsync({
             actorId: triggeredBy,
@@ -193,21 +205,31 @@ if (exports.reportQueue) {
     });
 }
 /**
- * Schedule the daily report job (Bull only).
+ * Schedule the daily report job.
+ * Prioritizes Bull (Redis) for production consistency,
+ * but falls back to node-cron for simple EC2/local dev setups.
  */
 async function scheduleDailyReport() {
-    if (!exports.reportQueue) {
-        console.log('ℹ️  Skipping job scheduling: Redis is not configured.');
-        return;
-    }
-    const existing = await exports.reportQueue.getRepeatableJobs();
-    for (const job of existing) {
-        if (job.name === 'daily-report') {
-            await exports.reportQueue.removeRepeatableByKey(job.key);
+    const cronSchedule = '0 19 * * *'; // 7 PM daily
+    if (exports.reportQueue) {
+        // --- Option A: Bull (Redis is available) ---
+        const existing = await exports.reportQueue.getRepeatableJobs();
+        for (const job of existing) {
+            if (job.name === 'daily-report') {
+                await exports.reportQueue.removeRepeatableByKey(job.key);
+            }
         }
+        await exports.reportQueue.add('daily-report', { date: 'scheduled', triggeredBy: 'system' }, { repeat: { cron: cronSchedule } });
+        console.log(`📅 Daily report JOB scheduled (7 PM via Bull queue)`);
     }
-    // Schedule for 19:00 (7 PM) daily
-    await exports.reportQueue.add('daily-report', { date: new Date().toISOString(), triggeredBy: 'system' }, { repeat: { cron: '0 19 * * *' } });
-    console.log('📅 Daily report job scheduled (19:00 daily via Bull)');
+    else {
+        // --- Option B: node-cron (Fallback for EC2/No Redis) ---
+        node_cron_1.default.schedule(cronSchedule, async () => {
+            console.log('[NODE-CRON] Starting scheduled daily report...');
+            // The processDailyReport function will calculate 'today' internally because triggeredBy='system'
+            await processDailyReport('today', 'system');
+        });
+        console.log(`📅 Daily report CRON scheduled (7 PM via node-cron)`);
+    }
 }
 //# sourceMappingURL=dailyReport.job.js.map

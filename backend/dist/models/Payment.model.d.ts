@@ -18,6 +18,9 @@ export interface IPayment extends Document {
     cancelledBy: Types.ObjectId | null;
     cancelledAt: Date | null;
     transactionRef: string | null;
+    bankName: string | null;
+    chequeNumber: string | null;
+    chequeDate: Date | null;
     createdAt: Date;
 }
 export declare const Payment: mongoose.Model<IPayment, {}, {}, {}, mongoose.Document<unknown, {}, IPayment, {}, {}> & IPayment & Required<{

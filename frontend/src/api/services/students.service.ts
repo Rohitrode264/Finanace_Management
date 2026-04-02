@@ -22,4 +22,6 @@ export const studentsService = {
     // PATCH /students/:id/status — body: { status: 'ACTIVE'|'DROPPED'|'PASSED_OUT' }
     updateStatus: (id: string, status: StudentStatus) =>
         apiClient.patch<ApiResponse<Student>>(`/students/${id}/status`, { status }),
+
+    getSchools: () => apiClient.get<ApiResponse<string[]>>('/students/meta/schools'),
 };

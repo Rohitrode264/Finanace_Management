@@ -4,7 +4,12 @@ exports.EnrollmentRepository = void 0;
 const Enrollment_model_1 = require("../models/Enrollment.model");
 class EnrollmentRepository {
     async findById(id, session) {
-        return Enrollment_model_1.Enrollment.findById(id).session(session ?? null);
+        return Enrollment_model_1.Enrollment.findById(id)
+            .populate({
+            path: 'academicClassId',
+            populate: { path: 'templateId' }
+        })
+            .session(session ?? null);
     }
     async findByStudentAndYear(studentId, academicYear) {
         return Enrollment_model_1.Enrollment.findOne({ studentId, academicYear });
@@ -22,7 +27,14 @@ class EnrollmentRepository {
         await Enrollment_model_1.Enrollment.findByIdAndUpdate(enrollmentId, { $set: { netFee, concessionType, concessionValue } }, { session });
     }
     async findMany(filter, limit = 50, skip = 0) {
-        return Enrollment_model_1.Enrollment.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 });
+        return Enrollment_model_1.Enrollment.find(filter)
+            .populate({
+            path: 'academicClassId',
+            populate: { path: 'templateId' }
+        })
+            .skip(skip)
+            .limit(limit)
+            .sort({ createdAt: -1 });
     }
 }
 exports.EnrollmentRepository = EnrollmentRepository;

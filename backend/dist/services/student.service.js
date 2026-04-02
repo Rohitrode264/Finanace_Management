@@ -14,13 +14,16 @@ class StudentService {
             firstName: params.firstName.trim(),
             lastName: params.lastName.trim(),
             phone: params.phone.trim(),
+            alternatePhone: params.alternatePhone?.trim(),
+            motherPhone: params.motherPhone?.trim(),
             fatherName: params.fatherName.trim(),
-            motherName: params.motherName.trim(),
+            motherName: params.motherName?.trim(),
             schoolName: params.schoolName?.trim(),
             program: params.program?.trim(),
             email: params.email?.trim(),
             bloodGroup: params.bloodGroup?.trim(),
             address: params.address,
+            history: params.history,
             status: 'ACTIVE',
             createdBy: new mongoose_1.Types.ObjectId(params.createdBy),
         });
@@ -41,15 +44,20 @@ class StudentService {
     }
     async generateAdmissionNumber() {
         const year = new Date().getFullYear();
-        const prefix = `ADM-${year}-`;
+        const prefix = `CP${year}`;
+        // Find the student with the highest admission number for the current year
         const lastStudent = await Student_model_1.Student.findOne({ admissionNumber: new RegExp(`^${prefix}`) })
             .sort({ admissionNumber: -1 });
         if (!lastStudent || !lastStudent.admissionNumber) {
-            return `${prefix}0001`;
+            // First student of the year starts from a base + jump
+            return `${prefix}1117`;
         }
-        const lastSequence = parseInt(lastStudent.admissionNumber.replace(prefix, ''), 10);
-        const nextSequence = isNaN(lastSequence) ? 1 : lastSequence + 1;
-        return `${prefix}${nextSequence.toString().padStart(4, '0')}`;
+        // Extract the numeric part (everything after CPXXXX)
+        const lastPart = lastStudent.admissionNumber.replace(prefix, '');
+        const lastVal = parseInt(lastPart, 10);
+        // Increment sequentially from the base value
+        const nextVal = isNaN(lastVal) ? 1117 : lastVal + 7;
+        return `${prefix}${nextVal}`;
     }
     async updateStudentStatus(params) {
         const student = await Student_model_1.Student.findById(params.studentId);
@@ -71,17 +79,27 @@ class StudentService {
         return student;
     }
     async findById(id) {
-        return Student_model_1.Student.findById(id);
+        return Student_model_1.Student.findById(id).populate('createdBy', 'name');
     }
-    async search(query, limit = 20, program) {
-        if (query.trim().length < 2)
-            return [];
-        const filter = { $text: { $search: query } };
+    async search(query, limit = 20, skip = 0, program) {
+        if (!query || query.trim().length === 0)
+            return { students: [], total: 0 };
+        const searchRegex = new RegExp(query.trim(), 'i');
+        const searchFilter = {
+            $or: [
+                { firstName: searchRegex },
+                { lastName: searchRegex },
+                { admissionNumber: searchRegex }
+            ]
+        };
+        const filter = { ...searchFilter };
         if (program)
             filter.program = program;
-        return Student_model_1.Student.find(filter, { score: { $meta: 'textScore' } })
-            .sort({ score: { $meta: 'textScore' } })
-            .limit(limit);
+        const [students, total] = await Promise.all([
+            Student_model_1.Student.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+            Student_model_1.Student.countDocuments(filter).exec()
+        ]);
+        return { students, total };
     }
     async listAll(status, program, limit = 50, skip = 0) {
         const filter = {};
@@ -89,7 +107,15 @@ class StudentService {
             filter.status = status;
         if (program)
             filter.program = program;
-        return Student_model_1.Student.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit);
+        const [students, total] = await Promise.all([
+            Student_model_1.Student.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit).exec(),
+            Student_model_1.Student.countDocuments(filter).exec()
+        ]);
+        return { students, total };
+    }
+    async getUniqueSchools() {
+        const schools = await Student_model_1.Student.distinct('schoolName', { schoolName: { $ne: '', $exists: true } });
+        return schools.filter((s) => !!s).sort();
     }
 }
 exports.StudentService = StudentService;

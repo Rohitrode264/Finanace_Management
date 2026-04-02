@@ -11,7 +11,9 @@ class LedgerRepository {
         return entry;
     }
     async findByEnrollment(enrollmentId) {
-        return LedgerEntry_model_1.LedgerEntry.find({ enrollmentId }).sort({ createdAt: 1 });
+        return LedgerEntry_model_1.LedgerEntry.find({ enrollmentId })
+            .populate('createdBy', 'name firstName lastName')
+            .sort({ createdAt: 1 });
     }
     async computeBalance(enrollmentId) {
         const result = await LedgerEntry_model_1.LedgerEntry.aggregate([

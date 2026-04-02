@@ -258,6 +258,67 @@ class ReportService {
             }
         };
     }
+    /**
+     * Eagle-Eye: full session overview grouped by class.
+     */
+    async getEagleEye() {
+        const { Enrollment } = await Promise.resolve().then(() => __importStar(require('../models/Enrollment.model')));
+        const { LedgerEntry } = await Promise.resolve().then(() => __importStar(require('../models/LedgerEntry.model')));
+        const enrollments = await Enrollment.find({ status: 'ONGOING' })
+            .populate({ path: 'studentId' })
+            .populate({ path: 'academicClassId', populate: { path: 'templateId' } })
+            .lean();
+        const enrollmentIds = enrollments.map((e) => e._id);
+        const paymentAgg = await LedgerEntry.aggregate([
+            { $match: { enrollmentId: { $in: enrollmentIds }, type: 'CREDIT', referenceType: 'PAYMENT' } },
+            { $group: { _id: '$enrollmentId', total: { $sum: '$amount' } } }
+        ]);
+        const paidMap = new Map();
+        paymentAgg.forEach((row) => paidMap.set(row._id.toString(), row.total));
+        const classMap = new Map();
+        const allRows = [];
+        for (const enrollment of enrollments) {
+            const student = enrollment.studentId;
+            if (!student)
+                continue;
+            const acClass = enrollment.academicClassId;
+            const template = acClass?.templateId;
+            const className = template
+                ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} — ${template.board}`
+                : (acClass?.section || 'Unknown Class');
+            const paid = paidMap.get(enrollment._id.toString()) ?? 0;
+            const outstanding = Math.max(0, enrollment.netFee - paid);
+            const row = {
+                name: `${student.firstName} ${student.lastName}`,
+                admissionNumber: student.admissionNumber,
+                netFee: enrollment.netFee,
+                paid,
+                outstanding,
+            };
+            allRows.push({ ...row, className });
+            if (!classMap.has(className)) {
+                classMap.set(className, { className, enrolled: 0, totalFees: 0, collected: 0, outstanding: 0, students: [] });
+            }
+            const group = classMap.get(className);
+            group.enrolled++;
+            group.totalFees += enrollment.netFee;
+            group.collected += paid;
+            group.outstanding += outstanding;
+            group.students.push(row);
+        }
+        for (const group of classMap.values()) {
+            group.students.sort((a, b) => b.outstanding - a.outstanding);
+        }
+        const byClass = Array.from(classMap.values()).sort((a, b) => a.className.localeCompare(b.className));
+        const institution = byClass.reduce((acc, g) => ({
+            totalEnrolled: acc.totalEnrolled + g.enrolled,
+            totalFees: acc.totalFees + g.totalFees,
+            totalCollected: acc.totalCollected + g.collected,
+            totalOutstanding: acc.totalOutstanding + g.outstanding,
+        }), { totalEnrolled: 0, totalFees: 0, totalCollected: 0, totalOutstanding: 0 });
+        const atRisk = [...allRows].filter(s => s.outstanding > 0).sort((a, b) => b.outstanding - a.outstanding).slice(0, 10);
+        return { generatedAt: new Date().toISOString(), institution, byClass, atRisk };
+    }
 }
 exports.ReportService = ReportService;
 exports.reportService = new ReportService();

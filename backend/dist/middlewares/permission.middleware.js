@@ -42,7 +42,7 @@ function invalidateRoleCache(roleId) {
  * Middleware factory — use in routes:
  * router.post('/payments', authMiddleware, permissionMiddleware('CREATE_PAYMENT', 'PAYMENT'), ...)
  */
-function permissionMiddleware(action, resource) {
+function permissionMiddleware(actions, resource) {
     return async (req, res, next) => {
         if (!req.user) {
             res.status(401).json({ success: false, error: 'Not authenticated.' });
@@ -50,11 +50,12 @@ function permissionMiddleware(action, resource) {
         }
         try {
             const permissions = await getRolePermissions(req.user.roleId);
-            const required = `${action}:${resource}`;
-            if (!permissions.has(required)) {
+            const actionList = Array.isArray(actions) ? actions : [actions];
+            const hasPermission = actionList.some(action => permissions.has(`${action}:${resource}`));
+            if (!hasPermission) {
                 res.status(403).json({
                     success: false,
-                    error: `Access denied. Missing permission: ${required}`,
+                    error: `Access denied. Missing permission: ${actionList.join(' or ')} for ${resource}`,
                 });
                 return;
             }

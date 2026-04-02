@@ -30,6 +30,34 @@ export interface DailyReportSummary {
         left: number;
     };
 }
+export interface EagleEyeStudentRow {
+    name: string;
+    admissionNumber: string;
+    netFee: number;
+    paid: number;
+    outstanding: number;
+}
+export interface EagleEyeClassGroup {
+    className: string;
+    enrolled: number;
+    totalFees: number;
+    collected: number;
+    outstanding: number;
+    students: EagleEyeStudentRow[];
+}
+export interface EagleEyeReport {
+    generatedAt: string;
+    institution: {
+        totalEnrolled: number;
+        totalFees: number;
+        totalCollected: number;
+        totalOutstanding: number;
+    };
+    byClass: EagleEyeClassGroup[];
+    atRisk: (EagleEyeStudentRow & {
+        className: string;
+    })[];
+}
 export declare class ReportService {
     /**
      * Generates a daily financial summary by aggregating LedgerEntries.
@@ -73,6 +101,10 @@ export declare class ReportService {
             totalEnrollments: number;
         };
     }>;
+    /**
+     * Eagle-Eye: full session overview grouped by class.
+     */
+    getEagleEye(): Promise<EagleEyeReport>;
 }
 export declare const reportService: ReportService;
 //# sourceMappingURL=report.service.d.ts.map

@@ -8,6 +8,11 @@ const env_1 = require("./config/env"); // System Config
 const seeder_1 = require("./utils/seeder");
 const app_1 = __importDefault(require("./app"));
 const dailyReport_job_1 = require("./jobs/dailyReport.job");
+const node_dns_1 = __importDefault(require("node:dns"));
+// Force Node.js to prefer IPv4 for DNS lookups. 
+// This fixes querySrv ECONNREFUSED on some networks (like Jio/Reliance) 
+// where SRV over IPv6 is flaky.
+node_dns_1.default.setDefaultResultOrder('ipv4first');
 async function main() {
     // 1. Connect to MongoDB (with retry logic in db.ts)
     await (0, db_1.connectDB)();

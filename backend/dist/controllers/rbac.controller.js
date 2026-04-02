@@ -158,6 +158,21 @@ class RBACController {
             (0, apiResponse_1.sendError)(res, err instanceof Error ? err.message : 'Failed', 400);
         }
     }
+    async revokePermission(req, res) {
+        const permissionId = req.params['permId'];
+        if (!permissionId || permissionId.length !== 24) {
+            (0, apiResponse_1.sendError)(res, 'Invalid permission ID', 400);
+            return;
+        }
+        try {
+            const meta = audit_service_1.auditService.extractRequestMeta(req);
+            await rbac_service_1.rbacService.revokePermission({ roleId: req.params['id'], permissionId, revokedBy: req.user.userId, ...meta });
+            (0, apiResponse_1.sendSuccess)(res, null, 200, 'Permission revoked');
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, err instanceof Error ? err.message : 'Failed', 400);
+        }
+    }
     async getRolePermissions(req, res) {
         try {
             (0, apiResponse_1.sendSuccess)(res, await rbac_service_1.rbacService.getRolePermissions(req.params['id']));

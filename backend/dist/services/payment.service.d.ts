@@ -8,6 +8,9 @@ export interface ProcessPaymentInput {
     ipAddress: string;
     userAgent: string;
     transactionRef?: string;
+    bankName?: string;
+    chequeNumber?: string;
+    chequeDate?: Date;
     fingerprintVerified?: boolean;
 }
 export interface ProcessPaymentResult {
@@ -37,10 +40,9 @@ export declare class PaymentService {
     processPayment(input: ProcessPaymentInput): Promise<ProcessPaymentResult>;
     /**
      * Private: Allocates incoming payment amount to installments in due-date order.
-     * Skips installments that are already fully paid.
-     * Handles partial payments (only partially covers an installment).
+     * Crucially accounts for concessions which reduce the overall debt.
      */
-    private allocateToInstallments;
+    private allocateWithConcession;
     /**
      * ──────────────────────────────────────────────────────────────────────────
      * PAYMENT CANCELLATION FLOW

@@ -19,6 +19,7 @@ const AuditLogsPage = lazy(() => import('../pages/audit/AuditLogsPage').then(m =
 const SettingsPage = lazy(() => import('../pages/settings/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const LedgerPage = lazy(() => import('../pages/ledger/LedgerPage').then(m => ({ default: m.LedgerPage })));
 const ClassStudentsPage = lazy(() => import('../pages/classes/ClassStudentsPage').then(m => ({ default: m.ClassStudentsPage })));
+const EagleEyePage = lazy(() => import('../pages/reports/EagleEyePage').then(m => ({ default: m.EagleEyePage })));
 
 function PageLoader() {
     return (
@@ -65,6 +66,7 @@ export const router = createBrowserRouter([
                     { path: '/payments', element: <SuspenseWrapper><PaymentEntryPage /></SuspenseWrapper> },
                     { path: '/receipts/:id', element: <SuspenseWrapper><ReceiptPage /></SuspenseWrapper> },
                     { path: '/reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
+                    { path: '/eagle-eye', element: <SuspenseWrapper><EagleEyePage /></SuspenseWrapper> },
                     { path: '/users', element: <SuspenseWrapper><UsersPage /></SuspenseWrapper> },
                     { path: '/rbac', element: <SuspenseWrapper><RBACPage /></SuspenseWrapper> },
                     { path: '/audit', element: <SuspenseWrapper><AuditLogsPage /></SuspenseWrapper> },

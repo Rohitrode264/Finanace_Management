@@ -6,6 +6,7 @@ export declare class StudentController {
     getCount(req: Request, res: Response): Promise<void>;
     listStudents(req: Request, res: Response): Promise<void>;
     updateStatus(req: Request, res: Response): Promise<void>;
+    getSchools(req: Request, res: Response): Promise<void>;
 }
 export declare const studentController: StudentController;
 //# sourceMappingURL=student.controller.d.ts.map

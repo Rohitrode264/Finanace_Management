@@ -67,6 +67,14 @@ const UserSchema = new mongoose_1.Schema({
         default: null,
         // Encrypted fingerprint reference key, NOT raw biometric data
     },
+    resetPasswordOTP: {
+        type: String,
+        select: false,
+    },
+    resetPasswordOTPExpires: {
+        type: Date,
+        select: false,
+    },
     isActive: {
         type: Boolean,
         default: true,

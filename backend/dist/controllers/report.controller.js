@@ -79,6 +79,15 @@ class ReportController {
             (0, apiResponse_1.sendError)(res, message, 500);
         }
     }
+    async getEagleEye(req, res) {
+        try {
+            const report = await report_service_1.reportService.getEagleEye();
+            (0, apiResponse_1.sendSuccess)(res, report);
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, 'Failed to generate Eagle-Eye report', 500);
+        }
+    }
 }
 exports.ReportController = ReportController;
 exports.reportController = new ReportController();

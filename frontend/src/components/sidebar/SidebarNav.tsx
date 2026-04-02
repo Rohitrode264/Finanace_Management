@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Users, GraduationCap,
     CreditCard, School, BarChart3, ClipboardList,
     ShieldCheck, Settings, ChevronLeft, ChevronRight,
-    BookOpen,
+    BookOpen, Eye,
 } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
 import { useAuthStore } from '../../store/authStore';
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: 'Ledger', icon: ClipboardList, path: '/ledger', permission: 'VIEW_ENROLLMENT', section: 'FINANCE' },
     // { label: 'Receipts', icon: Receipt, path: '/receipts', permission: 'VIEW_RECEIPT', section: 'FINANCE' },
     { label: 'Reports', icon: BarChart3, path: '/reports', permission: 'VIEW_REPORT', section: 'FINANCE' },
+    { label: 'Eagle Eye', icon: Eye, path: '/eagle-eye', permission: 'VIEW_REPORT', section: 'FINANCE' },
     { label: 'Users', icon: Users, path: '/users', permission: ['MANAGE_USERS', 'CREATE_USER'], section: 'ADMIN' },
     { label: 'Roles & RBAC', icon: ShieldCheck, path: '/rbac', permission: 'MANAGE_ROLES', section: 'ADMIN' },
     { label: 'Audit Logs', icon: ClipboardList, path: '/audit', permission: 'VIEW_AUDIT_LOG', section: 'ADMIN' },

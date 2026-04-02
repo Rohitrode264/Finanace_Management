@@ -9,10 +9,12 @@ const createStudentSchema = zod_1.z.object({
     admissionNumber: zod_1.z.string().min(3).max(20),
     firstName: zod_1.z.string().min(1).max(100),
     lastName: zod_1.z.string().min(1).max(100),
-    phone: zod_1.z.string().regex(/^[0-9]{10}$/, '10-digit phone required'),
+    phone: zod_1.z.string().min(10).max(15),
+    alternatePhone: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
+    motherPhone: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
     email: zod_1.z.string().email().optional().or(zod_1.z.literal('')),
     fatherName: zod_1.z.string().min(1).max(100),
-    motherName: zod_1.z.string().min(1).max(100),
+    motherName: zod_1.z.string().max(100).optional().or(zod_1.z.literal('')),
     schoolName: zod_1.z.string().max(200).optional().or(zod_1.z.literal('')),
     program: zod_1.z.string().max(100).optional().or(zod_1.z.literal('')),
     bloodGroup: zod_1.z.string().optional().or(zod_1.z.literal('')),
@@ -21,6 +23,12 @@ const createStudentSchema = zod_1.z.object({
         city: zod_1.z.string().optional(),
         state: zod_1.z.string().optional(),
         zipCode: zod_1.z.string().optional(),
+    }).optional(),
+    history: zod_1.z.object({
+        previousSchool: zod_1.z.string().optional(),
+        percentage: zod_1.z.string().optional(),
+        yearPassout: zod_1.z.string().optional(),
+        extraNote: zod_1.z.string().optional(),
     }).optional(),
 });
 const updateStatusSchema = zod_1.z.object({
@@ -80,17 +88,19 @@ class StudentController {
     }
     async listStudents(req, res) {
         try {
-            const { q, status, program, limit = '50', skip = '0' } = req.query;
-            let students;
+            const { q, status, program, limit = '20', skip = '0' } = req.query;
+            const l = parseInt(limit, 10);
+            const s = parseInt(skip, 10);
+            let result;
             if (q) {
-                students = await student_service_1.studentService.search(q, parseInt(limit), program);
+                result = await student_service_1.studentService.search(q, l, s, program);
             }
             else {
-                students = await student_service_1.studentService.listAll(status, program, parseInt(limit), parseInt(skip));
+                result = await student_service_1.studentService.listAll(status, program, l, s);
             }
-            (0, apiResponse_1.sendSuccess)(res, students);
+            (0, apiResponse_1.sendSuccess)(res, result);
         }
-        catch {
+        catch (err) {
             (0, apiResponse_1.sendError)(res, 'Failed to list students', 500);
         }
     }
@@ -113,6 +123,15 @@ class StudentController {
         catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to update status';
             (0, apiResponse_1.sendError)(res, message, 400);
+        }
+    }
+    async getSchools(req, res) {
+        try {
+            const schools = await student_service_1.studentService.getUniqueSchools();
+            (0, apiResponse_1.sendSuccess)(res, schools);
+        }
+        catch {
+            (0, apiResponse_1.sendError)(res, 'Failed to fetch schools', 500);
         }
     }
 }

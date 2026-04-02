@@ -97,11 +97,14 @@ class PaymentService {
                 }
             }
             // ── STEP 5: Allocate payment to installments (oldest due first) ─────────
-            // installmentPlan lives on AcademicClass (immutable snapshot there)
+            // We must consider BOTH existing payments AND concessions when deciding
+            // what is "outstanding" in an installment.
+            const totalConcession = enrollment.totalFee - enrollment.netFee;
+            // Note: paidPerInstallment currently only contains actual cash payments.
             const academicClass = await AcademicClass_model_1.AcademicClass.findById(enrollment.academicClassId).lean();
             const installmentPlan = (academicClass?.installmentPlan ?? []);
-            const allocation = this.allocateToInstallments(enrollment.academicClassId.toString(), installmentPlan, paidPerInstallment, input.amount, enrollment);
-            if (allocation.length === 0) {
+            const allocation = this.allocateWithConcession(installmentPlan, paidPerInstallment, totalConcession, input.amount);
+            if (allocation.length === 0 && input.amount > 0) {
                 throw new Error('No outstanding installments to allocate payment against');
             }
             // ── STEP 6: Insert Payment document ─────────────────────────────────────
@@ -115,6 +118,9 @@ class PaymentService {
                 isCancelled: false,
                 receiptId: null,
                 transactionRef: input.transactionRef ?? null,
+                bankName: input.bankName ?? null,
+                chequeNumber: input.chequeNumber ?? null,
+                chequeDate: input.chequeDate ?? null,
             }, session);
             // ── STEP 7: Insert Ledger CREDIT entry ──────────────────────────────────
             await ledgerSvc.recordCredit({
@@ -160,6 +166,7 @@ class PaymentService {
                 ipAddress: input.ipAddress,
                 userAgent: input.userAgent,
             });
+            await payment.populate('receivedBy', 'name firstName lastName');
             return { payment, receipt, receiptNumber, allocation };
         }
         catch (err) {
@@ -172,24 +179,30 @@ class PaymentService {
     }
     /**
      * Private: Allocates incoming payment amount to installments in due-date order.
-     * Skips installments that are already fully paid.
-     * Handles partial payments (only partially covers an installment).
+     * Crucially accounts for concessions which reduce the overall debt.
      */
-    allocateToInstallments(academicClassId, installmentPlan, paidPerInstallment, totalPayment, enrollment) {
+    allocateWithConcession(installmentPlan, paidPerInstallment, totalConcession, incomingAmount) {
         const allocation = [];
-        let remaining = totalPayment;
+        let remainingConcession = totalConcession;
+        let remainingPayment = incomingAmount;
         // Sort installments by dueDate ascending (oldest due first)
         const sorted = [...installmentPlan].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
         for (const installment of sorted) {
-            if (remaining <= 0)
-                break;
-            const alreadyPaid = paidPerInstallment.get(installment.installmentNo) ?? 0;
-            const outstanding = installment.amount - alreadyPaid;
+            const installmentAmount = installment.amount;
+            const cashPaid = paidPerInstallment.get(installment.installmentNo) ?? 0;
+            // How much of this installment is covered by concessions?
+            // Concessions fill the "oldest" debt first.
+            const concessionCover = Math.min(installmentAmount - cashPaid, remainingConcession);
+            remainingConcession -= concessionCover;
+            const coveredSoFar = cashPaid + concessionCover;
+            const outstanding = installmentAmount - coveredSoFar;
             if (outstanding <= 0)
-                continue; // This installment is fully paid
-            const toAllocate = Math.min(outstanding, remaining);
+                continue;
+            if (remainingPayment <= 0)
+                continue;
+            const toAllocate = Math.min(outstanding, remainingPayment);
             allocation.push({ installmentNo: installment.installmentNo, amount: toAllocate });
-            remaining -= toAllocate;
+            remainingPayment -= toAllocate;
         }
         return allocation;
     }

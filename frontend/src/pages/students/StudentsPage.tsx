@@ -154,6 +154,12 @@ export function StudentsPage() {
     });
     const categories = catRes?.data?.data || [];
 
+    const { data: schoolsRes } = useQuery({
+        queryKey: ['unique-schools'],
+        queryFn: () => studentsService.getSchools(),
+    });
+    const uniqueSchools = schoolsRes?.data?.data || [];
+
     const { data: studentsRes, isLoading } = useQuery({
         queryKey: ['students', skip, dSearch, program],
         queryFn: () => studentsService.list({ limit: LIMIT, skip, search: dSearch || undefined, program: program || undefined }),
@@ -182,6 +188,11 @@ export function StudentsPage() {
             const studentRes = await studentsService.create(formattedData as any);
             const newStudentId = studentRes.data?.data?._id;
             if (!newStudentId) throw new Error('Failed to create student record');
+
+            // Refresh schools list if a new school was added
+            if (formattedData.schoolName) {
+                qc.invalidateQueries({ queryKey: ['unique-schools'] });
+            }
 
             // 2. Enroll if class selected (optional but recommended)
             if (selectedClassId) {
@@ -521,14 +532,20 @@ export function StudentsPage() {
                                         </div>
                                         <div style={{ gridColumn: 'span 1' }}>
                                             <label className="form-label">School Name (Optional)</label>
-                                            <input {...register('schoolName')} className="form-input" placeholder="Current school name" />
+                                            <input {...register('schoolName')} list="schools-list" className="form-input" placeholder="Current school name" />
                                         </div>
                                         <div style={{ gridColumn: '1 / -1', marginTop: 8 }}>
                                             <h5 style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 8, color: 'var(--text-muted)' }}>Previous History (Optional)</h5>
                                         </div>
                                         <div style={{ gridColumn: '1 / -1' }}>
                                             <label className="form-label">Previous School Name</label>
-                                            <input {...register('history.previousSchool')} className="form-input" placeholder="School where student studied previously" />
+                                            <datalist id="schools-list">
+                                                {uniqueSchools.map((s: string) => (
+                                                    <option key={s} value={s} />
+                                                ))}
+                                            </datalist>
+
+                                            <input {...register('history.previousSchool')} list="schools-list" className="form-input" placeholder="School where student studied previously" />
                                         </div>
                                         <div>
                                             <label className="form-label">Percentage (%) / Grade</label>

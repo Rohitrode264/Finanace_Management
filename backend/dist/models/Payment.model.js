@@ -105,6 +105,20 @@ const PaymentSchema = new mongoose_1.Schema({
         trim: true,
         // UPI ref, cheque number, transaction ID etc.
     },
+    bankName: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+    chequeNumber: {
+        type: String,
+        default: null,
+        trim: true,
+    },
+    chequeDate: {
+        type: Date,
+        default: null,
+    },
 }, {
     timestamps: { createdAt: true, updatedAt: false },
     // FINANCIAL RULE: Payment documents are created once and never updated

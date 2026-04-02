@@ -60,7 +60,14 @@ const StudentSchema = new mongoose_1.Schema({
         type: String,
         required: true,
         trim: true,
-        match: [/^[0-9]{10}$/, 'Phone must be 10 digits'],
+    },
+    alternatePhone: {
+        type: String,
+        trim: true,
+    },
+    motherPhone: {
+        type: String,
+        trim: true,
     },
     fatherName: {
         type: String,
@@ -70,7 +77,7 @@ const StudentSchema = new mongoose_1.Schema({
     },
     motherName: {
         type: String,
-        required: true,
+        required: false,
         trim: true,
         maxlength: 100,
     },
@@ -99,6 +106,12 @@ const StudentSchema = new mongoose_1.Schema({
         city: { type: String, trim: true },
         state: { type: String, trim: true },
         zipCode: { type: String, trim: true },
+    },
+    history: {
+        previousSchool: { type: String, trim: true },
+        percentage: { type: String, trim: true },
+        yearPassout: { type: String, trim: true },
+        extraNote: { type: String, trim: true },
     },
     status: {
         type: String,

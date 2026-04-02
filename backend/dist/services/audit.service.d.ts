@@ -18,7 +18,18 @@ export declare class AuditService {
     };
     getAuditTrail(entityType: string, entityId: string, limit?: number): Promise<IAuditLog[]>;
     getActorHistory(actorId: string, limit?: number): Promise<IAuditLog[]>;
-    listAll(limit?: number): Promise<IAuditLog[]>;
+    listAll(params: {
+        actorId?: string;
+        action?: string;
+        entityType?: string;
+        startDate?: string;
+        endDate?: string;
+        page?: number;
+        limit?: number;
+    }): Promise<{
+        logs: IAuditLog[];
+        total: number;
+    }>;
 }
 export declare const auditService: AuditService;
 //# sourceMappingURL=audit.service.d.ts.map

@@ -6,9 +6,11 @@ export interface IStudent extends Document {
     firstName: string;
     lastName: string;
     phone: string;
+    alternatePhone?: string;
+    motherPhone?: string;
     email?: string;
     fatherName: string;
-    motherName: string;
+    motherName?: string;
     schoolName?: string;
     program?: string;
     bloodGroup?: string;
@@ -17,6 +19,12 @@ export interface IStudent extends Document {
         city?: string;
         state?: string;
         zipCode?: string;
+    };
+    history?: {
+        previousSchool?: string;
+        percentage?: string;
+        yearPassout?: string;
+        extraNote?: string;
     };
     status: StudentStatus;
     createdBy: Types.ObjectId;

@@ -6,6 +6,8 @@ export interface IUser extends Document {
     passwordHash: string;
     roleId: Types.ObjectId;
     fingerprintKey: string | null;
+    resetPasswordOTP?: string;
+    resetPasswordOTPExpires?: Date;
     isActive: boolean;
     createdAt: Date;
     updatedAt: Date;

@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { BarChart3, Calendar, Search, Download, Mail, Send, ToggleLeft, ToggleRight } from 'lucide-react';
+import { BarChart3, Calendar, Search, Mail, Send, ToggleLeft, ToggleRight, Printer, FileSpreadsheet } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { reportService } from '../../api/services/report.service';
@@ -15,6 +15,8 @@ import { TruncatedText } from '../../components/ui/TruncatedText';
 import toast from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import * as XLSX from 'xlsx';
+import { downloadElementAsPdf } from '../../utils/reportPdf';
 
 // ── Custom calendar CSS injected globally once ──────────────────────────────
 const calendarStyles = `
@@ -220,31 +222,69 @@ export function ReportsPage() {
         borderRadius: 8, fontSize: '0.875rem', fontWeight: 600 as const, transition: 'all 0.2s',
     });
 
-    const downloadCSV = () => {
+    const downloadExcel = () => {
         if (!daily) return;
-        const lines = [
-            ['Type', 'Name', 'Admission No', 'Deposited Today', 'Total Paid to Date', 'Balance Left', 'Collected By'].join(','),
-        ];
-        daily.newAdmissions.students.forEach((s: any) => {
-            lines.push(`New Admission,"${s.name}","${s.admissionNumber}",${s.deposited},${s.totalPaid},${s.left},"${s.collectedBy}"`);
-        });
-        daily.existingStudentsActivity?.forEach((s: any) => {
-            lines.push(`Existing Student,"${s.name}","${s.admissionNumber}",${s.deposited},${s.totalPaid},${s.left},"${s.collectedBy}"`);
-        });
-        lines.push('');
-        lines.push(`Total Collected,${daily.totalCollected}`);
-        lines.push(`Total Concessions,${daily.totalConcessions}`);
-        lines.push(`Total Cancellations,${daily.totalCancellations}`);
-        lines.push(`Net Receipts,${daily.netReceipts}`);
-        lines.push(`CP Share (35%),${daily.ncpShare}`);
 
-        const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `NCP_Financial_Report_${daily.date}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
+        const data: any[] = [];
+        // Header
+        data.push(["NCP Daily Collection Report"]);
+        data.push([`Period: ${daily.date}`]);
+        data.push([]);
+
+        // New Admissions
+        if (daily.newAdmissions?.students?.length > 0) {
+            data.push(["New Admissions Today"]);
+            data.push(["Name", "Adm. No.", "Deposited", "Total Paid", "Balance", "Collected By"]);
+            daily.newAdmissions.students.forEach((s: any) => {
+                data.push([s.name, s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
+            });
+            data.push([]);
+        }
+
+        // Installment Payments
+        if (daily.existingStudentsActivity?.length > 0) {
+            data.push(["Installment Payments"]);
+            data.push(["Name", "Adm. No.", "Paid Today", "Total Paid", "Balance", "Collected By"]);
+            daily.existingStudentsActivity.forEach((s: any) => {
+                data.push([s.name, s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
+            });
+            data.push([]);
+        }
+
+        // Summary
+        data.push(["Financial Summary"]);
+        data.push(["Total Collected", daily.totalCollected]);
+        data.push(["Net Receipts", daily.netReceipts]);
+        data.push(["Concessions", daily.totalConcessions]);
+        data.push(["Cancellations", daily.totalCancellations]);
+        data.push(["CP Share (35%)", daily.ncpShare]);
+
+        // Create Workbook
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Daily Report");
+
+        // Column widths
+        worksheet["!cols"] = [
+            { wch: 25 }, // Name
+            { wch: 15 }, // Adm No
+            { wch: 12 }, // Deposited/Paid
+            { wch: 12 }, // Total Paid
+            { wch: 12 }, // Balance
+            { wch: 20 }  // Collected By
+        ];
+
+        // Export
+        XLSX.writeFile(workbook, `NCP_DailyReport_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+    };
+
+    const handleDownloadPdf = async () => {
+        try {
+            await downloadElementAsPdf('daily-report-content', `NCP_DailyReport_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+            toast.success('📄 PDF downloaded successfully');
+        } catch (error) {
+            toast.error('Failed to generate PDF');
+        }
     };
 
     const onCalendarMonthChange = useCallback((date: Date) => {
@@ -276,7 +316,7 @@ export function ReportsPage() {
 
             {/* Daily Report */}
             {activeTab === 'daily' && (
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} id="daily-report-content">
                     {/* Date Picker + CSV Row */}
                     <div className="card" style={{ padding: 20, marginBottom: 20, display: 'flex', gap: 20, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                         <div className="rdp-custom" style={{ flex: '1 1 260px' }}>
@@ -312,9 +352,30 @@ export function ReportsPage() {
                                 </div>
                             </div>
 
-                            <button className="btn-primary" onClick={downloadCSV} disabled={!daily || dLoading} style={{ justifyContent: 'center' }}>
-                                <Download size={14} style={{ marginRight: 6 }} /> Export CSV
-                            </button>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {/* Export Group */}
+                                <div style={{ display: 'flex', background: 'var(--bg-subtle)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>
+                                    <button
+                                        className="btn-ghost"
+                                        onClick={handleDownloadPdf}
+                                        disabled={!daily || dLoading}
+                                        title="Download PDF"
+                                        style={{ height: 36, flex: 1, fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                        <Printer size={14} style={{ marginRight: 6 }} /> PDF
+                                    </button>
+                                    <div style={{ width: 1, background: 'var(--border)', margin: '4px 0' }} />
+                                    <button
+                                        className="btn-ghost"
+                                        onClick={downloadExcel}
+                                        disabled={!daily || dLoading}
+                                        title="Export Excel"
+                                        style={{ height: 36, flex: 1, fontSize: '0.75rem', fontWeight: 700 }}
+                                    >
+                                        <FileSpreadsheet size={14} style={{ marginRight: 6 }} /> Excel
+                                    </button>
+                                </div>
+                            </div>
 
                             {/* Report Dispatch Card */}
                             <div style={{ padding: '14px 16px', background: 'var(--bg-surface)', borderRadius: 10, border: '1px solid var(--border)', marginTop: 4 }}>

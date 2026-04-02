@@ -161,7 +161,39 @@ class AuthService {
             throw new Error('User not found');
         user.fingerprintKey = params.fingerprintKey;
         await user.save();
-        // Audit log is typically handled by the controller to include request meta
+    }
+    async generateResetOTP(email) {
+        const user = await User_model_1.User.findOne({ email: email.toLowerCase().trim() });
+        if (!user)
+            throw new Error('User not found');
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.resetPasswordOTP = otp;
+        user.resetPasswordOTPExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+        await user.save();
+        return otp;
+    }
+    async resetPasswordWithOTP(params) {
+        const user = await User_model_1.User.findOne({
+            email: params.email.toLowerCase().trim(),
+            resetPasswordOTP: params.otp,
+            resetPasswordOTPExpires: { $gt: new Date() }
+        }).select('+resetPasswordOTP +resetPasswordOTPExpires');
+        if (!user)
+            throw new Error('Invalid or expired OTP');
+        user.passwordHash = await this.hashPassword(params.newPassword);
+        user.resetPasswordOTP = undefined;
+        user.resetPasswordOTPExpires = undefined;
+        await user.save();
+    }
+    async updatePassword(userId, oldPass, newPass) {
+        const user = await User_model_1.User.findById(userId).select('+passwordHash');
+        if (!user)
+            throw new Error('User not found');
+        const valid = await this.verifyPassword(oldPass, user.passwordHash);
+        if (!valid)
+            throw new Error('Incorrect old password');
+        user.passwordHash = await this.hashPassword(newPass);
+        await user.save();
     }
 }
 exports.AuthService = AuthService;

@@ -10,6 +10,7 @@ router.get('/daily', (0, permission_middleware_1.permissionMiddleware)('VIEW_REP
 router.get('/enrollment/:enrollmentId/ledger', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getEnrollmentLedgerReport(req, res));
 router.get('/dashboard-stats', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getDashboardStats(req, res));
 router.get('/payment-dates', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getPaymentDates(req, res));
+router.get('/eagle-eye', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getEagleEye(req, res));
 router.post('/send-now', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.sendNow(req, res));
 exports.default = router;
 //# sourceMappingURL=report.routes.js.map

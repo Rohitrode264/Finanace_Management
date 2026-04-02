@@ -11,6 +11,7 @@ router.post('/', (0, permission_middleware_1.permissionMiddleware)('CREATE_STUDE
 router.get('/count', (0, permission_middleware_1.permissionMiddleware)('VIEW_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.getCount(req, res));
 router.get('/generate-admission-id', (0, permission_middleware_1.permissionMiddleware)('CREATE_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.generateAdmissionId(req, res));
 router.get('/:id', (0, permission_middleware_1.permissionMiddleware)('VIEW_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.getStudent(req, res));
+router.get('/meta/schools', (0, permission_middleware_1.permissionMiddleware)('VIEW_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.getSchools(req, res));
 router.patch('/:id/status', (0, permission_middleware_1.permissionMiddleware)('UPDATE_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.updateStatus(req, res));
 exports.default = router;
 //# sourceMappingURL=student.routes.js.map

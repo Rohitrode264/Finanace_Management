@@ -54,6 +54,13 @@ export declare class AuthService {
         fingerprintKey: string;
         registeredBy: string;
     }): Promise<void>;
+    generateResetOTP(email: string): Promise<string>;
+    resetPasswordWithOTP(params: {
+        email: string;
+        otp: string;
+        newPassword: string;
+    }): Promise<void>;
+    updatePassword(userId: string, oldPass: string, newPass: string): Promise<void>;
 }
 export declare const authService: AuthService;
 //# sourceMappingURL=auth.service.d.ts.map

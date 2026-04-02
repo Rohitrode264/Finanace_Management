@@ -46,26 +46,38 @@ class ReceiptController {
     async getReceipt(req, res) {
         try {
             const { ReceiptRepository } = await Promise.resolve().then(() => __importStar(require('../repositories/receipt.repository')));
+            const { ledgerService } = await Promise.resolve().then(() => __importStar(require('../services/ledger.service')));
             const repo = new ReceiptRepository();
             const receipt = await repo.findById(req.params['id']);
             if (!receipt) {
                 (0, apiResponse_1.sendError)(res, 'Receipt not found', 404);
                 return;
             }
+            // Attach balance to enrollment
+            const enrollment = receipt.enrollmentId;
+            if (enrollment && enrollment._id) {
+                enrollment.outstandingBalance = await ledgerService.getBalance(enrollment._id);
+            }
             (0, apiResponse_1.sendSuccess)(res, receipt);
         }
-        catch {
+        catch (err) {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch receipt', 500);
         }
     }
     async getByPayment(req, res) {
         try {
             const { ReceiptRepository } = await Promise.resolve().then(() => __importStar(require('../repositories/receipt.repository')));
+            const { ledgerService } = await Promise.resolve().then(() => __importStar(require('../services/ledger.service')));
             const repo = new ReceiptRepository();
             const receipt = await repo.findByPaymentId(req.params['paymentId']);
             if (!receipt) {
                 (0, apiResponse_1.sendError)(res, 'Receipt not found for this payment', 404);
                 return;
+            }
+            // Attach balance
+            const enrollment = receipt.enrollmentId;
+            if (enrollment && enrollment._id) {
+                enrollment.outstandingBalance = await ledgerService.getBalance(enrollment._id);
             }
             (0, apiResponse_1.sendSuccess)(res, receipt);
         }

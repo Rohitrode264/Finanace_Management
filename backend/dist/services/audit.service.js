@@ -39,11 +39,39 @@ class AuditService {
             .sort({ timestamp: -1 })
             .limit(limit);
     }
-    async listAll(limit = 100) {
-        return AuditLog_model_1.AuditLog.find({})
-            .sort({ timestamp: -1 })
-            .limit(limit)
-            .populate('actorId', 'name email role');
+    async listAll(params) {
+        const { actorId, action, entityType, startDate, endDate, page = 1, limit = 50 } = params;
+        const query = {};
+        if (actorId)
+            query.actorId = new mongoose_1.Types.ObjectId(actorId);
+        if (action)
+            query.action = action;
+        if (entityType)
+            query.entityType = entityType.toUpperCase();
+        if (startDate || endDate) {
+            query.timestamp = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.timestamp.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.timestamp.$lte = end;
+            }
+        }
+        const skip = (page - 1) * limit;
+        const [logs, total] = await Promise.all([
+            AuditLog_model_1.AuditLog.find(query)
+                .sort({ timestamp: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate('actorId', 'name email role')
+                .lean(),
+            AuditLog_model_1.AuditLog.countDocuments(query)
+        ]);
+        return { logs: logs, total };
     }
 }
 exports.AuditService = AuditService;

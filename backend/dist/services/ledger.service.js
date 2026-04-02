@@ -45,19 +45,10 @@ class LedgerService {
         const enrollment = await enrollmentRepo.findById(enrollmentId);
         if (!enrollment)
             throw new Error('Enrollment not found');
-        // Start with netFee (what student owes)
-        // Subtract all CREDIT entries (payments received, concessions granted)
-        // Add back all DEBIT entries (reversals, cancellations)
         const ledgerBalance = await ledgerRepo.computeBalance(enrollmentId);
-        // balance = netFee - credits + debits (already computed in aggregate)
-        // The aggregate returns debits - credits, so:
-        // outstanding = netFee + (debits - credits combined negative = money received)
-        // Simpler: outstanding = netFee - total_credits + total_debits_from_reversals
-        // LedgerRepository.computeBalance returns: debits - credits
-        // So: outstanding = netFee + (debits - credits)
-        // BUT: concession CREDIT reduces netFee separately
-        // So: outstanding = netFee - payment_credits + cancellation_debits
-        return enrollment.netFee + ledgerBalance;
+        // outstanding = totalFee + (debits - credits)
+        // Since concession is recorded as a CREDIT, it will correctly reduce the totalFee.
+        return enrollment.totalFee + ledgerBalance;
     }
     async getLedger(enrollmentId) {
         return ledgerRepo.findByEnrollment(enrollmentId);

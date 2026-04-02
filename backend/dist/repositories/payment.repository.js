@@ -11,7 +11,7 @@ class PaymentRepository {
         return payment;
     }
     async findById(id) {
-        return Payment_model_1.Payment.findById(id);
+        return Payment_model_1.Payment.findById(id).populate('receivedBy', 'name firstName lastName');
     }
     async findByEnrollment(enrollmentId) {
         return Payment_model_1.Payment.find({ enrollmentId }).sort({ createdAt: -1 });

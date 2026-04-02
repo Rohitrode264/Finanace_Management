@@ -78,7 +78,7 @@ export interface Student {
     phone: string;
     motherPhone?: string;
     fatherName: string;
-    motherName: string;
+    motherName?: string;
     schoolName?: string;
     email?: string;
     program?: string;

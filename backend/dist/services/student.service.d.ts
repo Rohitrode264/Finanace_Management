@@ -5,8 +5,10 @@ export declare class StudentService {
         firstName: string;
         lastName: string;
         phone: string;
+        alternatePhone?: string;
+        motherPhone?: string;
         fatherName: string;
-        motherName: string;
+        motherName?: string;
         schoolName?: string;
         program?: string;
         email?: string;
@@ -16,6 +18,12 @@ export declare class StudentService {
             city?: string;
             state?: string;
             zipCode?: string;
+        };
+        history?: {
+            previousSchool?: string;
+            percentage?: string;
+            yearPassout?: string;
+            extraNote?: string;
         };
         createdBy: string;
         ipAddress: string;
@@ -31,8 +39,15 @@ export declare class StudentService {
         userAgent: string;
     }): Promise<IStudent>;
     findById(id: string): Promise<IStudent | null>;
-    search(query: string, limit?: number, program?: string): Promise<IStudent[]>;
-    listAll(status?: IStudent['status'], program?: string, limit?: number, skip?: number): Promise<IStudent[]>;
+    search(query: string, limit?: number, skip?: number, program?: string): Promise<{
+        students: IStudent[];
+        total: number;
+    }>;
+    listAll(status?: IStudent['status'], program?: string, limit?: number, skip?: number): Promise<{
+        students: IStudent[];
+        total: number;
+    }>;
+    getUniqueSchools(): Promise<string[]>;
 }
 export declare const studentService: StudentService;
 //# sourceMappingURL=student.service.d.ts.map

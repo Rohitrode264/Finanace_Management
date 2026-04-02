@@ -8,6 +8,7 @@ export declare class RBACController {
     createRole(req: Request, res: Response): Promise<void>;
     listPermissions(_req: Request, res: Response): Promise<void>;
     grantPermission(req: Request, res: Response): Promise<void>;
+    revokePermission(req: Request, res: Response): Promise<void>;
     getRolePermissions(req: Request, res: Response): Promise<void>;
 }
 export declare const rbacController: RBACController;

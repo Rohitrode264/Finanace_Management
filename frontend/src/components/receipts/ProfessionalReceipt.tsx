@@ -11,216 +11,385 @@ interface ProfessionalReceiptProps {
     academicClass: AcademicClass;
 }
 
+const INST = {
+    name: 'NEW CAREER POINT',
+    subtitle: 'Quality Education & Guidance Center',
+    address: 'Vaibhav Complex, Nagpur, Maharashtra',
+    phone: '+91 84469 87338',
+    regNo: 'UDYAM-MH-20-0026811',
+    gstin: '27ADYPR1897B1ZV',
+};
+
+const PAYMENT_MODE_LABELS: Record<string, string> = {
+    CASH: 'Cash',
+    UPI: 'UPI / Online Transfer',
+    CARD: 'Debit / Credit Card',
+    CHEQUE: 'Cheque',
+    BANK_TRANSFER: 'Bank Transfer',
+};
+
+/* ─── Tiny reusable sub-components ─────────────────────────────────────────── */
+
+function FieldLabel({ children }: { children: React.ReactNode }) {
+    return (
+        <div style={{
+            fontSize: 9, fontWeight: 700, letterSpacing: '0.08em',
+            textTransform: 'uppercase', color: '#6b7280', marginBottom: 3,
+        }}>
+            {children}
+        </div>
+    );
+}
+
+function FieldValue({ children, size = 14, bold = 700 as number, color = '#111827' }:
+    { children: React.ReactNode; size?: number; bold?: number; color?: string }) {
+    return (
+        <div style={{ fontSize: size, fontWeight: bold, color, lineHeight: 1.3 }}>
+            {children}
+        </div>
+    );
+}
+
+function Divider({ style }: { style?: React.CSSProperties }) {
+    return <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '0', ...style }} />;
+}
+
+/* ─── Main component ─────────────────────────────────────────────────────── */
+
 export function ProfessionalReceipt({ receipt, payment, enrollment, student, academicClass }: ProfessionalReceiptProps) {
-    // Calculations
     const amountPaid = payment.amount;
     const balanceAfter = enrollment.outstandingBalance ?? 0;
     const balanceBefore = balanceAfter + amountPaid;
 
     const template = typeof academicClass?.templateId === 'object' ? academicClass.templateId as ClassTemplate : null;
-    const className = template ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} - ${template.board}` : 'N/A';
+    const className = template
+        ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} — ${template.board}`
+        : 'N/A';
 
-    const formattedDate = receipt?.createdAt ? format(new Date(receipt.createdAt), 'dd MMMM yyyy') : 'N/A';
+    const formattedDate = receipt?.createdAt ? format(new Date(receipt.createdAt), 'dd MMM yyyy') : 'N/A';
+    const formattedTime = receipt?.createdAt ? format(new Date(receipt.createdAt), 'hh:mm a') : '';
     const amountInWords = numberToWords(amountPaid);
 
-    // Receiver name from populated payment object
     const receivedByObj = (payment as any)?.receivedBy;
     const receiverName =
         typeof receivedByObj === 'object'
             ? (receivedByObj?.name || (receivedByObj?.firstName ? `${receivedByObj.firstName} ${receivedByObj.lastName || ''}`.trim() : null))
-            : (typeof receivedByObj === 'string' ? receivedByObj : null) || 'Authorized Collector';
+            : (typeof receivedByObj === 'string' ? receivedByObj : null) || 'Authorized Staff';
 
-    const paymentModeLabels: Record<string, string> = {
-        CASH: '💷 Cash',
-        UPI: '📱 UPI / Online',
-        CARD: '💳 Card',
-        CHEQUE: '🧾 Cheque',
-        BANK_TRANSFER: '🏦 Bank Transfer',
-    };
-    const paymentModeLabel = paymentModeLabels[payment.paymentMode] || payment.paymentMode;
+    const paymentModeLabel = PAYMENT_MODE_LABELS[payment.paymentMode] || payment.paymentMode;
+    const isPaid = balanceAfter <= 0;
 
     return (
-        <div className="receipt-premium-container" style={{
-            width: '100%',
-            maxWidth: '210mm', // A5 landscape width
-            minHeight: '145mm', // Safer margin for A5
-            padding: '10px 20px', // Reduced top padding to move content up
-            margin: '0 auto',
-            backgroundColor: '#ffffff',
-            fontFamily: "'Inter', system-ui, -apple-system, sans-serif",
-            color: '#1a1a1a',
-            position: 'relative',
-            border: '2px solid #000',
-            boxSizing: 'border-box'
-        }}>
-            {/* Branding Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <img
-                        src="/images/logo_bw.jpg"
-                        alt="CP Logo"
-                        style={{ width: '75px', height: '75px', objectFit: 'contain', borderRadius: '8px' }}
-                    />
-                    <div>
-                        <h1 style={{ fontSize: '28px', fontWeight: 900, margin: '0 0 2px', letterSpacing: '-0.03em', color: '#000', textTransform: 'uppercase' }}>
-                            NEW CAREER POINT
-                        </h1>
-                        <p style={{ fontSize: '14px', color: '#222', margin: '2px 0 0', fontWeight: 800 }}>
-                            Quality Education & Guidance Center
-                        </p>
-                        <p style={{ fontSize: '12px', color: '#444', margin: '2px 0 0', fontWeight: 700 }}>
-                            Vaibhav Complex, Nagpur. | Ph: +91 84469 87338
-                        </p>
-                        <div style={{ fontSize: '11px', color: '#666', margin: '4px 0 0', display: 'flex', gap: '12px' }}>
-                            <span>Reg No: <strong>UDYAM-MH-20-0026811</strong></span>
-                            <span>GSTIN: <strong>27ADYPR1897B1ZV</strong></span>
-                        </div>
-                    </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{
-                        display: 'inline-block',
-                        padding: '6px 16px',
-                        backgroundColor: '#000',
-                        color: '#fff',
-                        borderRadius: '4px',
-                        fontSize: '12px',
-                        fontWeight: 900,
-                        textTransform: 'uppercase',
-                        marginBottom: '10px'
-                    }}>
-                        Payment Receipt
-                    </div>
-                    <div style={{ fontSize: '16px', color: '#000', fontWeight: 900 }}>#{receipt?.receiptNumber}</div>
-                    <div style={{ fontSize: '14px', color: '#444', fontWeight: 700 }}>{formattedDate}</div>
-                </div>
-            </div>
-
-            {/* Information Grid */}
-            <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(3, 1fr)',
-                gap: '24px',
-                padding: '16px 0',
-                borderTop: '2px solid #000',
-                borderBottom: '2px solid #000',
-                marginBottom: '16px'
-            }}>
-                <div>
-                    <label style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#4b5563', display: 'block', marginBottom: '6px' }}>Student Name</label>
-                    <p style={{ fontSize: '17px', fontWeight: 900, margin: 0, color: '#000' }}>{student?.firstName} {student?.lastName}</p>
-                    <p style={{ fontSize: '13px', margin: '4px 0 0', color: '#111', fontWeight: 700 }}>ID: {student?.admissionNumber}</p>
-                </div>
-                <div>
-                    <label style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#4b5563', display: 'block', marginBottom: '6px' }}>Course / Class Info</label>
-                    <p style={{ fontSize: '16px', fontWeight: 900, margin: 0, color: '#000' }}>{className?.replace('Grade', 'Class')}</p>
-                    <p style={{ fontSize: '13px', margin: '4px 0 0', color: '#111', fontWeight: 700 }}>Session: {enrollment.academicYear}</p>
-                </div>
-                <div>
-                    <label style={{ fontSize: '11px', fontWeight: 900, textTransform: 'uppercase', color: '#4b5563', display: 'block', marginBottom: '6px' }}>Transaction Details</label>
-                    <p style={{ fontSize: '16px', fontWeight: 900, margin: 0, color: '#000' }}>{paymentModeLabel}</p>
-                    <p style={{ fontSize: '13px', margin: '4px 0 0', color: '#111', fontWeight: 700 }}>By: {receiverName}</p>
-                </div>
-            </div>
-
-            {/* Main Content Area */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 0.8fr', gap: '24px', marginBottom: '20px' }}>
-                <div>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '2px solid #333' }}>
-                                <th style={{ textAlign: 'left', padding: '10px 0', fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: '#4b5563' }}>Fee Description</th>
-                                <th style={{ textAlign: 'right', padding: '10px 0', fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: '#4b5563' }}>Amount</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style={{ padding: '12px 0', fontSize: '15px', fontWeight: 700, color: '#000' }}>Academic Tuition Fee</td>
-                                <td style={{ padding: '12px 0', fontSize: '16px', fontWeight: 900, textAlign: 'right', color: '#000' }}>{formatCurrency(enrollment.netFee)}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    <div style={{ marginTop: '20px', padding: '16px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '8px' }}>
-                        <p style={{ fontSize: '12px', color: '#4b5563', marginBottom: '6px', fontStyle: 'italic', fontWeight: 800 }}>Amount in words:</p>
-                        <p style={{ fontSize: '15px', fontWeight: 900, margin: 0, color: '#000', textTransform: 'capitalize' }}>Rupees {amountInWords}</p>
-                    </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                    <div style={{ padding: '16px', backgroundColor: '#fafafa', border: '1px solid #ddd', borderRadius: '8px', fontSize: '14px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                            <span style={{ fontWeight: 700, color: '#4b5563' }}>Previous Due:</span>
-                            <span style={{ fontWeight: 800, color: '#000' }}>{formatCurrency(balanceBefore)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid #eee', paddingBottom: '8px' }}>
-                            <span style={{ fontWeight: 700, color: '#4b5563' }}>Paid Amount:</span>
-                            <span style={{ fontWeight: 900, color: '#059669', fontSize: '18px' }}>{formatCurrency(amountPaid)}</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '8px', color: '#dc2626' }}>
-                            <span style={{ fontWeight: 900 }}>Remaining Balance:</span>
-                            <span style={{ fontWeight: 900, fontSize: '18px' }}>{formatCurrency(balanceAfter)}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Footer */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '30px' }}>
-                <div style={{ textAlign: 'center', width: '200px' }}>
-                    <div style={{ borderTop: '2px solid #000', paddingTop: '10px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: '#000' }}>Parent / Guardian</span>
-                    </div>
-                </div>
-
-                {/* Received Stamp Mockup */}
-                <div style={{
-                    width: '70px',
-                    height: '70px',
-                    border: '3px solid #000',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    transform: 'rotate(-15deg)',
-                    color: '#000',
-                    fontSize: '11px',
-                    fontWeight: 1000,
-                    textAlign: 'center',
-                    opacity: 0.8
-                }}>
-                    PAID &<br />VERIFIED
-                </div>
-
-                <div style={{ textAlign: 'center', width: '200px' }}>
-                    <p style={{ fontSize: '15px', fontWeight: 900, margin: '0 0 6px', color: '#000' }}>{receiverName}</p>
-                    <div style={{ borderTop: '2px solid #000', paddingTop: '10px' }}>
-                        <span style={{ fontSize: '12px', fontWeight: 900, textTransform: 'uppercase', color: '#000' }}>Authorized Signatory</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style={{ marginTop: '20px', paddingTop: '12px', borderTop: '2px solid #000', textAlign: 'center' }}>
-                <p style={{ fontSize: '11px', color: '#000', margin: 0, fontWeight: 700 }}>This is a computer-generated document. | © {new Date().getFullYear()} New Career Point</p>
-            </div>
-
+        <>
+            {/* ── Screen + Print stylesheet ───────────────────────────────── */}
             <style>{`
+                .ncp-receipt {
+                    width: 100%;
+                    max-width: 720px;
+                    margin: 0 auto;
+                    background: #ffffff;
+                    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                    color: #111827;
+                    box-sizing: border-box;
+                }
+
+                /* ── Print rules ── */
                 @media print {
-                    .receipt-premium-container {
-                        border: 1px solid #000 !important;
-                        padding: 24px 32px !important;
-                        margin: 0 !important;
-                        width: 100% !important;
-                        max-width: 210mm !important;
-                        min-height: 145mm !important;
+                    body > * { display: none !important; }
+                    .ncp-receipt-print-wrapper { display: block !important; }
+
+                    .ncp-receipt {
+                        max-width: 100% !important;
+                        padding: 8mm 12mm !important;
                         box-shadow: none !important;
+                        border: none !important;
                     }
-                    * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-                    @page { 
-                        size: A5 landscape; 
-                        margin: 0; 
+
+                    * {
+                        -webkit-print-color-adjust: exact !important;
+                        print-color-adjust: exact !important;
+                    }
+
+                    @page {
+                        size: A4 portrait;
+                        margin: 8mm 10mm;
                     }
                 }
             `}</style>
-        </div>
+
+            <div className="ncp-receipt">
+
+                {/* ═══════════════════════  HEADER  ══════════════════════════ */}
+                <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'flex-start',
+                    paddingBottom: 16,
+                    borderBottom: '2px solid #111827',
+                }}>
+                    {/* Left — branding */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <img
+                            src="/images/logo_bw.jpg"
+                            alt="Logo"
+                            style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 6 }}
+                        />
+                        <div>
+                            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', color: '#111827', lineHeight: 1 }}>
+                                {INST.name}
+                            </div>
+                            <div style={{ fontSize: 11.5, fontWeight: 600, color: '#374151', marginTop: 3 }}>
+                                {INST.subtitle}
+                            </div>
+                            <div style={{ fontSize: 10.5, color: '#6b7280', marginTop: 3 }}>
+                                {INST.address} &nbsp;|&nbsp; {INST.phone}
+                            </div>
+                            <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 2, display: 'flex', gap: 12 }}>
+                                <span>Reg. No: <strong style={{ color: '#6b7280' }}>{INST.regNo}</strong></span>
+                                <span>GSTIN: <strong style={{ color: '#6b7280' }}>{INST.gstin}</strong></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right — receipt meta */}
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div style={{
+                            display: 'inline-block',
+                            border: '1.5px solid #111827',
+                            borderRadius: 4,
+                            padding: '3px 12px',
+                            fontSize: 10,
+                            fontWeight: 800,
+                            letterSpacing: '0.1em',
+                            textTransform: 'uppercase',
+                            color: '#111827',
+                            marginBottom: 8,
+                        }}>
+                            Payment Receipt
+                        </div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#111827', letterSpacing: '-0.02em' }}>
+                            #{receipt?.receiptNumber}
+                        </div>
+                        <div style={{ fontSize: 11.5, color: '#374151', fontWeight: 600, marginTop: 2 }}>
+                            {formattedDate}
+                        </div>
+                        {formattedTime && (
+                            <div style={{ fontSize: 10, color: '#9ca3af', marginTop: 1 }}>
+                                {formattedTime}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* ══════════════  STUDENT / COURSE / TRANSACTION  ═══════════ */}
+                <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr',
+                    gap: 0,
+                    margin: '16px 0',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: 8,
+                    overflow: 'hidden',
+                }}>
+                    {/* Student */}
+                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderRight: '1px solid #e5e7eb' }}>
+                        <FieldLabel>Student</FieldLabel>
+                        <FieldValue size={15} bold={800}>
+                            {student?.firstName} {student?.lastName}
+                        </FieldValue>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3, fontWeight: 500 }}>
+                            ID: {student?.admissionNumber}
+                        </div>
+                    </div>
+
+                    {/* Course */}
+                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderRight: '1px solid #e5e7eb' }}>
+                        <FieldLabel>Course / Class</FieldLabel>
+                        <FieldValue size={14} bold={700}>
+                            {className}
+                        </FieldValue>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3, fontWeight: 500 }}>
+                            Session: {enrollment.academicYear}
+                        </div>
+                    </div>
+
+                    {/* Transaction */}
+                    <div style={{ padding: '14px 16px', background: '#f9fafb' }}>
+                        <FieldLabel>Transaction</FieldLabel>
+                        <FieldValue size={14} bold={700}>
+                            {paymentModeLabel}
+                        </FieldValue>
+                        <div style={{ fontSize: 11, color: '#6b7280', marginTop: 3, fontWeight: 500 }}>
+                            Collected by: {receiverName}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ══════════════════  FEE TABLE + SUMMARY  ═════════════════ */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, marginBottom: 20 }}>
+
+                    {/* Left — fee table */}
+                    <div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                            <thead>
+                                <tr>
+                                    <th style={{
+                                        textAlign: 'left', padding: '8px 0 8px',
+                                        fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em',
+                                        textTransform: 'uppercase', color: '#6b7280',
+                                        borderBottom: '1px solid #d1d5db',
+                                    }}>
+                                        Fee Description
+                                    </th>
+                                    <th style={{
+                                        textAlign: 'right', padding: '8px 0 8px',
+                                        fontSize: 9.5, fontWeight: 700, letterSpacing: '0.07em',
+                                        textTransform: 'uppercase', color: '#6b7280',
+                                        borderBottom: '1px solid #d1d5db',
+                                    }}>
+                                        Amount
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '12px 0 8px', fontSize: 14, fontWeight: 600, color: '#111827' }}>
+                                        Academic Tuition Fee
+                                    </td>
+                                    <td style={{ padding: '12px 0 8px', fontSize: 14, fontWeight: 700, textAlign: 'right', color: '#111827' }}>
+                                        {formatCurrency(enrollment.netFee)}
+                                    </td>
+                                </tr>
+
+                                {payment.transactionRef && (
+                                    <tr>
+                                        <td colSpan={2} style={{ padding: '4px 0', fontSize: 11, color: '#9ca3af' }}>
+                                            Ref: {payment.transactionRef}
+                                            {payment.bankName ? ` · ${payment.bankName}` : ''}
+                                            {payment.chequeNumber ? ` · Cheque #${payment.chequeNumber}` : ''}
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+
+                        <Divider style={{ marginTop: 8, marginBottom: 14 }} />
+
+                        {/* Amount in words */}
+                        <div style={{
+                            padding: '10px 14px',
+                            background: '#f9fafb',
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 6,
+                        }}>
+                            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 4 }}>
+                                Amount in Words
+                            </div>
+                            <div style={{ fontSize: 13, fontWeight: 600, color: '#111827', textTransform: 'capitalize', fontStyle: 'italic' }}>
+                                Rupees {amountInWords} only
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right — summary panel */}
+                    <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', gap: 0 }}>
+                        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+
+                            {/* Previous balance */}
+                            <div style={{ padding: '11px 14px', borderBottom: '1px solid #e5e7eb' }}>
+                                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#9ca3af', marginBottom: 4 }}>
+                                    Previous Balance
+                                </div>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: '#374151' }}>
+                                    {formatCurrency(balanceBefore)}
+                                </div>
+                            </div>
+
+                            {/* Amount paid — highlighted */}
+                            <div style={{ padding: '11px 14px', background: '#ecfdf5', borderBottom: '1px solid #d1fae5' }}>
+                                <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#059669', marginBottom: 4 }}>
+                                    Amount Paid
+                                </div>
+                                <div style={{ fontSize: 22, fontWeight: 900, color: '#059669', letterSpacing: '-0.02em' }}>
+                                    {formatCurrency(amountPaid)}
+                                </div>
+                            </div>
+
+                            {/* Remaining balance */}
+                            <div style={{ padding: '11px 14px', background: isPaid ? '#f0fdf4' : '#fff' }}>
+                                <div style={{
+                                    fontSize: 9.5, fontWeight: 700, letterSpacing: '0.06em',
+                                    textTransform: 'uppercase',
+                                    color: isPaid ? '#059669' : '#9ca3af',
+                                    marginBottom: 4,
+                                }}>
+                                    {isPaid ? 'Status' : 'Remaining Balance'}
+                                </div>
+                                {isPaid ? (
+                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                        <div style={{ fontSize: 13, fontWeight: 800, color: '#059669' }}>
+                                            CLEARED — No Dues
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div style={{ fontSize: 18, fontWeight: 800, color: '#dc2626' }}>
+                                        {formatCurrency(balanceAfter)}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ═══════════════════════  FOOTER  ═══════════════════════════ */}
+                <Divider style={{ marginBottom: 20 }} />
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    {/* Parent signature */}
+                    <div style={{ textAlign: 'center', minWidth: 160 }}>
+                        <div style={{ height: 36 }} />
+                        <div style={{ borderTop: '1px solid #374151', paddingTop: 6 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
+                                Parent / Guardian
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Center — PAID stamp */}
+                    <div style={{
+                        width: 64, height: 64,
+                        border: '2px solid #374151',
+                        borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transform: 'rotate(-12deg)',
+                        fontSize: 10, fontWeight: 900,
+                        color: '#374151', textAlign: 'center',
+                        letterSpacing: '0.04em',
+                        flexShrink: 0,
+                    }}>
+                        PAID<br />VERIFIED
+                    </div>
+
+                    {/* Authorized signatory */}
+                    <div style={{ textAlign: 'center', minWidth: 160 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 4 }}>
+                            {receiverName}
+                        </div>
+                        <div style={{ borderTop: '1px solid #374151', paddingTop: 6 }}>
+                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
+                                Authorized Signatory
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* ═══════════════════  DISCLAIMER  ═══════════════════════════ */}
+                <div style={{ marginTop: 20, paddingTop: 10, borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
+                    <p style={{ fontSize: 9.5, color: '#9ca3af', margin: 0, fontWeight: 500 }}>
+                        This is a computer-generated document and does not require a physical signature. &nbsp;|&nbsp; © {new Date().getFullYear()} {INST.name}
+                    </p>
+                </div>
+
+            </div>
+        </>
     );
 }
