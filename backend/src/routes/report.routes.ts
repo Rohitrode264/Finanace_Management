@@ -11,6 +11,7 @@ router.get('/daily', permissionMiddleware('VIEW_REPORT', 'REPORT'), (req, res) =
 router.get('/enrollment/:enrollmentId/ledger', permissionMiddleware('VIEW_REPORT', 'REPORT'), (req, res) => reportController.getEnrollmentLedgerReport(req, res));
 router.get('/dashboard-stats', permissionMiddleware('VIEW_REPORT', 'REPORT'), (req, res) => reportController.getDashboardStats(req, res));
 router.get('/payment-dates', permissionMiddleware('VIEW_REPORT', 'REPORT'), (req, res) => reportController.getPaymentDates(req, res));
+router.get('/eagle-eye', permissionMiddleware('VIEW_REPORT', 'REPORT'), (req, res) => reportController.getEagleEye(req, res));
 router.post('/send-now', permissionMiddleware('VIEW_REPORT', 'REPORT'), (req, res) => reportController.sendNow(req, res));
 
 export default router;

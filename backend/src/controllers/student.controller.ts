@@ -13,7 +13,7 @@ const createStudentSchema = z.object({
     motherPhone: z.string().max(15).optional().or(z.literal('')),
     email: z.string().email().optional().or(z.literal('')),
     fatherName: z.string().min(1).max(100),
-    motherName: z.string().min(1).max(100),
+    motherName: z.string().max(100).optional().or(z.literal('')),
     schoolName: z.string().max(200).optional().or(z.literal('')),
     program: z.string().max(100).optional().or(z.literal('')),
     bloodGroup: z.string().optional().or(z.literal('')),
@@ -124,6 +124,15 @@ export class StudentController {
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to update status';
             sendError(res, message, 400);
+        }
+    }
+
+    async getSchools(req: Request, res: Response): Promise<void> {
+        try {
+            const schools = await studentService.getUniqueSchools();
+            sendSuccess(res, schools);
+        } catch {
+            sendError(res, 'Failed to fetch schools', 500);
         }
     }
 }

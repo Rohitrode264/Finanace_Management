@@ -12,7 +12,7 @@ export interface IStudent extends Document {
     motherPhone?: string;
     email?: string;
     fatherName: string;
-    motherName: string;
+    motherName?: string;
     schoolName?: string;
     program?: string;
     bloodGroup?: string;

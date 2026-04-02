@@ -11,7 +11,7 @@ export class StudentService {
         alternatePhone?: string;
         motherPhone?: string;
         fatherName: string;
-        motherName: string;
+        motherName?: string;
         schoolName?: string;
         program?: string;
         email?: string;
@@ -43,7 +43,7 @@ export class StudentService {
             alternatePhone: params.alternatePhone?.trim(),
             motherPhone: params.motherPhone?.trim(),
             fatherName: params.fatherName.trim(),
-            motherName: params.motherName.trim(),
+            motherName: params.motherName?.trim(),
             schoolName: params.schoolName?.trim(),
             program: params.program?.trim(),
             email: params.email?.trim(),
@@ -159,6 +159,11 @@ export class StudentService {
         ]);
 
         return { students, total };
+    }
+
+    async getUniqueSchools(): Promise<string[]> {
+        const schools = await Student.distinct('schoolName', { schoolName: { $ne: '', $exists: true } });
+        return schools.filter((s): s is string => !!s).sort();
     }
 }
 
