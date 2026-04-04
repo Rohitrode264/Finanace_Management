@@ -516,8 +516,9 @@ export function StudentsPage() {
                                                 <input
                                                     {...register('admissionNumber')}
                                                     className={`form-input ${errors.admissionNumber ? 'error' : ''}`}
-                                                    placeholder={fetchingId ? "Generating ID..." : "e.g. ADM-2024-001"}
-                                                    style={{ flex: 1, fontWeight: 600 }}
+                                                    placeholder={fetchingId ? "Generating ID..." : "Admission ID"}
+                                                    readOnly
+                                                    style={{ background: 'var(--bg-subtle)', cursor: 'not-allowed', color: 'var(--text-muted)', fontWeight: 600, flex: 1 }}
                                                 />
                                                 <button
                                                     type="button"
