@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, ChevronLeft, ChevronRight, X, BookOpen, Tag,
     Phone, User, MapPin, GraduationCap,
-    Calendar, Info
+    Calendar, Info, RefreshCw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { useForm } from 'react-hook-form';
@@ -45,7 +45,7 @@ const DetailField = ({ label, value, icon: Icon }: { label: string; value: strin
 const CURRENT_YEAR = `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`;
 
 const studentSchema = z.object({
-    admissionNumber: z.string().min(3, 'Admission number must be at least 3 characters').max(20),
+    admissionNumber: z.string().optional().or(z.literal('')),
     firstName: z.string().min(1, 'First name required').max(100),
     lastName: z.string().min(1, 'Last name required').max(100),
     phone: z.string().min(10, "Father's phone must be 10 digits"),
@@ -100,10 +100,12 @@ export function StudentsPage() {
     const [viewProfileDrawer, setViewProfileDrawer] = useState<boolean>(false);
     const [selectedStudentForView, setSelectedStudentForView] = useState<Student | null>(null);
     const [profileTab, setProfileTab] = useState<'overview' | 'academic' | 'personal'>('overview');
+    const [showConcessionModal, setShowConcessionModal] = useState(false);
+    const [enrollmentToConcede, setEnrollmentToConcede] = useState<Enrollment | null>(null);
 
     // Filter state
     const [search, setSearch] = useState('');
-    const [program, setProgram] = useState('');
+    const [program] = useState('');
     const [skip, setSkip] = useState(0);
     const LIMIT = 12;
     const [showCreate, setShowCreate] = useState(false);
@@ -114,20 +116,32 @@ export function StudentsPage() {
     const [wizardStep, setWizardStep] = useState<1 | 2 | 3>(1);
 
     // Step 1: Student details form
-    const { register, handleSubmit, formState: { errors }, reset, getValues } = useForm<StudentForm>({
+    const { register, handleSubmit, formState: { errors }, reset, getValues, setValue } = useForm<StudentForm>({
         resolver: zodResolver(studentSchema),
         defaultValues: { email: '', bloodGroup: '', phone: '', motherPhone: '', address: { street: '', city: '', state: '', zipCode: '' } }
     });
 
+    const [fetchingId, setFetchingId] = useState(false);
+    const refreshAdmissionId = async () => {
+        setFetchingId(true);
+        try {
+            const res = await studentsService.generateAdmissionId();
+            if (res.data?.data?.admissionId) {
+                setValue('admissionNumber', res.data.data.admissionId, { shouldValidate: true });
+            }
+        } catch (error) {
+            console.error('Failed to generate admission ID:', error);
+            toast.error('Failed to generate admission ID');
+        } finally {
+            setFetchingId(false);
+        }
+    };
+
     useEffect(() => {
         if (showCreate) {
-            studentsService.generateAdmissionId().then(res => {
-                if (res.data?.data?.admissionId) {
-                    reset({ ...getValues(), admissionNumber: res.data.data.admissionId });
-                }
-            }).catch(console.error);
+            refreshAdmissionId();
         }
-    }, [showCreate, reset, getValues]);
+    }, [showCreate]);
 
     // Step 2: Course Selection
     const [selectedClassId, setSelectedClassId] = useState<string>('');
@@ -160,6 +174,18 @@ export function StudentsPage() {
     });
     const uniqueSchools = schoolsRes?.data?.data || [];
 
+    const { data: citiesRes } = useQuery({
+        queryKey: ['unique-cities'],
+        queryFn: () => studentsService.getCities(),
+    });
+    const uniqueCities = citiesRes?.data?.data || [];
+
+    const { data: statesRes } = useQuery({
+        queryKey: ['unique-states'],
+        queryFn: () => studentsService.getStates(),
+    });
+    const uniqueStates = statesRes?.data?.data || [];
+
     const { data: studentsRes, isLoading } = useQuery({
         queryKey: ['students', skip, dSearch, program],
         queryFn: () => studentsService.list({ limit: LIMIT, skip, search: dSearch || undefined, program: program || undefined }),
@@ -175,7 +201,7 @@ export function StudentsPage() {
             // Apply auto-formatting to name fields
             const formattedData = {
                 ...studentData,
-                admissionNumber: studentData.admissionNumber.trim(),
+                admissionNumber: studentData.admissionNumber?.trim() || '',
                 firstName: formatName(studentData.firstName),
                 lastName: formatName(studentData.lastName),
                 fatherName: formatName(studentData.fatherName),
@@ -192,6 +218,12 @@ export function StudentsPage() {
             // Refresh schools list if a new school was added
             if (formattedData.schoolName) {
                 qc.invalidateQueries({ queryKey: ['unique-schools'] });
+            }
+            if (formattedData.address?.city) {
+                qc.invalidateQueries({ queryKey: ['unique-cities'] });
+            }
+            if (formattedData.address?.state) {
+                qc.invalidateQueries({ queryKey: ['unique-states'] });
             }
 
             // 2. Enroll if class selected (optional but recommended)
@@ -270,6 +302,19 @@ export function StudentsPage() {
         onError: () => toast.error('Failed to update status'),
     });
 
+    const applyConcessionMutation = useMutation({
+        mutationFn: (data: { concessionType: 'PERCENTAGE' | 'FLAT'; concessionValue: number; reason?: string }) =>
+            enrollmentService.applyConcession(enrollmentToConcede!._id, data),
+        onSuccess: (res) => {
+            const amount = (res.data?.data as any)?.concessionAmount;
+            toast.success(`Concession of ${formatCurrency(amount)} applied successfully`);
+            setShowConcessionModal(false);
+            setEnrollmentToConcede(null);
+            qc.invalidateQueries({ queryKey: ['student-enrollments', selectedStudentForView?._id] });
+        },
+        onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Failed to apply concession'),
+    });
+
     const handleViewStudent = (student: Student) => {
         setSelectedStudentForView(student);
         setViewProfileDrawer(true);
@@ -284,7 +329,7 @@ export function StudentsPage() {
                 actions={
                     <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                         <SearchInput value={search} onChange={setSearch} placeholder="Search students..." />
-                        <select
+                        {/* <select
                             value={program}
                             onChange={(e) => { setProgram(e.target.value); setSkip(0); }}
                             className="form-select"
@@ -295,7 +340,7 @@ export function StudentsPage() {
                                 <option key={c._id} value={c.name}>{c.name}</option>
                             ))}
                             <option value="Other">Other</option>
-                        </select>
+                        </select> */}
                         {canCreate && (
                             <button className="btn-primary" onClick={() => setShowCreate(true)} style={{ height: 42 }}>
                                 <Plus size={18} /> New Admission
@@ -443,7 +488,6 @@ export function StudentsPage() {
                     <motion.div
                         className="modal-overlay"
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        onClick={closeWizard}
                     >
                         <motion.div
                             className="modal-content"
@@ -472,10 +516,19 @@ export function StudentsPage() {
                                                 <input
                                                     {...register('admissionNumber')}
                                                     className={`form-input ${errors.admissionNumber ? 'error' : ''}`}
-                                                    placeholder="Generating ID..."
-                                                    readOnly
-                                                    style={{ background: 'var(--bg-subtle)', cursor: 'not-allowed', color: 'var(--text-muted)', fontWeight: 600 }}
+                                                    placeholder={fetchingId ? "Generating ID..." : "e.g. ADM-2024-001"}
+                                                    style={{ flex: 1, fontWeight: 600 }}
                                                 />
+                                                <button
+                                                    type="button"
+                                                    onClick={refreshAdmissionId}
+                                                    disabled={fetchingId}
+                                                    className="btn-secondary"
+                                                    style={{ padding: '0 12px', height: 42, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    title="Refresh Admission ID"
+                                                >
+                                                    <RefreshCw size={16} className={fetchingId ? 'spin' : ''} />
+                                                </button>
                                             </div>
                                             {errors.admissionNumber && <p className="form-error">{errors.admissionNumber.message}</p>}
                                         </div>
@@ -580,11 +633,17 @@ export function StudentsPage() {
                                         </div>
                                         <div>
                                             <label className="form-label">City</label>
-                                            <input {...register('address.city')} className="form-input" placeholder="City" />
+                                            <datalist id="cities-list">
+                                                {uniqueCities.map((c: string) => <option key={c} value={c} />)}
+                                            </datalist>
+                                            <input {...register('address.city')} list="cities-list" className="form-input" placeholder="City" />
                                         </div>
                                         <div>
                                             <label className="form-label">State</label>
-                                            <input {...register('address.state')} className="form-input" placeholder="State" />
+                                            <datalist id="states-list">
+                                                {uniqueStates.map((s: string) => <option key={s} value={s} />)}
+                                            </datalist>
+                                            <input {...register('address.state')} list="states-list" className="form-input" placeholder="State" />
                                         </div>
                                         <div>
                                             <label className="form-label">Zip/Pin Code</label>
@@ -702,7 +761,7 @@ export function StudentsPage() {
                                                         <input
                                                             type="text" className="form-input"
                                                             value={concessionReason} onChange={e => setConcessionReason(e.target.value)}
-                                                            placeholder="Reason for concession"
+                                                            placeholder="Reason for concession (Optional)"
                                                         />
                                                     </div>
                                                 </div>
@@ -716,7 +775,7 @@ export function StudentsPage() {
                                             type="button"
                                             className="btn-primary"
                                             onClick={() => admissionMutation.mutate(getValues())}
-                                            disabled={admissionMutation.isPending || (concessionType !== 'NONE' && (!concessionValue || !concessionReason))}
+                                            disabled={admissionMutation.isPending || (concessionType !== 'NONE' && (!concessionValue))}
                                         >
                                             {admissionMutation.isPending ? 'Processing...' : 'Complete Admission'}
                                         </button>
@@ -888,6 +947,18 @@ export function StudentsPage() {
                                                                     Pay Fee
                                                                 </button>
                                                             </div>
+                                                            {canConcession && e.status === 'ONGOING' && e.concessionType === 'NONE' && (
+                                                                <button
+                                                                    className="btn-secondary"
+                                                                    style={{ width: '100%', marginTop: 12, padding: '8px 12px', fontSize: '0.8125rem', borderColor: 'var(--warning)', color: 'var(--warning)' }}
+                                                                    onClick={() => {
+                                                                        setEnrollmentToConcede(e);
+                                                                        setShowConcessionModal(true);
+                                                                    }}
+                                                                >
+                                                                    <Tag size={14} style={{ marginRight: 6 }} /> Apply Concession
+                                                                </button>
+                                                            )}
                                                         </div>
                                                     ))}
                                                 </div>
@@ -1005,6 +1076,63 @@ export function StudentsPage() {
                     )
                 }
             </AnimatePresence >
-        </div >
+            {/* Concession Modal for Existing Enrollment */}
+            <AnimatePresence>
+                {showConcessionModal && enrollmentToConcede && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 1100 }}>
+                        <motion.div className="modal-content" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 24, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                                Apply Concession
+                            </h3>
+                            <div style={{ marginBottom: 20, padding: 12, background: 'var(--bg-subtle)', borderRadius: 12, fontSize: '0.875rem' }}>
+                                <div style={{ color: 'var(--text-muted)', marginBottom: 4 }}>Enrollment for:</div>
+                                <div style={{ fontWeight: 700 }}>{enrollmentToConcede.academicYear} — {templateLabel(enrollmentToConcede.academicClassId as any)}</div>
+                                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Current Net Fee:</span>
+                                    <strong style={{ color: 'var(--accent)' }}>{formatCurrency(enrollmentToConcede.netFee)}</strong>
+                                </div>
+                            </div>
+
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const type = formData.get('concessionType') as 'PERCENTAGE' | 'FLAT';
+                                const value = parseFloat(formData.get('concessionValue') as string);
+                                const reason = formData.get('reason') as string || 'Not specified';
+
+                                if (!value || value <= 0) {
+                                    toast.error('Please enter a valid concession value');
+                                    return;
+                                }
+
+                                applyConcessionMutation.mutate({ concessionType: type, concessionValue: value, reason });
+                            }}>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label className="form-label">Concession Type *</label>
+                                    <select name="concessionType" className="form-select" defaultValue="PERCENTAGE">
+                                        <option value="PERCENTAGE">Percentage (%)</option>
+                                        <option value="FLAT">Flat Amount (₹)</option>
+                                    </select>
+                                </div>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label className="form-label">Value *</label>
+                                    <input name="concessionValue" type="number" step="0.01" className="form-input" placeholder="e.g. 10 for 10% or 5000 for ₹5000" required />
+                                </div>
+                                <div style={{ marginBottom: 24 }}>
+                                    <label className="form-label">Reason (Optional)</label>
+                                    <textarea name="reason" className="form-input" rows={3} placeholder="Optional reason for concession" />
+                                </div>
+                                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                                    <button type="button" className="btn-secondary" onClick={() => setShowConcessionModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn-primary" disabled={applyConcessionMutation.isPending}>
+                                        {applyConcessionMutation.isPending ? 'Applying...' : 'Apply Concession'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
     );
 }

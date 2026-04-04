@@ -5,7 +5,7 @@ import { sendSuccess, sendError } from '../utils/apiResponse';
 import { z } from 'zod';
 
 const createStudentSchema = z.object({
-    admissionNumber: z.string().min(3).max(20),
+    admissionNumber: z.string().optional().or(z.literal('')),
     firstName: z.string().min(1).max(100),
     lastName: z.string().min(1).max(100),
     phone: z.string().min(10).max(15),
@@ -133,6 +133,24 @@ export class StudentController {
             sendSuccess(res, schools);
         } catch {
             sendError(res, 'Failed to fetch schools', 500);
+        }
+    }
+
+    async getCities(req: Request, res: Response): Promise<void> {
+        try {
+            const cities = await studentService.getUniqueCities();
+            sendSuccess(res, cities);
+        } catch {
+            sendError(res, 'Failed to fetch cities', 500);
+        }
+    }
+
+    async getStates(req: Request, res: Response): Promise<void> {
+        try {
+            const states = await studentService.getUniqueStates();
+            sendSuccess(res, states);
+        } catch {
+            sendError(res, 'Failed to fetch states', 500);
         }
     }
 }

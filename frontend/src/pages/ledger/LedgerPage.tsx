@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { SearchInput } from '../../components/ui/SearchInput';
@@ -16,6 +16,11 @@ import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Modal } from '../../components/ui/Modal';
 import { TruncatedText } from '../../components/ui/TruncatedText';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { Tag } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { enrollmentService } from '../../api/services/enrollment.service';
+import { usePermission } from '../../hooks/usePermission';
 
 export function LedgerPage() {
     const [searchParams] = useSearchParams();
@@ -28,6 +33,9 @@ export function LedgerPage() {
     const [downloading, setDownloading] = useState(false);
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
     const [selectedEnrollment, setSelectedEnrollment] = useState<Enrollment | null>(null);
+    const [showConcessionModal, setShowConcessionModal] = useState(false);
+    const qc = useQueryClient();
+    const canConcession = usePermission('APPLY_CONCESSION');
 
     // Auto-select if params present
     useEffect(() => {
@@ -55,6 +63,19 @@ export function LedgerPage() {
         student: Student;
         academicClass: AcademicClass;
     } | null>(null);
+
+    const applyConcessionMutation = useMutation({
+        mutationFn: (data: { concessionType: 'PERCENTAGE' | 'FLAT'; concessionValue: number; reason?: string }) =>
+            enrollmentService.applyConcession(selectedEnrollment!._id, data),
+        onSuccess: (res) => {
+            const amount = (res.data?.data as any)?.concessionAmount;
+            toast.success(`Concession of ${formatCurrency(amount)} applied successfully`);
+            setShowConcessionModal(false);
+            qc.invalidateQueries({ queryKey: ['enrollment-ledger', selectedEnrollment?._id] });
+            qc.invalidateQueries({ queryKey: ['student-enrollments', selectedStudent?._id] });
+        },
+        onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Failed to apply concession'),
+    });
 
     const downloadPDF = async () => {
         if (!receiptRef.current || !receiptData) return;
@@ -285,6 +306,15 @@ export function LedgerPage() {
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>OUTSTANDING BALANCE</div>
                                         <div style={{ fontSize: '1.5rem', fontWeight: 800, color: balance > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(balance)}</div>
                                     </div>
+                                    {canConcession && selectedEnrollment?.status === 'ONGOING' && selectedEnrollment?.concessionType === 'NONE' && (
+                                        <button
+                                            className="btn-secondary"
+                                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderColor: 'var(--warning)', color: 'var(--warning)' }}
+                                            onClick={() => setShowConcessionModal(true)}
+                                        >
+                                            <Tag size={16} /> Apply Concession
+                                        </button>
+                                    )}
                                 </div>
                             </div>
 
@@ -437,6 +467,64 @@ export function LedgerPage() {
                     @page { size: A5 landscape; margin: 0; }
                 }
             `}</style>
+
+            {/* Concession Modal */}
+            <AnimatePresence>
+                {showConcessionModal && selectedEnrollment && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 1100 }}>
+                        <motion.div className="modal-content" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} style={{ maxWidth: 480 }}>
+                            <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 24, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+                                Apply Concession
+                            </h3>
+                            <div style={{ marginBottom: 20, padding: 12, background: 'var(--bg-subtle)', borderRadius: 12, fontSize: '0.875rem' }}>
+                                <div style={{ color: 'var(--text-muted)', marginBottom: 4 }}>Enrollment for:</div>
+                                <div style={{ fontWeight: 700 }}>{selectedEnrollment.academicYear}</div>
+                                <div style={{ marginTop: 8, display: 'flex', justifyContent: 'space-between' }}>
+                                    <span>Current Net Fee:</span>
+                                    <strong style={{ color: 'var(--accent)' }}>{formatCurrency(selectedEnrollment.netFee)}</strong>
+                                </div>
+                            </div>
+
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                const formData = new FormData(e.currentTarget);
+                                const type = formData.get('concessionType') as 'PERCENTAGE' | 'FLAT';
+                                const value = parseFloat(formData.get('concessionValue') as string);
+                                const reason = formData.get('reason') as string || 'Not specified';
+
+                                if (!value || value <= 0) {
+                                    toast.error('Please enter a valid concession value');
+                                    return;
+                                }
+
+                                applyConcessionMutation.mutate({ concessionType: type, concessionValue: value, reason });
+                            }}>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label className="form-label">Concession Type *</label>
+                                    <select name="concessionType" className="form-select" defaultValue="PERCENTAGE">
+                                        <option value="PERCENTAGE">Percentage (%)</option>
+                                        <option value="FLAT">Flat Amount (₹)</option>
+                                    </select>
+                                </div>
+                                <div style={{ marginBottom: 16 }}>
+                                    <label className="form-label">Value *</label>
+                                    <input name="concessionValue" type="number" step="0.01" className="form-input" placeholder="e.g. 10 for 10% or 5000 for ₹5000" required />
+                                </div>
+                                <div style={{ marginBottom: 24 }}>
+                                    <label className="form-label">Reason (Optional)</label>
+                                    <textarea name="reason" className="form-input" rows={3} placeholder="Optional reason for concession" />
+                                </div>
+                                <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+                                    <button type="button" className="btn-secondary" onClick={() => setShowConcessionModal(false)}>Cancel</button>
+                                    <button type="submit" className="btn-primary" disabled={applyConcessionMutation.isPending}>
+                                        {applyConcessionMutation.isPending ? 'Applying...' : 'Apply Concession'}
+                                    </button>
+                                </div>
+                            </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }

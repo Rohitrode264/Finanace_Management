@@ -14,7 +14,7 @@ const createEnrollmentSchema = z.object({
 const concessionSchema = z.object({
     concessionType: z.enum(['PERCENTAGE', 'FLAT']),
     concessionValue: z.number().positive(),
-    reason: z.string().min(10, 'Reason must be at least 10 characters'),
+    reason: z.string().optional().default('No reason provided'),
 });
 
 export class EnrollmentController {

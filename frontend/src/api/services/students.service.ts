@@ -24,4 +24,6 @@ export const studentsService = {
         apiClient.patch<ApiResponse<Student>>(`/students/${id}/status`, { status }),
 
     getSchools: () => apiClient.get<ApiResponse<string[]>>('/students/meta/schools'),
+    getCities: () => apiClient.get<ApiResponse<string[]>>('/students/meta/cities'),
+    getStates: () => apiClient.get<ApiResponse<string[]>>('/students/meta/states'),
 };

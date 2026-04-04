@@ -17,7 +17,7 @@ export const enrollmentService = {
     // POST /enrollments/:id/concession — body: { concessionType, concessionValue, reason }
     applyConcession: (
         id: string,
-        data: { concessionType: 'PERCENTAGE' | 'FLAT'; concessionValue: number; reason: string }
+        data: { concessionType: 'PERCENTAGE' | 'FLAT'; concessionValue: number; reason?: string }
     ) => apiClient.post<ApiResponse<{ concessionAmount: number }>>(`/enrollments/${id}/concession`, data),
 
     // GET /enrollments/:id/ledger — returns { ledger, outstandingBalance }

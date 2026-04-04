@@ -8,7 +8,6 @@ import { usePermission } from '../../hooks/usePermission';
 import { enrollmentService } from '../../api/services/enrollment.service';
 import { studentsService } from '../../api/services/students.service';
 import { classesService } from '../../api/services/classes.service';
-import { categoryService } from '../../api/services/category.service';
 import { useDebounce } from '../../hooks/useDebounce';
 import { formatCurrency } from '../../utils/currency';
 import { format } from 'date-fns';
@@ -24,7 +23,7 @@ const CURRENT_YEAR = `${new Date().getFullYear()}-${String(new Date().getFullYea
 const concessionSchema = z.object({
     concessionType: z.enum(['PERCENTAGE', 'FLAT'] as const),
     concessionValue: z.number().positive('Value must be positive'),
-    reason: z.string().min(10, 'Reason must be at least 10 characters'),
+    reason: z.string().optional(),
 });
 type ConcessionForm = z.infer<typeof concessionSchema>;
 
@@ -45,7 +44,7 @@ export function EnrollmentsPage() {
     const [ledgerSkip, setLedgerSkip] = useState(0);
     const LEDGER_LIMIT = 10;
     const [ledgerSearch, setLedgerSearch] = useState('');
-    const [program, setProgram] = useState('');
+    const [program] = useState('');
     const dLedgerSearch = useDebounce(ledgerSearch, 400);
 
     // New Enrollment form state  
@@ -58,12 +57,6 @@ export function EnrollmentsPage() {
 
     const canCreate = usePermission('CREATE_ENROLLMENT');
     const canConcession = usePermission('APPLY_CONCESSION');
-
-    const { data: catRes } = useQuery({
-        queryKey: ['categories'],
-        queryFn: () => categoryService.list(),
-    });
-    const categories = catRes?.data?.data || [];
 
     // Student search results
     // Student search results for new enrollment
@@ -172,7 +165,7 @@ export function EnrollmentsPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Full Ledger & Enrollments</h3>
                             <div style={{ display: 'flex', gap: 12 }}>
-                                <select
+                                {/* <select
                                     value={program}
                                     onChange={(e) => { setProgram(e.target.value); setLedgerSkip(0); }}
                                     className="form-select"
@@ -183,7 +176,7 @@ export function EnrollmentsPage() {
                                         <option key={c._id} value={c.name}>{c.name}</option>
                                     ))}
                                     <option value="Other">Other</option>
-                                </select>
+                                </select> */}
                                 <div style={{ position: 'relative', width: 300 }}>
                                     <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                                     <input
@@ -386,7 +379,7 @@ export function EnrollmentsPage() {
             {/* New Enrollment Modal */}
             <AnimatePresence>
                 {showEnrollForm && (
-                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowEnrollForm(false)}>
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <motion.div
                             className="modal-content"
                             initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }}
@@ -539,7 +532,7 @@ export function EnrollmentsPage() {
             {/* Concession Modal */}
             <AnimatePresence>
                 {showConcessionForm && (
-                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowConcessionForm(false)}>
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                         <motion.div className="modal-content" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()}>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginBottom: 24, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
                                 Apply Concession
@@ -558,8 +551,8 @@ export function EnrollmentsPage() {
                                     {cErrors.concessionValue && <p className="form-error">{cErrors.concessionValue.message}</p>}
                                 </div>
                                 <div style={{ marginBottom: 24 }}>
-                                    <label className="form-label">Reason *</label>
-                                    <textarea {...regConcession('reason')} className={`form-input ${cErrors.reason ? 'error' : ''}`} rows={3} placeholder="Reason for concession (min 10 chars)" />
+                                    <label className="form-label">Reason (Optional)</label>
+                                    <textarea {...regConcession('reason')} className={`form-input ${cErrors.reason ? 'error' : ''}`} rows={3} placeholder="Optional reason for concession" />
                                     {cErrors.reason && <p className="form-error">{cErrors.reason.message}</p>}
                                 </div>
                                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>

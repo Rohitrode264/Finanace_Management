@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 
 export class StudentService {
     async createStudent(params: {
-        admissionNumber: string;
+        admissionNumber?: string;
         firstName: string;
         lastName: string;
         phone: string;
@@ -32,11 +32,18 @@ export class StudentService {
         ipAddress: string;
         userAgent: string;
     }): Promise<IStudent> {
-        const existing = await Student.findOne({ admissionNumber: params.admissionNumber.toUpperCase() });
-        if (existing) throw new Error(`Admission number ${params.admissionNumber} already exists`);
+        let admissionNumber = params.admissionNumber?.trim().toUpperCase();
+
+        // If no admission number provided, generate one automatically
+        if (!admissionNumber) {
+            admissionNumber = await this.generateAdmissionNumber();
+        }
+
+        const existing = await Student.findOne({ admissionNumber });
+        if (existing) throw new Error(`Admission number ${admissionNumber} already exists`);
 
         const student = await Student.create({
-            admissionNumber: params.admissionNumber.toUpperCase().trim(),
+            admissionNumber,
             firstName: params.firstName.trim(),
             lastName: params.lastName.trim(),
             phone: params.phone.trim(),
@@ -164,6 +171,16 @@ export class StudentService {
     async getUniqueSchools(): Promise<string[]> {
         const schools = await Student.distinct('schoolName', { schoolName: { $ne: '', $exists: true } });
         return schools.filter((s): s is string => !!s).sort();
+    }
+
+    async getUniqueCities(): Promise<string[]> {
+        const cities = await Student.distinct('address.city', { 'address.city': { $ne: '', $exists: true } });
+        return cities.filter((s): s is string => !!s).sort();
+    }
+
+    async getUniqueStates(): Promise<string[]> {
+        const states = await Student.distinct('address.state', { 'address.state': { $ne: '', $exists: true } });
+        return states.filter((s): s is string => !!s).sort();
     }
 }
 
