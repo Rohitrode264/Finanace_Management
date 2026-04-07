@@ -39,7 +39,7 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
             >
                 {/* ── Top row ─────────────────────────────────────── */}
                 <div style={{
-                    height: 56,
+                    height: 64,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -58,7 +58,7 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                         )}
                         <div style={{ minWidth: 0 }}>
                             <h1 style={{
-                                fontSize: '0.9375rem',
+                                fontSize: '1.0625rem',
                                 fontWeight: 700,
                                 color: 'var(--text-primary)',
                                 lineHeight: 1.1,
@@ -73,13 +73,13 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                                 <p
                                     className="header-subtitle"
                                     style={{
-                                        fontSize: '0.72rem',
+                                        fontSize: '0.8125rem',
                                         color: 'var(--text-muted)',
-                                        marginTop: 1,
+                                        marginTop: 2,
                                         whiteSpace: 'nowrap',
                                         overflow: 'hidden',
                                         textOverflow: 'ellipsis',
-                                        maxWidth: 320,
+                                        maxWidth: 400,
                                     }}
                                 >
                                     {subtitle}

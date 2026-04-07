@@ -8,6 +8,7 @@ export class StudentService {
         firstName: string;
         lastName: string;
         phone: string;
+        dob?: string;
         alternatePhone?: string;
         motherPhone?: string;
         fatherName: string;
@@ -47,6 +48,7 @@ export class StudentService {
             firstName: params.firstName.trim(),
             lastName: params.lastName.trim(),
             phone: params.phone.trim(),
+            dob: params.dob?.trim(),
             alternatePhone: params.alternatePhone?.trim(),
             motherPhone: params.motherPhone?.trim(),
             fatherName: params.fatherName.trim(),
@@ -98,6 +100,36 @@ export class StudentService {
         // Increment sequentially from the base value
         const nextVal = isNaN(lastVal) ? 1117 : lastVal + 7;
         return `${prefix}${nextVal}`;
+    }
+
+    async updateStudent(params: {
+        studentId: string;
+        data: any;
+        updatedBy: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<IStudent> {
+        const student = await Student.findById(params.studentId);
+        if (!student) throw new Error('Student not found');
+
+        const before = student.toObject() as unknown as Record<string, unknown>;
+        
+        const updates = Object.fromEntries(Object.entries(params.data).filter(([_, v]) => v != null));
+        Object.assign(student, updates);
+        await student.save();
+
+        auditService.logAsync({
+            actorId: params.updatedBy,
+            action: 'STUDENT_UPDATED',
+            entityType: 'STUDENT',
+            entityId: params.studentId,
+            before,
+            after: updates,
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+        });
+
+        return student as IStudent;
     }
 
     async updateStudentStatus(params: {

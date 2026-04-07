@@ -171,7 +171,7 @@ export function LedgerPage() {
                 subtitle="Search for a student to view their complete financial history and download past receipts."
             />
 
-            <div className="ledger-grid-layout" style={{ display: 'grid', gap: 24 }}>
+            <div className="ledger-grid-layout" style={{ marginTop: 24 }}>
                 {/* Left Panel: Search & Student Info */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
                     <div className="card" style={{ padding: 20 }}>
@@ -296,15 +296,15 @@ export function LedgerPage() {
                         </div>
                     ) : (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                            <div style={{ padding: '20px 24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div className="ledger-header">
                                 <div>
                                     <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Transaction History</h3>
                                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Detailed ledger for academic year {selectedEnrollment.academicYear}</p>
                                 </div>
-                                <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                                <div className="ledger-header-actions" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
                                     <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 600 }}>OUTSTANDING BALANCE</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 800, color: balance > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(balance)}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>OUTSTANDING BALANCE</div>
+                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: balance > 0 ? 'var(--danger)' : 'var(--success)', letterSpacing: '-0.02em' }}>{formatCurrency(balance)}</div>
                                     </div>
                                     {canConcession && selectedEnrollment?.status === 'ONGOING' && selectedEnrollment?.concessionType === 'NONE' && (
                                         <button
@@ -318,8 +318,9 @@ export function LedgerPage() {
                                 </div>
                             </div>
 
-                            <div className="table-container" style={{ borderRadius: 0, border: 'none', boxShadow: 'none' }}>
-                                <table className="data-table">
+                            <div className="table-container">
+                                {/* Desktop Table View */}
+                                <table className="data-table desktop-only">
                                     <thead>
                                         <tr>
                                             <th>Date & Time</th>
@@ -366,10 +367,10 @@ export function LedgerPage() {
                                                         </div>
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981', background: entry.type === 'CREDIT' ? 'rgba(16,185,129,0.02)' : 'transparent' }}>
-                                                        {entry.type === 'CREDIT' ? `₹${entry.amount.toLocaleString('en-IN')}` : '-'}
+                                                        {entry.type === 'CREDIT' ? formatCurrency(entry.amount) : '-'}
                                                     </td>
                                                     <td style={{ textAlign: 'right', fontWeight: 700, color: '#ef4444', background: entry.type === 'DEBIT' ? 'rgba(239,68,68,0.02)' : 'transparent' }}>
-                                                        {entry.type === 'DEBIT' ? `₹${entry.amount.toLocaleString('en-IN')}` : '-'}
+                                                        {entry.type === 'DEBIT' ? formatCurrency(entry.amount) : '-'}
                                                     </td>
                                                     <td className="no-print" style={{ textAlign: 'center' }}>
                                                         {entry.referenceType === 'PAYMENT' ? (
@@ -390,6 +391,47 @@ export function LedgerPage() {
                                         )}
                                     </tbody>
                                 </table>
+
+                                {/* Mobile Card View */}
+                                <div className="mobile-only">
+                                    {loadingLedger ? (
+                                        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading...</div>
+                                    ) : ledger.length === 0 ? (
+                                        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No transactions yet.</div>
+                                    ) : (
+                                        ledger.map((entry) => (
+                                            <div key={entry._id} className="ledger-mobile-card">
+                                                <div className="ledger-mobile-card-header">
+                                                    <span>{format(new Date(entry.createdAt), 'dd MMM yyyy, hh:mm a')}</span>
+                                                    <span className="badge badge-gray" style={{ fontSize: '0.6rem' }}>{entry.referenceType}</span>
+                                                </div>
+                                                <div className="ledger-mobile-card-title">
+                                                    {entry.description}
+                                                </div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                                                    Ref: {entry.referenceId}
+                                                </div>
+                                                <div className="ledger-mobile-card-footer">
+                                                    <div>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amount</div>
+                                                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: entry.type === 'CREDIT' ? '#10b981' : '#ef4444' }}>
+                                                            {entry.type === 'CREDIT' ? '+' : '-'}{formatCurrency(entry.amount)}
+                                                        </div>
+                                                    </div>
+                                                    {entry.referenceType === 'PAYMENT' && (
+                                                        <button
+                                                            className="btn-secondary"
+                                                            onClick={() => fetchAndShowReceipt(entry.referenceId)}
+                                                            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                                                        >
+                                                            <Download size={14} /> Receipt
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
                             </div>
                         </motion.div>
                     )}

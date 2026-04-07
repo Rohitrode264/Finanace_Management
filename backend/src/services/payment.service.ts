@@ -112,7 +112,12 @@ export class PaymentService {
             );
 
             if (allocation.length === 0 && input.amount > 0) {
-                throw new Error('No outstanding installments to allocate payment against');
+                throw new Error('No outstanding balance to allocate payment against');
+            }
+
+            const totalAllocated = allocation.reduce((sum, a) => sum + a.amount, 0);
+            if (totalAllocated < input.amount) {
+                throw new Error(`Payment rejected: Collected amount (${input.amount}) is greater than outstanding balance (${totalAllocated}).`);
             }
 
             // ── STEP 6: Insert Payment document ─────────────────────────────────────

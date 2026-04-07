@@ -6,10 +6,11 @@ const audit_service_1 = require("../services/audit.service");
 const apiResponse_1 = require("../utils/apiResponse");
 const zod_1 = require("zod");
 const createStudentSchema = zod_1.z.object({
-    admissionNumber: zod_1.z.string().min(3).max(20),
+    admissionNumber: zod_1.z.string().optional().or(zod_1.z.literal('')),
     firstName: zod_1.z.string().min(1).max(100),
     lastName: zod_1.z.string().min(1).max(100),
     phone: zod_1.z.string().min(10).max(15),
+    dob: zod_1.z.string().optional().or(zod_1.z.literal('')),
     alternatePhone: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
     motherPhone: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
     email: zod_1.z.string().email().optional().or(zod_1.z.literal('')),
@@ -34,6 +35,7 @@ const createStudentSchema = zod_1.z.object({
 const updateStatusSchema = zod_1.z.object({
     status: zod_1.z.enum(['ACTIVE', 'DROPPED', 'PASSED_OUT']),
 });
+const updateStudentSchema = createStudentSchema.omit({ admissionNumber: true });
 class StudentController {
     async createStudent(req, res) {
         const parsed = createStudentSchema.safeParse(req.body);
@@ -52,6 +54,27 @@ class StudentController {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to create student';
+            (0, apiResponse_1.sendError)(res, message, 400);
+        }
+    }
+    async updateStudent(req, res) {
+        const parsed = updateStudentSchema.safeParse(req.body);
+        if (!parsed.success) {
+            (0, apiResponse_1.sendError)(res, 'Validation failed', 422, 'VALIDATION_ERROR', parsed.error.format());
+            return;
+        }
+        try {
+            const meta = audit_service_1.auditService.extractRequestMeta(req);
+            const student = await student_service_1.studentService.updateStudent({
+                studentId: req.params['id'],
+                data: parsed.data,
+                updatedBy: req.user.userId,
+                ...meta,
+            });
+            (0, apiResponse_1.sendSuccess)(res, student, 200, 'Student updated successfully');
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to update student';
             (0, apiResponse_1.sendError)(res, message, 400);
         }
     }
@@ -132,6 +155,24 @@ class StudentController {
         }
         catch {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch schools', 500);
+        }
+    }
+    async getCities(req, res) {
+        try {
+            const cities = await student_service_1.studentService.getUniqueCities();
+            (0, apiResponse_1.sendSuccess)(res, cities);
+        }
+        catch {
+            (0, apiResponse_1.sendError)(res, 'Failed to fetch cities', 500);
+        }
+    }
+    async getStates(req, res) {
+        try {
+            const states = await student_service_1.studentService.getUniqueStates();
+            (0, apiResponse_1.sendSuccess)(res, states);
+        }
+        catch {
+            (0, apiResponse_1.sendError)(res, 'Failed to fetch states', 500);
         }
     }
 }

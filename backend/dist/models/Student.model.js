@@ -61,6 +61,10 @@ const StudentSchema = new mongoose_1.Schema({
         required: true,
         trim: true,
     },
+    dob: {
+        type: String,
+        trim: true,
+    },
     alternatePhone: {
         type: String,
         trim: true,

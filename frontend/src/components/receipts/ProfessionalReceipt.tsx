@@ -93,6 +93,40 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
                     box-sizing: border-box;
                 }
 
+                /* ── Mobile responsiveness ── */
+                @media (max-width: 640px) {
+                    .ncp-receipt {
+                        padding: 16px 12px !important;
+                    }
+                    .ncp-receipt-header {
+                        flex-direction: column !important;
+                        gap: 20px !important;
+                    }
+                    .ncp-receipt-header-meta {
+                        text-align: left !important;
+                        width: 100% !important;
+                    }
+                    .ncp-receipt-info-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    .ncp-receipt-summary-grid {
+                        grid-template-columns: 1fr !important;
+                        gap: 16px !important;
+                    }
+                    .ncp-receipt-footer {
+                        flex-direction: column !important;
+                        align-items: center !important;
+                        gap: 32px !important;
+                    }
+                    .ncp-receipt-footer > div {
+                        width: 100% !important;
+                    }
+                    .ncp-info-badge {
+                        display: block !important;
+                        margin-bottom: 8px !important;
+                    }
+                }
+
                 /* ── Print rules ── */
                 @media print {
                     body > * { display: none !important; }
@@ -120,7 +154,7 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
             <div className="ncp-receipt">
 
                 {/* ═══════════════════════  HEADER  ══════════════════════════ */}
-                <div style={{
+                <div className="ncp-receipt-header" style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
@@ -152,8 +186,8 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
                     </div>
 
                     {/* Right — receipt meta */}
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{
+                    <div className="ncp-receipt-header-meta" style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div className="ncp-info-badge" style={{
                             display: 'inline-block',
                             border: '1.5px solid #111827',
                             borderRadius: 4,
@@ -182,7 +216,7 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
                 </div>
 
                 {/* ══════════════  STUDENT / COURSE / TRANSACTION  ═══════════ */}
-                <div style={{
+                <div className="ncp-receipt-info-grid" style={{
                     display: 'grid',
                     gridTemplateColumns: '1fr 1fr 1fr',
                     gap: 0,
@@ -226,7 +260,7 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
                 </div>
 
                 {/* ══════════════════  FEE TABLE + SUMMARY  ═════════════════ */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, marginBottom: 20 }}>
+                <div className="ncp-receipt-summary-grid" style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: 24, marginBottom: 20 }}>
 
                     {/* Left — fee table */}
                     <div>
@@ -343,7 +377,7 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
 
                 {/* ═══════════════════════  FOOTER  ═══════════════════════════ */}
                 <Divider style={{ marginBottom: 20 }} />
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                <div className="ncp-receipt-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
                     {/* Parent signature */}
                     <div style={{ textAlign: 'center', minWidth: 160 }}>
                         <div style={{ height: 36 }} />

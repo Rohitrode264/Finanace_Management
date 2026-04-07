@@ -1,10 +1,11 @@
 import { IStudent } from '../models/Student.model';
 export declare class StudentService {
     createStudent(params: {
-        admissionNumber: string;
+        admissionNumber?: string;
         firstName: string;
         lastName: string;
         phone: string;
+        dob?: string;
         alternatePhone?: string;
         motherPhone?: string;
         fatherName: string;
@@ -31,6 +32,13 @@ export declare class StudentService {
     }): Promise<IStudent>;
     countTotal(): Promise<number>;
     generateAdmissionNumber(): Promise<string>;
+    updateStudent(params: {
+        studentId: string;
+        data: any;
+        updatedBy: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<IStudent>;
     updateStudentStatus(params: {
         studentId: string;
         status: IStudent['status'];
@@ -48,6 +56,8 @@ export declare class StudentService {
         total: number;
     }>;
     getUniqueSchools(): Promise<string[]>;
+    getUniqueCities(): Promise<string[]>;
+    getUniqueStates(): Promise<string[]>;
 }
 export declare const studentService: StudentService;
 //# sourceMappingURL=student.service.d.ts.map

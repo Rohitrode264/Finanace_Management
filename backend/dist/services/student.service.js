@@ -6,14 +6,20 @@ const audit_service_1 = require("./audit.service");
 const mongoose_1 = require("mongoose");
 class StudentService {
     async createStudent(params) {
-        const existing = await Student_model_1.Student.findOne({ admissionNumber: params.admissionNumber.toUpperCase() });
+        let admissionNumber = params.admissionNumber?.trim().toUpperCase();
+        // If no admission number provided, generate one automatically
+        if (!admissionNumber) {
+            admissionNumber = await this.generateAdmissionNumber();
+        }
+        const existing = await Student_model_1.Student.findOne({ admissionNumber });
         if (existing)
-            throw new Error(`Admission number ${params.admissionNumber} already exists`);
+            throw new Error(`Admission number ${admissionNumber} already exists`);
         const student = await Student_model_1.Student.create({
-            admissionNumber: params.admissionNumber.toUpperCase().trim(),
+            admissionNumber,
             firstName: params.firstName.trim(),
             lastName: params.lastName.trim(),
             phone: params.phone.trim(),
+            dob: params.dob?.trim(),
             alternatePhone: params.alternatePhone?.trim(),
             motherPhone: params.motherPhone?.trim(),
             fatherName: params.fatherName.trim(),
@@ -58,6 +64,26 @@ class StudentService {
         // Increment sequentially from the base value
         const nextVal = isNaN(lastVal) ? 1117 : lastVal + 7;
         return `${prefix}${nextVal}`;
+    }
+    async updateStudent(params) {
+        const student = await Student_model_1.Student.findById(params.studentId);
+        if (!student)
+            throw new Error('Student not found');
+        const before = student.toObject();
+        const updates = Object.fromEntries(Object.entries(params.data).filter(([_, v]) => v != null));
+        Object.assign(student, updates);
+        await student.save();
+        audit_service_1.auditService.logAsync({
+            actorId: params.updatedBy,
+            action: 'STUDENT_UPDATED',
+            entityType: 'STUDENT',
+            entityId: params.studentId,
+            before,
+            after: updates,
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+        });
+        return student;
     }
     async updateStudentStatus(params) {
         const student = await Student_model_1.Student.findById(params.studentId);
@@ -116,6 +142,14 @@ class StudentService {
     async getUniqueSchools() {
         const schools = await Student_model_1.Student.distinct('schoolName', { schoolName: { $ne: '', $exists: true } });
         return schools.filter((s) => !!s).sort();
+    }
+    async getUniqueCities() {
+        const cities = await Student_model_1.Student.distinct('address.city', { 'address.city': { $ne: '', $exists: true } });
+        return cities.filter((s) => !!s).sort();
+    }
+    async getUniqueStates() {
+        const states = await Student_model_1.Student.distinct('address.state', { 'address.state': { $ne: '', $exists: true } });
+        return states.filter((s) => !!s).sort();
     }
 }
 exports.StudentService = StudentService;

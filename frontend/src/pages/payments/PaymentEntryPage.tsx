@@ -480,6 +480,11 @@ export function PaymentEntryPage() {
                                             className="form-input"
                                             placeholder="Enter payment amount"
                                         />
+                                        {numericAmount > (enrollment.outstandingBalance ?? 0) && (
+                                            <div style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: 4 }}>
+                                                Amount cannot exceed the outstanding balance ({formatCurrency(enrollment.outstandingBalance ?? 0)}).
+                                            </div>
+                                        )}
                                     </div>
                                     <div>
                                         <label className="form-label">Payment Mode *</label>
@@ -563,6 +568,7 @@ export function PaymentEntryPage() {
                                     className="btn-primary"
                                     disabled={
                                         numericAmount <= 0 ||
+                                        numericAmount > (enrollment.outstandingBalance ?? 0) ||
                                         createPaymentMutation.isPending ||
                                         (paymentMode === 'CHEQUE' && (!bankName || !chequeNumber || !chequeDate))
                                     }

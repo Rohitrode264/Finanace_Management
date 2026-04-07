@@ -41,7 +41,7 @@
   --border-strong: #d1d1d6;
 
   /* Sidebar */
-  --sidebar-w: 260px;
+  --sidebar-w: 280px;
   --sidebar-bg: #f5f5f7;
   --sidebar-border: rgba(0, 0, 0, 0.05);
   --sidebar-text: #86868b;
@@ -69,7 +69,7 @@
   --radius-full: 9999px;
 
   /* Layout dimensions */
-  --header-h: 56px;
+  --header-h: 64px;
 
   /* Typography */
   --font-sans: 'Inter', -apple-system, system-ui, sans-serif;
@@ -85,22 +85,166 @@
    RESPONSIVE STRUCTURES (ADDED)
 ══════════════════════════════════════════════════════════════════════════════ */
 .page-content {
-  padding: 24px 24px 40px;
+  padding: 32px 32px 48px;
+  max-width: 100%;
+  margin: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
   .page-content {
     padding: 16px 16px 24px;
   }
 }
 
 .ledger-grid-layout {
+  display: grid;
   grid-template-columns: 1fr;
+  gap: 24px;
 }
 
 @media (min-width: 992px) {
   .ledger-grid-layout {
     grid-template-columns: 350px 1fr;
+  }
+}
+
+.admission-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+}
+
+@media (min-width: 1024px) {
+  .admission-grid-layout {
+    grid-template-columns: minmax(0, 1fr) 320px;
+  }
+}
+
+.admission-form-card {
+  padding: 40px;
+}
+
+@media (max-width: 640px) {
+  .admission-form-card {
+    padding: 24px 16px;
+  }
+
+  .step-label {
+    font-size: 0.6rem !important;
+  }
+
+  .step-num {
+    display: none;
+  }
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 24px;
+}
+
+/* Visibility Utilities */
+.desktop-only {
+  display: initial;
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+}
+
+/* Mobile Ledger Card */
+.ledger-mobile-card {
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ledger-mobile-card:last-child {
+  border-bottom: none;
+}
+
+.ledger-mobile-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+}
+
+.ledger-mobile-card-title {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ledger-mobile-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+.ledger-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .ledger-header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .ledger-header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .ledger-mobile-card-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .ledger-header h3 {
+    font-size: 1rem !important;
+  }
+}
+
+.table-container .data-table {
+  min-width: 800px;
+}
+
+@media (max-width: 640px) {
+  .table-container .data-table {
+    min-width: 600px;
   }
 }
 
@@ -767,11 +911,11 @@ a {
 }
 
 .sidebar-section-label {
-  font-size: 0.6rem;
+  font-size: 0.72rem;
   font-weight: 800;
   letter-spacing: 0.12em;
   color: var(--sidebar-section-color);
-  padding: 10px 16px 4px;
+  padding: 12px 16px 6px;
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -793,7 +937,7 @@ a {
   cursor: pointer;
   text-decoration: none;
   color: var(--sidebar-text);
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   font-weight: 500;
   transition: all var(--transition-fast);
   white-space: nowrap;
@@ -832,7 +976,7 @@ a {
 }
 
 .page-title {
-  font-size: 1.375rem;
+  font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-primary);
   line-height: 1.2;
@@ -840,7 +984,7 @@ a {
 }
 
 .page-subtitle {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   color: var(--text-muted);
   margin-top: 4px;
   line-height: 1.5;

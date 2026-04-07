@@ -14,7 +14,7 @@ const createEnrollmentSchema = zod_1.z.object({
 const concessionSchema = zod_1.z.object({
     concessionType: zod_1.z.enum(['PERCENTAGE', 'FLAT']),
     concessionValue: zod_1.z.number().positive(),
-    reason: zod_1.z.string().min(10, 'Reason must be at least 10 characters'),
+    reason: zod_1.z.string().optional().default('No reason provided'),
 });
 class EnrollmentController {
     async createEnrollment(req, res) {

@@ -15,6 +15,7 @@ router.get('/:id', permissionMiddleware('VIEW_STUDENT', 'STUDENT'), (req, res) =
 router.get('/meta/schools', permissionMiddleware('VIEW_STUDENT', 'STUDENT'), (req, res) => studentController.getSchools(req, res));
 router.get('/meta/cities', permissionMiddleware('VIEW_STUDENT', 'STUDENT'), (req, res) => studentController.getCities(req, res));
 router.get('/meta/states', permissionMiddleware('VIEW_STUDENT', 'STUDENT'), (req, res) => studentController.getStates(req, res));
+router.put('/:id', permissionMiddleware('UPDATE_STUDENT', 'STUDENT'), (req, res) => studentController.updateStudent(req, res));
 router.patch('/:id/status', permissionMiddleware('UPDATE_STUDENT', 'STUDENT'), (req, res) => studentController.updateStatus(req, res));
 
 export default router;

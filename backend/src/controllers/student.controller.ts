@@ -9,6 +9,7 @@ const createStudentSchema = z.object({
     firstName: z.string().min(1).max(100),
     lastName: z.string().min(1).max(100),
     phone: z.string().min(10).max(15),
+    dob: z.string().optional().or(z.literal('')),
     alternatePhone: z.string().max(15).optional().or(z.literal('')),
     motherPhone: z.string().max(15).optional().or(z.literal('')),
     email: z.string().email().optional().or(z.literal('')),
@@ -35,6 +36,8 @@ const updateStatusSchema = z.object({
     status: z.enum(['ACTIVE', 'DROPPED', 'PASSED_OUT']),
 });
 
+const updateStudentSchema = createStudentSchema.omit({ admissionNumber: true });
+
 export class StudentController {
     async createStudent(req: Request, res: Response): Promise<void> {
         const parsed = createStudentSchema.safeParse(req.body);
@@ -53,6 +56,28 @@ export class StudentController {
             sendSuccess(res, student, 201, 'Student created successfully');
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to create student';
+            sendError(res, message, 400);
+        }
+    }
+
+    async updateStudent(req: Request, res: Response): Promise<void> {
+        const parsed = updateStudentSchema.safeParse(req.body);
+        if (!parsed.success) {
+            sendError(res, 'Validation failed', 422, 'VALIDATION_ERROR', parsed.error.format());
+            return;
+        }
+
+        try {
+            const meta = auditService.extractRequestMeta(req);
+            const student = await studentService.updateStudent({
+                studentId: req.params['id']!,
+                data: parsed.data,
+                updatedBy: req.user!.userId,
+                ...meta,
+            });
+            sendSuccess(res, student, 200, 'Student updated successfully');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to update student';
             sendError(res, message, 400);
         }
     }

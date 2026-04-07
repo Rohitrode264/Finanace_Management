@@ -19,6 +19,8 @@ export const studentsService = {
     // POST /students — body: { admissionNumber, firstName, lastName, phone, fatherName, motherName }
     create: (data: Partial<Student>) => apiClient.post<ApiResponse<Student>>('/students', data),
 
+    update: (id: string, data: Partial<Student>) => apiClient.put<ApiResponse<Student>>(`/students/${id}`, data),
+
     // PATCH /students/:id/status — body: { status: 'ACTIVE'|'DROPPED'|'PASSED_OUT' }
     updateStatus: (id: string, status: StudentStatus) =>
         apiClient.patch<ApiResponse<Student>>(`/students/${id}/status`, { status }),

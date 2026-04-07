@@ -8,6 +8,9 @@ const LoginPage = lazy(() => import('../pages/auth/LoginPage').then(m => ({ defa
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage').then(m => ({ default: m.ForgotPasswordPage })));
 const DashboardPage = lazy(() => import('../pages/dashboard/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const StudentsPage = lazy(() => import('../pages/students/StudentsPage').then(m => ({ default: m.StudentsPage })));
+const NewAdmissionPage = lazy(() => import('../pages/students/NewAdmissionPage').then(m => ({ default: m.NewAdmissionPage })));
+const AdmissionPrintPage = lazy(() => import('../pages/students/AdmissionPrintPage').then(m => ({ default: m.AdmissionPrintPage })));
+const EditStudentPage = lazy(() => import('../pages/students/EditStudentPage').then(m => ({ default: m.EditStudentPage })));
 const ClassesPage = lazy(() => import('../pages/classes/ClassesPage').then(m => ({ default: m.ClassesPage })));
 const EnrollmentsPage = lazy(() => import('../pages/enrollments/EnrollmentsPage').then(m => ({ default: m.EnrollmentsPage })));
 const PaymentEntryPage = lazy(() => import('../pages/payments/PaymentEntryPage').then(m => ({ default: m.PaymentEntryPage })));
@@ -60,6 +63,9 @@ export const router = createBrowserRouter([
                     { index: true, element: <Navigate to="/dashboard" replace /> },
                     { path: '/dashboard', element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
                     { path: '/students', element: <SuspenseWrapper><StudentsPage /></SuspenseWrapper> },
+                    { path: '/students/new', element: <SuspenseWrapper><NewAdmissionPage /></SuspenseWrapper> },
+                    { path: '/students/:id/print', element: <SuspenseWrapper><AdmissionPrintPage /></SuspenseWrapper> },
+                    { path: '/students/:id/edit', element: <SuspenseWrapper><EditStudentPage /></SuspenseWrapper> },
                     { path: '/classes', element: <SuspenseWrapper><ClassesPage /></SuspenseWrapper> },
                     { path: '/classes/:classId/students', element: <SuspenseWrapper><ClassStudentsPage /></SuspenseWrapper> },
                     { path: '/enrollments', element: <SuspenseWrapper><EnrollmentsPage /></SuspenseWrapper> },

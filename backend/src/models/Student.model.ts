@@ -8,6 +8,7 @@ export interface IStudent extends Document {
     firstName: string;
     lastName: string;
     phone: string;
+    dob?: string;
     alternatePhone?: string;
     motherPhone?: string;
     email?: string;
@@ -59,6 +60,10 @@ const StudentSchema = new Schema<IStudent>(
         phone: {
             type: String,
             required: true,
+            trim: true,
+        },
+        dob: {
+            type: String,
             trim: true,
         },
         alternatePhone: {

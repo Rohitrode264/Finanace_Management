@@ -99,7 +99,7 @@ export function SidebarNav({ collapsed, onCollapse, mobileOpen, setMobileOpen }:
         <motion.aside
             className={`sidebar ${!mobileOpen ? 'mobile-hidden' : ''}`}
             style={{
-                width: collapsed ? 64 : 248,
+                width: collapsed ? 64 : 280,
                 transition: 'width 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
             }}
         >
