@@ -23,4 +23,16 @@ export const enrollmentService = {
     // GET /enrollments/:id/ledger — returns { ledger, outstandingBalance }
     getLedger: (id: string) =>
         apiClient.get<ApiResponse<{ ledger: LedgerEntry[]; outstandingBalance: number }>>(`/enrollments/${id}/ledger`),
+
+    // GET /enrollments/:id/transfer — body: { targetClassId, reason?, concessionType?, concessionValue? }
+    transfer: (id: string, data: { targetClassId: string; reason?: string; concessionType?: 'NONE' | 'PERCENTAGE' | 'FLAT'; concessionValue?: number }) =>
+        apiClient.post<ApiResponse<{ oldEnrollment: Enrollment; newEnrollment: Enrollment; amountCarriedOver: number; concessionAmount: number }>>(
+            `/enrollments/${id}/transfer`,
+            data
+        ),
+
+    // GET /enrollments/student/:studentId
+    getByStudentId: (studentId: string) =>
+        apiClient.get<ApiResponse<(Enrollment & { outstandingBalance: number })[]>>(`/enrollments/student/${studentId}`),
 };
+

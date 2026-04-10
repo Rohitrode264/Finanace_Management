@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer } from 'lucide-react';
+import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer, Trash2, AlertTriangle } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { studentsService } from '../../api/services/students.service';
@@ -21,6 +21,7 @@ import { Tag } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { enrollmentService } from '../../api/services/enrollment.service';
 import { usePermission } from '../../hooks/usePermission';
+import { paymentService } from '../../api/services/payment.service';
 
 export function LedgerPage() {
     const [searchParams] = useSearchParams();
@@ -36,8 +37,11 @@ export function LedgerPage() {
     const [showConcessionModal, setShowConcessionModal] = useState(false);
     const qc = useQueryClient();
     const canConcession = usePermission('APPLY_CONCESSION');
+    const canDeletePayment = usePermission('DELETE_PAYMENT');
 
-    // Auto-select if params present
+    // Deletion Modal State
+    const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+    const [deletePhase, setDeletePhase] = useState<0 | 1 | 2>(0);
     useEffect(() => {
         if (studentIdParam && !selectedStudent) {
             apiClient.get(`/students/${studentIdParam}`).then(res => {
@@ -75,6 +79,18 @@ export function LedgerPage() {
             qc.invalidateQueries({ queryKey: ['student-enrollments', selectedStudent?._id] });
         },
         onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Failed to apply concession'),
+    });
+
+    const deletePaymentMutation = useMutation({
+        mutationFn: (id: string) => paymentService.hardDelete(id),
+        onSuccess: (res) => {
+            toast.success(res.data.message || 'Payment deleted successfully');
+            setDeletingPaymentId(null);
+            setDeletePhase(0);
+            qc.invalidateQueries({ queryKey: ['enrollment-ledger', selectedEnrollment?._id] });
+            qc.invalidateQueries({ queryKey: ['student-enrollments', selectedStudent?._id] });
+        },
+        onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Failed to delete payment'),
     });
 
     const downloadPDF = async () => {
@@ -373,18 +389,37 @@ export function LedgerPage() {
                                                         {entry.type === 'DEBIT' ? formatCurrency(entry.amount) : '-'}
                                                     </td>
                                                     <td className="no-print" style={{ textAlign: 'center' }}>
-                                                        {entry.referenceType === 'PAYMENT' ? (
-                                                            <button
-                                                                onClick={() => fetchAndShowReceipt(entry.referenceId)}
-                                                                title="Download/Print Receipt"
-                                                                style={{
-                                                                    padding: 6, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-surface)',
-                                                                    cursor: 'pointer', color: '#6366f1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
-                                                                }}
-                                                            >
-                                                                <Download size={15} />
-                                                            </button>
-                                                        ) : '-'}
+                                                        <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                                                            {entry.referenceType === 'PAYMENT' ? (
+                                                                <>
+                                                                    <button
+                                                                        onClick={() => fetchAndShowReceipt(entry.referenceId)}
+                                                                        title="Download/Print Receipt"
+                                                                        style={{
+                                                                            padding: 6, borderRadius: 6, border: '1px solid var(--border)', background: 'var(--bg-surface)',
+                                                                            cursor: 'pointer', color: '#6366f1', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+                                                                        }}
+                                                                    >
+                                                                        <Download size={15} />
+                                                                    </button>
+                                                                    {canDeletePayment && (
+                                                                        <button
+                                                                            onClick={() => {
+                                                                                setDeletingPaymentId(entry.referenceId);
+                                                                                setDeletePhase(1);
+                                                                            }}
+                                                                            title="Delete Payment (Admin Only)"
+                                                                            style={{
+                                                                                padding: 6, borderRadius: 6, border: '1px solid #fee2e2', background: '#fffafa',
+                                                                                cursor: 'pointer', color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
+                                                                            }}
+                                                                        >
+                                                                            <Trash2 size={15} />
+                                                                        </button>
+                                                                    )}
+                                                                </>
+                                                            ) : '-'}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             ))
@@ -418,15 +453,29 @@ export function LedgerPage() {
                                                             {entry.type === 'CREDIT' ? '+' : '-'}{formatCurrency(entry.amount)}
                                                         </div>
                                                     </div>
-                                                    {entry.referenceType === 'PAYMENT' && (
-                                                        <button
-                                                            className="btn-secondary"
-                                                            onClick={() => fetchAndShowReceipt(entry.referenceId)}
-                                                            style={{ padding: '6px 12px', fontSize: '0.75rem' }}
-                                                        >
-                                                            <Download size={14} /> Receipt
-                                                        </button>
-                                                    )}
+                                                    <div style={{ display: 'flex', gap: 8 }}>
+                                                        {entry.referenceType === 'PAYMENT' && (
+                                                            <button
+                                                                className="btn-secondary"
+                                                                onClick={() => fetchAndShowReceipt(entry.referenceId)}
+                                                                style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                                                            >
+                                                                <Download size={14} /> Receipt
+                                                            </button>
+                                                        )}
+                                                        {entry.referenceType === 'PAYMENT' && canDeletePayment && (
+                                                            <button
+                                                                className="btn-secondary"
+                                                                onClick={() => {
+                                                                    setDeletingPaymentId(entry.referenceId);
+                                                                    setDeletePhase(1);
+                                                                }}
+                                                                style={{ padding: '6px 12px', fontSize: '0.75rem', borderColor: '#fee2e2', color: '#ef4444' }}
+                                                            >
+                                                                <Trash2 size={14} />
+                                                            </button>
+                                                        )}
+                                                    </div>
                                                 </div>
                                             </div>
                                         ))
@@ -563,6 +612,51 @@ export function LedgerPage() {
                                     </button>
                                 </div>
                             </form>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            {/* Deletion Double-Confirmation Modal */}
+            <AnimatePresence>
+                {deletePhase > 0 && deletingPaymentId && (
+                    <motion.div className="modal-overlay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} style={{ zIndex: 1200 }}>
+                        <motion.div className="modal-content" initial={{ scale: 0.95 }} animate={{ scale: 1 }} exit={{ scale: 0.95 }} onClick={e => e.stopPropagation()} style={{ maxWidth: 440 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 16 }}>
+                                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
+                                    <AlertTriangle size={32} />
+                                </div>
+                                
+                                {deletePhase === 1 ? (
+                                    <>
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Delete Payment Entry?</h3>
+                                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            You are about to delete this payment record. This will <strong>recalculate the student's balance</strong> and remove all associated financial trace.
+                                        </p>
+                                        <div style={{ display: 'flex', gap: 12, width: '100%', marginTop: 8 }}>
+                                            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setDeletePhase(0); setDeletingPaymentId(null); }}>Cancel</button>
+                                            <button className="btn-primary" style={{ flex: 1, background: '#ef4444', borderColor: '#ef4444' }} onClick={() => setDeletePhase(2)}>Continue</button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <>
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>Final Warning</h3>
+                                        <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                            This action is <strong>irreversible</strong>. The receipt and ledger entries will be permanently purged from the system. <br/>Are you absolutely sure?
+                                        </p>
+                                        <div style={{ display: 'flex', gap: 12, width: '100%', marginTop: 8 }}>
+                                            <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setDeletePhase(0); setDeletingPaymentId(null); }}>No, Keep It</button>
+                                            <button 
+                                                className="btn-primary" 
+                                                style={{ flex: 1, background: '#b91c1c', borderColor: '#b91c1c' }} 
+                                                onClick={() => deletePaymentMutation.mutate(deletingPaymentId)}
+                                                disabled={deletePaymentMutation.isPending}
+                                            >
+                                                {deletePaymentMutation.isPending ? 'Deleting...' : 'Yes, Delete Forever'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </motion.div>
                     </motion.div>
                 )}

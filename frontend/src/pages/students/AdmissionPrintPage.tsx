@@ -2,6 +2,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
 import { studentsService } from '../../api/services/students.service';
+import { enrollmentService } from '../../api/services/enrollment.service';
+import type { AcademicClass, ClassTemplate } from '../../types';
 
 export function AdmissionPrintPage() {
     const { id } = useParams<{ id: string }>();
@@ -10,6 +12,12 @@ export function AdmissionPrintPage() {
     const { data, isLoading } = useQuery({
         queryKey: ['student', id],
         queryFn: () => studentsService.getById(id!),
+        enabled: !!id,
+    });
+    
+    const { data: enrollRes } = useQuery({
+        queryKey: ['student-enrollments', id],
+        queryFn: () => enrollmentService.getByStudentId(id!),
         enabled: !!id,
     });
 
@@ -44,6 +52,20 @@ export function AdmissionPrintPage() {
     };
 
     const formattedDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    
+    // Find active enrollment
+    const enrollments = enrollRes?.data?.data || [];
+    const currentEnrollment = enrollments.find(e => e.status === 'ONGOING') || enrollments[0];
+    
+    let courseLabel = '—';
+    if (currentEnrollment) {
+        const ac = currentEnrollment.academicClassId as unknown as AcademicClass;
+        const t = ac?.templateId as unknown as ClassTemplate;
+        if (t) {
+            courseLabel = `${t.grade}${t.stream ? ` — ${t.stream}` : ''} (${t.board})`;
+            if (ac.section) courseLabel += ` — Sec ${ac.section}`;
+        }
+    }
 
     // A4 printing layout setup
     return (
@@ -247,7 +269,12 @@ export function AdmissionPrintPage() {
                         <div className="value-text">{student.schoolName || '—'}</div>
                     </div>
 
-                    <div style={{ gridColumn: 'span 2', padding: '14px 16px', background: '#f9fafb', borderTop: '1px solid #e5e7eb' }}>
+                    <div style={{ gridColumn: 'span 2', padding: '14px 16px', background: '#f9fafb', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
+                        <div className="label-title">Enrolled in (Course/Class)</div>
+                        <div className="value-text" style={{ fontSize: 16, color: '#6366f1' }}>{courseLabel}</div>
+                    </div>
+
+                    <div style={{ gridColumn: 'span 2', padding: '14px 16px', background: '#ffffff' }}>
                         <div className="label-title">Residential Address</div>
                         <div className="value-text" style={{ fontWeight: 600 }}>
                             {student.address?.street ? student.address.street + ', ' : ''}

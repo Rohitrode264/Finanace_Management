@@ -48,4 +48,24 @@ export class LedgerRepository {
     ): Promise<ILedgerEntry | null> {
         return LedgerEntry.findOne({ referenceId, referenceType }) as unknown as Promise<ILedgerEntry | null>;
     }
+
+    /**
+     * ADMIN ONLY: Hard delete ledger entries by reference.
+     * Bypasses Mongoose middleware to allow cleanup of "miss entries".
+     */
+    async hardDeleteByReference(
+        referenceId: string | Types.ObjectId,
+        referenceType: ILedgerEntry['referenceType'],
+        session?: ClientSession
+    ): Promise<void> {
+        // We use the native collection to bypass Mongoose's 'deleteMany' middlewares
+        // which block deletion to enforce immutability.
+        await LedgerEntry.collection.deleteMany(
+            {
+                referenceId: new Types.ObjectId(referenceId.toString()),
+                referenceType,
+            },
+            { session }
+        );
+    }
 }

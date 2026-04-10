@@ -2,8 +2,7 @@ import { useState, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import {
-    Search, CreditCard, CheckCircle2,
-    X, Printer, UserCheck, Download
+    Search, CreditCard, X, Printer, UserCheck, Download, CheckCircle2, Eye
 } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { useDebounce } from '../../hooks/useDebounce';
@@ -16,6 +15,7 @@ import type { Student, Enrollment, PaymentMode, ProcessPaymentResult, AcademicCl
 import apiClient from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
+import { Modal } from '../../components/ui/Modal';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 
@@ -41,6 +41,7 @@ export function PaymentEntryPage() {
     const [chequeDate, setChequeDate] = useState('');
     const [step, setStep] = useState<'search' | 'enrollment' | 'pay' | 'success'>('search');
     const [result, setResult] = useState<ProcessPaymentResult | null>(null);
+    const [showReceiptModal, setShowReceiptModal] = useState(false);
     const [selectedInsts, setSelectedInsts] = useState<number[]>([]);
     const dSearch = useDebounce(studentSearch, 500);
     const receiptRef = useRef<HTMLDivElement>(null);
@@ -474,9 +475,17 @@ export function PaymentEntryPage() {
                                     <div>
                                         <label className="form-label">Amount (₹) *</label>
                                         <input
-                                            type="number" min={1}
+                                            type="text"
+                                            inputMode="numeric"
                                             value={amount}
-                                            onChange={e => setAmount(e.target.value)}
+                                            onChange={e => {
+                                                // Strip everything except digits and a single decimal point
+                                                const raw = e.target.value.replace(/[^0-9.]/g, '');
+                                                // Prevent multiple decimal points
+                                                const parts = raw.split('.');
+                                                const cleaned = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : raw;
+                                                setAmount(cleaned);
+                                            }}
                                             className="form-input"
                                             placeholder="Enter payment amount"
                                         />
@@ -586,75 +595,81 @@ export function PaymentEntryPage() {
             {/* Step 4: Success */}
             {step === 'success' && result && selectedStudent && enrollment && (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
-                    <div className="card" style={{ padding: 24, textAlign: 'center', marginBottom: 24, background: 'rgba(16,185,129,0.04)' }}>
+                    <div className="card" style={{ padding: 48, textAlign: 'center', background: 'var(--bg-surface)', border: 'none', boxShadow: 'var(--shadow-xl)' }}>
                         <div style={{
-                            width: 56, height: 56, background: 'rgba(16,185,129,0.12)',
+                            width: 80, height: 80, background: 'rgba(16,185,129,0.1)',
                             borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            margin: '0 auto 12px',
+                            margin: '0 auto 24px',
                         }}>
-                            <CheckCircle2 size={28} color="#10b981" />
+                            <CheckCircle2 size={40} color="#10b981" />
                         </div>
-                        <h3 style={{ fontWeight: 800, fontSize: '1.25rem', marginBottom: 4 }}>Payment Successful!</h3>
-                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: 16 }}>
-                            Receipt <strong style={{ color: '#6366f1' }}>{result.receiptNumber}</strong> has been generated.
+                        <h2 style={{ fontWeight: 800, fontSize: '1.75rem', marginBottom: 8, color: 'var(--text-primary)' }}>Payment Collected!</h2>
+                        <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginBottom: 32, maxWidth: 400, margin: '0 auto 32px' }}>
+                            Transaction recorded for {selectedStudent.firstName}. Receipt <strong style={{ color: '#6366f1' }}>{result.receiptNumber}</strong> is ready.
                         </p>
-                        <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-                            <button className="btn-secondary" onClick={resetFlow} style={{ fontSize: '0.8125rem' }}>
-                                Record New Payment
+                        
+                        <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <button 
+                                className="btn-primary" 
+                                onClick={() => setShowReceiptModal(true)} 
+                                style={{ padding: '12px 24px', fontSize: '0.9375rem', gap: 10 }}
+                            >
+                                <Eye size={18} /> View & Print Receipt
                             </button>
-                            <button className="btn-secondary" onClick={downloadPDF} disabled={downloading} style={{ fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Download size={14} /> {downloading ? 'Generating...' : 'Download PDF'}
-                            </button>
-                            <button className="btn-primary" onClick={() => window.print()} style={{ fontSize: '0.8125rem', display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <Printer size={14} /> Print Receipt
+                            <button 
+                                className="btn-secondary" 
+                                onClick={resetFlow} 
+                                style={{ padding: '12px 24px', fontSize: '0.9375rem' }}
+                            >
+                                Record Another Payment
                             </button>
                         </div>
                     </div>
 
-                    <div id="receipt-print-area" ref={receiptRef} className="card" style={{
-                        padding: 0,
-                        overflow: 'hidden',
-                        background: '#fff',
-                        border: '1px solid var(--border)',
-                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)'
-                    }}>
-                        <ProfessionalReceipt
-                            receipt={result.receipt}
-                            payment={{
-                                ...result.payment,
-                                receivedBy: {
-                                    name: user?.name,
-                                    firstName: user?.name?.split(' ')[0]
-                                }
-                            } as any}
-                            enrollment={{
-                                ...enrollment,
-                                outstandingBalance: (enrollment.outstandingBalance ?? 0) - result.payment.amount
-                            } as any}
-                            student={selectedStudent}
-                            academicClass={(enrollment.academicClassId as any)}
-                        />
-                    </div>
-
-                    <style>{`
-                        @media print {
-                            body > *, #root > *, nav, aside, footer, .PageHeader, .btn-primary, .btn-secondary, h3, p, [role="status"] {
-                                display: none !important;
-                            }
-                            #receipt-print-area {
-                                display: block !important;
-                                position: fixed !important;
-                                top: 0 !important;
-                                left: 0 !important;
-                                width: 100% !important;
-                                border: none !important;
-                                box-shadow: none !important;
-                                padding: 0 !important;
-                                margin: 0 !important;
-                            }
-                            @page { size: A5 landscape; margin: 0; }
-                        }
-                    `}</style>
+                    <Modal
+                        isOpen={showReceiptModal}
+                        onClose={() => setShowReceiptModal(false)}
+                        title="Official Receipt Preview"
+                        maxWidth="max-w-5xl"
+                    >
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                                <button
+                                    className="btn-secondary"
+                                    onClick={downloadPDF}
+                                    disabled={downloading}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
+                                >
+                                    {downloading ? 'Generating...' : <><Download size={16} /> Download PDF</>}
+                                </button>
+                                <button
+                                    className="btn-primary"
+                                    onClick={() => window.print()}
+                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
+                                >
+                                    <Printer size={16} /> Print Receipt
+                                </button>
+                            </div>
+                            <div ref={receiptRef}>
+                                <ProfessionalReceipt
+                                    receipt={result.receipt}
+                                    payment={{
+                                        ...result.payment,
+                                        receivedBy: {
+                                            name: user?.name,
+                                            firstName: user?.name?.split(' ')[0]
+                                        }
+                                    } as any}
+                                    enrollment={{
+                                        ...enrollment,
+                                        outstandingBalance: (enrollment.outstandingBalance ?? 0) - result.payment.amount
+                                    } as any}
+                                    student={selectedStudent}
+                                    academicClass={(enrollment.academicClassId as any)}
+                                />
+                            </div>
+                        </div>
+                    </Modal>
                 </motion.div>
             )}
         </div>

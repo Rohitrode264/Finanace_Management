@@ -49,4 +49,8 @@ export class ReceiptRepository {
     async markCancelled(receiptId: string | Types.ObjectId, session: ClientSession): Promise<void> {
         await Receipt.findByIdAndUpdate(receiptId, { $set: { isCancelled: true } }, { session });
     }
+
+    async hardDeleteByPaymentId(paymentId: string | Types.ObjectId, session: ClientSession): Promise<void> {
+        await Receipt.deleteMany({ paymentId }, { session });
+    }
 }

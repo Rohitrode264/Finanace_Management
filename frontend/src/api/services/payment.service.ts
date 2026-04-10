@@ -24,4 +24,8 @@ export const paymentService = {
     // POST /payments/:id/cancel — body: { reason }
     cancel: (id: string, reason: string) =>
         apiClient.post<ApiResponse<{ success: boolean; message: string }>>(`/payments/${id}/cancel`, { reason }),
+
+    // DELETE /payments/:id/hard — admin only
+    hardDelete: (id: string) =>
+        apiClient.delete<ApiResponse<{ success: boolean; message: string }>>(`/payments/${id}/hard`),
 };

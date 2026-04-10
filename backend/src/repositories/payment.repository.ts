@@ -43,4 +43,8 @@ export class PaymentRepository {
     ): Promise<void> {
         await Payment.findByIdAndUpdate(paymentId, { $set: { receiptId } }, { session });
     }
+
+    async hardDelete(paymentId: string | Types.ObjectId, session: ClientSession): Promise<void> {
+        await Payment.findByIdAndDelete(paymentId, { session });
+    }
 }

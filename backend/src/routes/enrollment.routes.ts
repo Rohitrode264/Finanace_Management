@@ -13,5 +13,6 @@ router.get('/student/:studentId', permissionMiddleware('VIEW_ENROLLMENT', 'ENROL
 router.get('/:id', permissionMiddleware('VIEW_ENROLLMENT', 'ENROLLMENT'), (req, res) => enrollmentController.getEnrollment(req, res));
 router.post('/:id/concession', permissionMiddleware('APPLY_CONCESSION', 'CONCESSION'), (req, res) => enrollmentController.applyConcession(req, res));
 router.get('/:id/ledger', permissionMiddleware('VIEW_ENROLLMENT', 'ENROLLMENT'), (req, res) => enrollmentController.getEnrollmentLedger(req, res));
+router.post('/:id/transfer', permissionMiddleware('TRANSFER_ENROLLMENT', 'ENROLLMENT'), (req, res) => enrollmentController.transferEnrollment(req, res));
 
 export default router;

@@ -331,6 +331,65 @@ export class PaymentService {
             session.endSession();
         }
     }
+
+    /**
+     * ──────────────────────────────────────────────────────────────────────────
+     * ADMIN-ONLY: HARD DELETE PAYMENT
+     * ──────────────────────────────────────────────────────────────────────────
+     * - Atomically deletes Payment, LedgerEntry, and Receipt documents.
+     * - Bypasses Ledger immutability hooks using native collection methods.
+     * - Logs action in Audit Log.
+     */
+    async hardDeletePayment(params: {
+        paymentId: string;
+        adminId: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<{ success: boolean; message: string }> {
+        const session = await mongoose.startSession();
+        session.startTransaction();
+
+        try {
+            // 1. Fetch original payment details
+            const payment = await paymentRepo.findById(params.paymentId);
+            if (!payment) throw new Error('Payment not found');
+
+            // 2. Hard delete associated Ledger entries (bypassing middleware)
+            await ledgerRepo.hardDeleteByReference(payment._id, 'PAYMENT', session);
+
+            // 3. Hard delete associated Receipts
+            await receiptRepo.hardDeleteByPaymentId(payment._id, session);
+
+            // 4. Hard delete the Payment itself
+            await paymentRepo.hardDelete(payment._id, session);
+
+            await session.commitTransaction();
+
+            // 5. Audit Logging (Non-blocking)
+            auditService.logAsync({
+                actorId: params.adminId,
+                action: 'PAYMENT_HARD_DELETED',
+                entityType: 'PAYMENT',
+                entityId: params.paymentId,
+                before: {
+                    paymentId: payment._id,
+                    amount: payment.amount,
+                    enrollmentId: payment.enrollmentId,
+                    receiptId: payment.receiptId,
+                },
+                after: null, // Hard delete = nothing left
+                ipAddress: params.ipAddress,
+                userAgent: params.userAgent,
+            });
+
+            return { success: true, message: 'Payment and all associated financial records have been permanently deleted.' };
+        } catch (err) {
+            await session.abortTransaction();
+            throw err;
+        } finally {
+            session.endSession();
+        }
+    }
 }
 
 export const paymentService = new PaymentService();

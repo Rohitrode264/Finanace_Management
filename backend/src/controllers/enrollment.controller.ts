@@ -17,6 +17,13 @@ const concessionSchema = z.object({
     reason: z.string().optional().default('No reason provided'),
 });
 
+const transferSchema = z.object({
+    targetClassId: z.string().length(24, 'Invalid targetClassId'),
+    reason: z.string().optional(),
+    concessionType: z.enum(['NONE', 'PERCENTAGE', 'FLAT']).optional(),
+    concessionValue: z.number().min(0).optional(),
+});
+
 export class EnrollmentController {
     async createEnrollment(req: Request, res: Response): Promise<void> {
         const parsed = createEnrollmentSchema.safeParse(req.body);
@@ -98,6 +105,29 @@ export class EnrollmentController {
             const balance = await ledgerService.getBalance(req.params['id']!);
             sendSuccess(res, { ledger, outstandingBalance: balance });
         } catch { sendError(res, 'Failed to fetch ledger', 500); }
+    }
+
+    async transferEnrollment(req: Request, res: Response): Promise<void> {
+        const parsed = transferSchema.safeParse(req.body);
+        if (!parsed.success) { sendError(res, 'Validation failed', 422, 'VALIDATION_ERROR', parsed.error.format()); return; }
+        try {
+            const meta = auditService.extractRequestMeta(req);
+            const result = await enrollmentService.transferEnrollment({
+                sourceEnrollmentId: req.params['id']!,
+                targetClassId: parsed.data.targetClassId,
+                reason: parsed.data.reason,
+                concessionType: parsed.data.concessionType,
+                concessionValue: parsed.data.concessionValue,
+                transferredBy: req.user!.userId,
+                ...meta,
+            });
+            const parts: string[] = [];
+            if (result.concessionAmount > 0) parts.push(`₹${result.concessionAmount.toLocaleString('en-IN')} concession applied`);
+            if (result.amountCarriedOver > 0) parts.push(`₹${result.amountCarriedOver.toLocaleString('en-IN')} cash carried over`);
+            sendSuccess(res, result, 200, `Transfer successful. ${parts.join(', ') || 'No previous payments to carry over'}.`);
+        } catch (err) {
+            sendError(res, err instanceof Error ? err.message : 'Transfer failed', 400, 'TRANSFER_FAILED');
+        }
     }
 }
 
