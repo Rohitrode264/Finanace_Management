@@ -29,6 +29,9 @@ class PaymentRepository {
     async setReceiptId(paymentId, receiptId, session) {
         await Payment_model_1.Payment.findByIdAndUpdate(paymentId, { $set: { receiptId } }, { session });
     }
+    async hardDelete(paymentId, session) {
+        await Payment_model_1.Payment.findByIdAndDelete(paymentId, { session });
+    }
 }
 exports.PaymentRepository = PaymentRepository;
 //# sourceMappingURL=payment.repository.js.map

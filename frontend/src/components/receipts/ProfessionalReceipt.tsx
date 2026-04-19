@@ -130,7 +130,7 @@ export function ProfessionalReceipt({ receipt, payment, enrollment, student, aca
                 /* ── Print rules ── */
                 @media print {
                     body > * { display: none !important; }
-                    .ncp-receipt-print-wrapper, .ncp-receipt-print-wrapper * { display: block !important; }
+                    .ncp-receipt-print-wrapper { display: block !important; }
 
                     .ncp-receipt {
                         max-width: 100% !important;

@@ -63,6 +63,23 @@ export declare class PaymentService {
         success: boolean;
         message: string;
     }>;
+    /**
+     * ──────────────────────────────────────────────────────────────────────────
+     * ADMIN-ONLY: HARD DELETE PAYMENT
+     * ──────────────────────────────────────────────────────────────────────────
+     * - Atomically deletes Payment, LedgerEntry, and Receipt documents.
+     * - Bypasses Ledger immutability hooks using native collection methods.
+     * - Logs action in Audit Log.
+     */
+    hardDeletePayment(params: {
+        paymentId: string;
+        adminId: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<{
+        success: boolean;
+        message: string;
+    }>;
 }
 export declare const paymentService: PaymentService;
 //# sourceMappingURL=payment.service.d.ts.map

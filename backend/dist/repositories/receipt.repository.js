@@ -1,6 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReceiptRepository = void 0;
+const mongoose_1 = require("mongoose");
 const Receipt_model_1 = require("../models/Receipt.model");
 class ReceiptRepository {
     async create(data, session) {
@@ -45,6 +46,9 @@ class ReceiptRepository {
     }
     async markCancelled(receiptId, session) {
         await Receipt_model_1.Receipt.findByIdAndUpdate(receiptId, { $set: { isCancelled: true } }, { session });
+    }
+    async hardDeleteByPaymentId(paymentId, session) {
+        await Receipt_model_1.Receipt.collection.deleteMany({ paymentId: new mongoose_1.Types.ObjectId(paymentId.toString()) }, { session });
     }
 }
 exports.ReceiptRepository = ReceiptRepository;

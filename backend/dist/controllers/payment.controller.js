@@ -72,6 +72,21 @@ class PaymentController {
             (0, apiResponse_1.sendError)(res, message, 400, 'CANCEL_FAILED');
         }
     }
+    async hardDeletePayment(req, res) {
+        try {
+            const meta = audit_service_1.auditService.extractRequestMeta(req);
+            const result = await payment_service_1.paymentService.hardDeletePayment({
+                paymentId: req.params['id'],
+                adminId: req.user.userId,
+                ...meta,
+            });
+            (0, apiResponse_1.sendSuccess)(res, result, 200, result.message);
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : 'Hard delete failed';
+            (0, apiResponse_1.sendError)(res, message, 500, 'DELETE_FAILED');
+        }
+    }
 }
 exports.PaymentController = PaymentController;
 exports.paymentController = new PaymentController();

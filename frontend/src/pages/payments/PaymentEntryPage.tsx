@@ -46,6 +46,38 @@ export function PaymentEntryPage() {
     const dSearch = useDebounce(studentSearch, 500);
     const receiptRef = useRef<HTMLDivElement>(null);
     const [downloading, setDownloading] = useState(false);
+    const [receiptData, setReceiptData] = useState<any>(null);
+
+    const fetchAndShowReceipt = async (paymentId: string) => {
+        try {
+            const receiptRes = await apiClient.get(`/receipts/by-payment/${paymentId}`);
+            const receipt = receiptRes.data.data;
+            const paymentsRes = await apiClient.get(`/payments/${paymentId}`);
+            const payment = paymentsRes.data.data;
+
+            // Fetch the updated enrollment to get the fresh post-payment outstandingBalance
+            // This exactly mirrors the LedgerPage logic where selectedEnrollment is always fresh
+            const enrollmentRes = await apiClient.get(`/enrollments/${enrollment?._id}`);
+            const freshEnrollment = enrollmentRes.data.data;
+
+            const classId = typeof freshEnrollment?.academicClassId === 'object'
+                ? (freshEnrollment.academicClassId as any)._id
+                : freshEnrollment?.academicClassId;
+            const classRes = await apiClient.get(`/classes/${classId}`);
+
+            setReceiptData({
+                receipt,
+                payment,
+                enrollment: freshEnrollment,
+                student: selectedStudent,
+                academicClass: classRes.data.data
+            });
+            setShowReceiptModal(true);
+        } catch (err) {
+            console.error("Failed to fetch receipt:", err);
+            toast.error("Failed to generate receipt preview.");
+        }
+    };
 
     const { data: studentsRes, isLoading: sLoading } = useQuery({
         queryKey: ['student-search', dSearch],
@@ -99,7 +131,7 @@ export function PaymentEntryPage() {
     };
 
     const downloadPDF = async () => {
-        if (!receiptRef.current || !result || !enrollment || !selectedStudent) return;
+        if (!receiptRef.current || !receiptData) return;
         setDownloading(true);
         try {
             const element = receiptRef.current;
@@ -109,7 +141,7 @@ export function PaymentEntryPage() {
             const imgWidth = 210;
             const imgHeight = (canvas.height * imgWidth) / canvas.width;
             pdf.addImage(imgData, 'PNG', 0, 0, imgWidth, imgHeight);
-            pdf.save(`Receipt_${result.receiptNumber}.pdf`);
+            pdf.save(`Receipt_${receiptData.receipt.receiptNumber}.pdf`);
         } catch (error) {
             console.error('PDF Generation Error:', error);
             toast.error('Failed to generate PDF');
@@ -123,6 +155,44 @@ export function PaymentEntryPage() {
 
     return (
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
+            <style>{`
+                @media print {
+                    /* Hide everything by default */
+                    body > *, #root > *, .modal-overlay, .modal-header, .no-print, nav, aside, footer, button, .btn-primary, .btn-secondary {
+                        display: none !important;
+                    }
+                    /* ONLY show the receipt container and its ancestors if needed, 
+                       but since Modal is a portal, it is at the end of body. 
+                    */
+                    body > .modal-overlay {
+                        display: block !important;
+                        position: static !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        background: none !important;
+                    }
+                    .modal-content {
+                        display: block !important;
+                        position: static !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        max-width: none !important;
+                        padding: 0 !important;
+                        margin: 0 !important;
+                        border: none !important;
+                        box-shadow: none !important;
+                        background: none !important;
+                        transform: none !important;
+                        overflow: visible !important;
+                    }
+                    .receipt-premium-container {
+                        display: block !important;
+                    }
+                    /* Ensure background graphics are printed */
+                    * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
+                    @page { size: A5 landscape; margin: 0; }
+                }
+            `}</style>
             <PageHeader
                 title="Fee Collection Interface"
                 subtitle="Record payments and generate receipts for student enrollments."
@@ -611,7 +681,7 @@ export function PaymentEntryPage() {
                         <div style={{ display: 'flex', gap: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
                             <button 
                                 className="btn-primary" 
-                                onClick={() => setShowReceiptModal(true)} 
+                                onClick={() => fetchAndShowReceipt(result.payment._id)} 
                                 style={{ padding: '12px 24px', fontSize: '0.9375rem', gap: 10 }}
                             >
                                 <Eye size={18} /> View & Print Receipt
@@ -632,43 +702,30 @@ export function PaymentEntryPage() {
                         title="Official Receipt Preview"
                         maxWidth="max-w-5xl"
                     >
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
-                                <button
-                                    className="btn-secondary"
-                                    onClick={downloadPDF}
-                                    disabled={downloading}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
-                                >
-                                    {downloading ? 'Generating...' : <><Download size={16} /> Download PDF</>}
-                                </button>
-                                <button
-                                    className="btn-primary"
-                                    onClick={() => window.print()}
-                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
-                                >
-                                    <Printer size={16} /> Print Receipt
-                                </button>
+                        {receiptData && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                                    <button
+                                        className="btn-secondary"
+                                        onClick={downloadPDF}
+                                        disabled={downloading}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
+                                    >
+                                        {downloading ? 'Generating...' : <><Download size={16} /> Download PDF</>}
+                                    </button>
+                                    <button
+                                        className="btn-primary"
+                                        onClick={() => window.print()}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
+                                    >
+                                        <Printer size={16} /> Print Receipt
+                                    </button>
+                                </div>
+                                <div ref={receiptRef}>
+                                    <ProfessionalReceipt {...receiptData} />
+                                </div>
                             </div>
-                            <div ref={receiptRef}>
-                                <ProfessionalReceipt
-                                    receipt={result.receipt}
-                                    payment={{
-                                        ...result.payment,
-                                        receivedBy: {
-                                            name: user?.name,
-                                            firstName: user?.name?.split(' ')[0]
-                                        }
-                                    } as any}
-                                    enrollment={{
-                                        ...enrollment,
-                                        outstandingBalance: (enrollment.outstandingBalance ?? 0) - result.payment.amount
-                                    } as any}
-                                    student={selectedStudent}
-                                    academicClass={(enrollment.academicClassId as any)}
-                                />
-                            </div>
-                        </div>
+                        )}
                     </Modal>
                 </motion.div>
             )}

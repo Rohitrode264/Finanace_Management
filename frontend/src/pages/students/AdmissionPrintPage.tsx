@@ -67,6 +67,8 @@ export function AdmissionPrintPage() {
         }
     }
 
+    const creatorName = student.createdBy && typeof student.createdBy === 'object' ? (student.createdBy as any).name || 'Administrator' : 'Administrator';
+
     // A4 printing layout setup
     return (
         <>
@@ -311,7 +313,9 @@ export function AdmissionPrintPage() {
                     </div>
 
                     <div style={{ textAlign: 'center', minWidth: 160 }}>
-                        <div style={{ height: 36 }} />
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 4 }}>
+                            {creatorName}
+                        </div>
                         <div style={{ borderTop: '1px solid #374151', paddingTop: 6 }}>
                             <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
                                 Authorized Signatory
@@ -320,10 +324,13 @@ export function AdmissionPrintPage() {
                     </div>
                 </div>
 
-                <div style={{ marginTop: 20, paddingTop: 10, borderTop: '1px solid #e5e7eb', textAlign: 'center' }}>
-                    <p style={{ fontSize: 9.5, color: '#9ca3af', margin: 0, fontWeight: 500 }}>
+                <div style={{ marginTop: 20, paddingTop: 10, borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 9.5, color: '#9ca3af', fontWeight: 500, textAlign: 'left' }}>
+                        Registered By: {creatorName}
+                    </div>
+                    <div style={{ fontSize: 9.5, color: '#9ca3af', fontWeight: 500, textAlign: 'right' }}>
                         This document serves as proof of admission record. Keep safe for future reference. &nbsp;|&nbsp; © {new Date().getFullYear()} {INST.name}
-                    </p>
+                    </div>
                 </div>
             </div>
         </>

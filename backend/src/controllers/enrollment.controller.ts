@@ -42,7 +42,7 @@ export class EnrollmentController {
             const enrollment = await enrollmentService.findById(req.params['id']!);
             if (!enrollment) { sendError(res, 'Enrollment not found', 404); return; }
             const balance = await ledgerService.getBalance(req.params['id']!);
-            sendSuccess(res, { ...enrollment, outstandingBalance: balance });
+            sendSuccess(res, { ...enrollment.toJSON(), outstandingBalance: balance });
         } catch { sendError(res, 'Failed to fetch enrollment', 500); }
     }
 

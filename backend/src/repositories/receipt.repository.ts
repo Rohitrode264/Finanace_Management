@@ -51,6 +51,6 @@ export class ReceiptRepository {
     }
 
     async hardDeleteByPaymentId(paymentId: string | Types.ObjectId, session: ClientSession): Promise<void> {
-        await Receipt.deleteMany({ paymentId }, { session });
+        await Receipt.collection.deleteMany({ paymentId: new Types.ObjectId(paymentId.toString()) }, { session });
     }
 }

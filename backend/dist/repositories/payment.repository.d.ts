@@ -6,5 +6,6 @@ export declare class PaymentRepository {
     findByEnrollment(enrollmentId: string | Types.ObjectId): Promise<IPayment[]>;
     cancelPayment(paymentId: string | Types.ObjectId, cancelledBy: string | Types.ObjectId, reason: string, session: ClientSession): Promise<IPayment | null>;
     setReceiptId(paymentId: string | Types.ObjectId, receiptId: string | Types.ObjectId, session: ClientSession): Promise<void>;
+    hardDelete(paymentId: string | Types.ObjectId, session: ClientSession): Promise<void>;
 }
 //# sourceMappingURL=payment.repository.d.ts.map

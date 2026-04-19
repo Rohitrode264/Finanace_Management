@@ -6,6 +6,7 @@ export declare class EnrollmentController {
     getAllEnrollments(req: Request, res: Response): Promise<void>;
     applyConcession(req: Request, res: Response): Promise<void>;
     getEnrollmentLedger(req: Request, res: Response): Promise<void>;
+    transferEnrollment(req: Request, res: Response): Promise<void>;
 }
 export declare const enrollmentController: EnrollmentController;
 //# sourceMappingURL=enrollment.controller.d.ts.map

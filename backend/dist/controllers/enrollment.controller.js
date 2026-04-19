@@ -16,6 +16,12 @@ const concessionSchema = zod_1.z.object({
     concessionValue: zod_1.z.number().positive(),
     reason: zod_1.z.string().optional().default('No reason provided'),
 });
+const transferSchema = zod_1.z.object({
+    targetClassId: zod_1.z.string().length(24, 'Invalid targetClassId'),
+    reason: zod_1.z.string().optional(),
+    concessionType: zod_1.z.enum(['NONE', 'PERCENTAGE', 'FLAT']).optional(),
+    concessionValue: zod_1.z.number().min(0).optional(),
+});
 class EnrollmentController {
     async createEnrollment(req, res) {
         const parsed = createEnrollmentSchema.safeParse(req.body);
@@ -40,7 +46,7 @@ class EnrollmentController {
                 return;
             }
             const balance = await ledger_service_1.ledgerService.getBalance(req.params['id']);
-            (0, apiResponse_1.sendSuccess)(res, { ...enrollment, outstandingBalance: balance });
+            (0, apiResponse_1.sendSuccess)(res, { ...enrollment.toJSON(), outstandingBalance: balance });
         }
         catch {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch enrollment', 500);
@@ -101,6 +107,34 @@ class EnrollmentController {
         }
         catch {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch ledger', 500);
+        }
+    }
+    async transferEnrollment(req, res) {
+        const parsed = transferSchema.safeParse(req.body);
+        if (!parsed.success) {
+            (0, apiResponse_1.sendError)(res, 'Validation failed', 422, 'VALIDATION_ERROR', parsed.error.format());
+            return;
+        }
+        try {
+            const meta = audit_service_1.auditService.extractRequestMeta(req);
+            const result = await enrollment_service_1.enrollmentService.transferEnrollment({
+                sourceEnrollmentId: req.params['id'],
+                targetClassId: parsed.data.targetClassId,
+                reason: parsed.data.reason,
+                concessionType: parsed.data.concessionType,
+                concessionValue: parsed.data.concessionValue,
+                transferredBy: req.user.userId,
+                ...meta,
+            });
+            const parts = [];
+            if (result.concessionAmount > 0)
+                parts.push(`₹${result.concessionAmount.toLocaleString('en-IN')} concession applied`);
+            if (result.amountCarriedOver > 0)
+                parts.push(`₹${result.amountCarriedOver.toLocaleString('en-IN')} cash carried over`);
+            (0, apiResponse_1.sendSuccess)(res, result, 200, `Transfer successful. ${parts.join(', ') || 'No previous payments to carry over'}.`);
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, err instanceof Error ? err.message : 'Transfer failed', 400, 'TRANSFER_FAILED');
         }
     }
 }

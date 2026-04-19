@@ -7,6 +7,7 @@ import { auditService } from './audit.service';
 import { generateReceiptNumber } from '../utils/receiptNumber';
 import { IPayment, PaymentMode, IPaymentAllocation } from '../models/Payment.model';
 import { IReceipt } from '../models/Receipt.model';
+import { LedgerEntry, ILedgerEntry } from '../models/LedgerEntry.model';
 import { LedgerRepository } from '../repositories/ledger.repository';
 import { AcademicClass } from '../models/AcademicClass.model';
 
@@ -362,6 +363,37 @@ export class PaymentService {
 
             // 4. Hard delete the Payment itself
             await paymentRepo.hardDelete(payment._id, session);
+
+            // 4.5. Propagate payment deletion to any transferred enrollments
+            let currentEnrollmentId = payment.enrollmentId;
+            let currentReduction = payment.amount;
+
+            while (currentReduction > 0) {
+                const adjEntry = await mongoose.model<ILedgerEntry>('LedgerEntry').findOne({
+                    referenceId: currentEnrollmentId,
+                    referenceType: 'ADJUSTMENT' // This identifies a transfer carry-over
+                }).session(session);
+
+                if (!adjEntry) {
+                    break;
+                }
+
+                const newAmount = Math.max(0, adjEntry.amount - currentReduction);
+                const actualReduction = adjEntry.amount - newAmount;
+
+                if (newAmount <= 0) {
+                    await LedgerEntry.collection.deleteOne({ _id: adjEntry._id }, { session });
+                } else {
+                    await LedgerEntry.collection.updateOne(
+                        { _id: adjEntry._id },
+                        { $set: { amount: newAmount } },
+                        { session }
+                    );
+                }
+
+                currentEnrollmentId = adjEntry.enrollmentId;
+                currentReduction = actualReduction;
+            }
 
             await session.commitTransaction();
 

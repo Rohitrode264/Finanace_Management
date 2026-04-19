@@ -41,6 +41,7 @@ const receipt_repository_1 = require("../repositories/receipt.repository");
 const ledger_service_1 = require("./ledger.service");
 const audit_service_1 = require("./audit.service");
 const receiptNumber_1 = require("../utils/receiptNumber");
+const LedgerEntry_model_1 = require("../models/LedgerEntry.model");
 const ledger_repository_1 = require("../repositories/ledger.repository");
 const AcademicClass_model_1 = require("../models/AcademicClass.model");
 const enrollmentRepo = new enrollment_repository_1.EnrollmentRepository();
@@ -272,6 +273,77 @@ class PaymentService {
                 userAgent: params.userAgent,
             });
             return { success: true, message: 'Payment cancelled successfully. Reverse ledger entry created.' };
+        }
+        catch (err) {
+            await session.abortTransaction();
+            throw err;
+        }
+        finally {
+            session.endSession();
+        }
+    }
+    /**
+     * ──────────────────────────────────────────────────────────────────────────
+     * ADMIN-ONLY: HARD DELETE PAYMENT
+     * ──────────────────────────────────────────────────────────────────────────
+     * - Atomically deletes Payment, LedgerEntry, and Receipt documents.
+     * - Bypasses Ledger immutability hooks using native collection methods.
+     * - Logs action in Audit Log.
+     */
+    async hardDeletePayment(params) {
+        const session = await mongoose_1.default.startSession();
+        session.startTransaction();
+        try {
+            // 1. Fetch original payment details
+            const payment = await paymentRepo.findById(params.paymentId);
+            if (!payment)
+                throw new Error('Payment not found');
+            // 2. Hard delete associated Ledger entries (bypassing middleware)
+            await ledgerRepo.hardDeleteByReference(payment._id, 'PAYMENT', session);
+            // 3. Hard delete associated Receipts
+            await receiptRepo.hardDeleteByPaymentId(payment._id, session);
+            // 4. Hard delete the Payment itself
+            await paymentRepo.hardDelete(payment._id, session);
+            // 4.5. Propagate payment deletion to any transferred enrollments
+            let currentEnrollmentId = payment.enrollmentId;
+            let currentReduction = payment.amount;
+            while (currentReduction > 0) {
+                const adjEntry = await mongoose_1.default.model('LedgerEntry').findOne({
+                    referenceId: currentEnrollmentId,
+                    referenceType: 'ADJUSTMENT' // This identifies a transfer carry-over
+                }).session(session);
+                if (!adjEntry) {
+                    break;
+                }
+                const newAmount = Math.max(0, adjEntry.amount - currentReduction);
+                const actualReduction = adjEntry.amount - newAmount;
+                if (newAmount <= 0) {
+                    await LedgerEntry_model_1.LedgerEntry.collection.deleteOne({ _id: adjEntry._id }, { session });
+                }
+                else {
+                    await LedgerEntry_model_1.LedgerEntry.collection.updateOne({ _id: adjEntry._id }, { $set: { amount: newAmount } }, { session });
+                }
+                currentEnrollmentId = adjEntry.enrollmentId;
+                currentReduction = actualReduction;
+            }
+            await session.commitTransaction();
+            // 5. Audit Logging (Non-blocking)
+            audit_service_1.auditService.logAsync({
+                actorId: params.adminId,
+                action: 'PAYMENT_HARD_DELETED',
+                entityType: 'PAYMENT',
+                entityId: params.paymentId,
+                before: {
+                    paymentId: payment._id,
+                    amount: payment.amount,
+                    enrollmentId: payment.enrollmentId,
+                    receiptId: payment.receiptId,
+                },
+                after: null, // Hard delete = nothing left
+                ipAddress: params.ipAddress,
+                userAgent: params.userAgent,
+            });
+            return { success: true, message: 'Payment and all associated financial records have been permanently deleted.' };
         }
         catch (err) {
             await session.abortTransaction();

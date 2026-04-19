@@ -6,5 +6,10 @@ export declare class LedgerRepository {
     computeBalance(enrollmentId: string | Types.ObjectId): Promise<number>;
     findByDateRange(from: Date, to: Date): Promise<ILedgerEntry[]>;
     findByReference(referenceId: string | Types.ObjectId, referenceType: ILedgerEntry['referenceType']): Promise<ILedgerEntry | null>;
+    /**
+     * ADMIN ONLY: Hard delete ledger entries by reference.
+     * Bypasses Mongoose middleware to allow cleanup of "miss entries".
+     */
+    hardDeleteByReference(referenceId: string | Types.ObjectId, referenceType: ILedgerEntry['referenceType'], session?: ClientSession): Promise<void>;
 }
 //# sourceMappingURL=ledger.repository.d.ts.map

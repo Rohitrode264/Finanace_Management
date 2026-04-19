@@ -86,7 +86,7 @@ export class StudentController {
         try {
             const student = await studentService.findById(req.params['id']!);
             if (!student) { sendError(res, 'Student not found', 404); return; }
-            sendSuccess(res, student);
+            sendSuccess(res, student.toJSON ? student.toJSON() : student);
         } catch { sendError(res, 'Failed to fetch student', 500); }
     }
 

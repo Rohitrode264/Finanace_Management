@@ -7,5 +7,6 @@ export declare class ReceiptRepository {
     findByPaymentId(paymentId: string | Types.ObjectId): Promise<IReceipt | null>;
     incrementReprintCount(receiptId: string | Types.ObjectId): Promise<void>;
     markCancelled(receiptId: string | Types.ObjectId, session: ClientSession): Promise<void>;
+    hardDeleteByPaymentId(paymentId: string | Types.ObjectId, session: ClientSession): Promise<void>;
 }
 //# sourceMappingURL=receipt.repository.d.ts.map

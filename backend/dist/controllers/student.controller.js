@@ -85,7 +85,7 @@ class StudentController {
                 (0, apiResponse_1.sendError)(res, 'Student not found', 404);
                 return;
             }
-            (0, apiResponse_1.sendSuccess)(res, student);
+            (0, apiResponse_1.sendSuccess)(res, student.toJSON ? student.toJSON() : student);
         }
         catch {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch student', 500);
