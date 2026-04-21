@@ -1,6 +1,8 @@
+import { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
 import { studentsService } from '../../api/services/students.service';
 import { enrollmentService } from '../../api/services/enrollment.service';
 import type { AcademicClass, ClassTemplate } from '../../types';
@@ -8,11 +10,17 @@ import type { AcademicClass, ClassTemplate } from '../../types';
 export function AdmissionPrintPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const printRef = useRef<HTMLDivElement>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ['student', id],
         queryFn: () => studentsService.getById(id!),
         enabled: !!id,
+    });
+
+    const handlePrint = useReactToPrint({
+        contentRef: printRef,
+        documentTitle: `Admission_${data?.data?.data?.admissionNumber || 'NCP'}`,
     });
     
     const { data: enrollRes } = useQuery({
@@ -110,28 +118,35 @@ export function AdmissionPrintPage() {
 
                 /* ── Print rules ── */
                 @media print {
-                    body {
-                        visibility: hidden;
+                    html, body {
                         background: white !important;
                     }
                     
-                    .screen-only {
-                        display: none !important;
-                    }
-
-                    .ncp-receipt-print-wrapper { 
-                        visibility: visible !important;
-                        position: absolute !important;
-                        top: 0 !important;
-                        left: 0 !important;
-                        width: 100% !important;
-                    }
-
                     .ncp-receipt {
                         max-width: 100% !important;
                         padding: 8mm 12mm !important;
                         box-shadow: none !important;
                         border: none !important;
+                        overflow: visible !important;
+                    }
+
+                    .ncp-receipt-header, .ncp-receipt-footer, .ncp-hdr-brand {
+                        display: flex !important;
+                        flex-direction: row !important;
+                    }
+
+                    .ncp-receipt-header, .ncp-receipt-footer {
+                        justify-content: space-between !important;
+                        align-items: flex-start !important;
+                    }
+
+                    .ncp-hdr-brand {
+                        align-items: center !important;
+                        gap: 14px !important;
+                    }
+
+                    .ncp-receipt-footer {
+                        align-items: flex-end !important;
                     }
 
                     * {
@@ -141,17 +156,17 @@ export function AdmissionPrintPage() {
 
                     @page {
                         size: A4 portrait;
-                        margin: 8mm 10mm;
+                        margin: 0;
                     }
                 }
             `}</style>
             
-            <div className="screen-only" style={{ maxWidth: 720, margin: '20px auto 20px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <div className="screen-only no-print" style={{ maxWidth: 720, margin: '20px auto 20px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
                 <button className="btn-secondary" onClick={() => navigate(-1)}><ArrowLeft size={15}/> Back</button>
-                <button className="btn-primary" onClick={() => window.print()}><Printer size={15}/> Print Card</button>
+                <button className="btn-primary" onClick={() => handlePrint()}><Printer size={15}/> Print Card</button>
             </div>
 
-            <div className="ncp-receipt ncp-receipt-print-wrapper">
+            <div className="ncp-receipt" ref={printRef}>
                 
                 {/* ═══════════════════════  HEADER  ══════════════════════════ */}
                 <div className="ncp-receipt-header" style={{
@@ -161,7 +176,7 @@ export function AdmissionPrintPage() {
                     paddingBottom: 16,
                     borderBottom: '2px solid #111827',
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div className="ncp-hdr-brand" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
                         <img
                             src="/images/logo_bw.jpg"
                             alt="Logo"

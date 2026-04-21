@@ -10,6 +10,7 @@ import apiClient from '../../api/client';
 import { format } from 'date-fns';
 import { formatCurrency } from '../../utils/currency';
 import { useDebounce } from '../../hooks/useDebounce';
+import { useReactToPrint } from 'react-to-print';
 import type { Student, Enrollment, LedgerEntry, Receipt as ReceiptType, Payment, AcademicClass } from '../../types';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
 import html2canvas from 'html2canvas';
@@ -42,6 +43,12 @@ export function LedgerPage() {
     // Deletion Modal State
     const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
     const [deletePhase, setDeletePhase] = useState<0 | 1 | 2>(0);
+
+    const handlePrint = useReactToPrint({
+        contentRef: receiptRef,
+        documentTitle: `Receipt_NCP`,
+    });
+
     useEffect(() => {
         if (studentIdParam && !selectedStudent) {
             apiClient.get(`/students/${studentIdParam}`).then(res => {
@@ -496,7 +503,7 @@ export function LedgerPage() {
             >
                 {receiptData && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                        <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                             <button
                                 className="btn-secondary"
                                 onClick={downloadPDF}
@@ -507,57 +514,19 @@ export function LedgerPage() {
                             </button>
                             <button
                                 className="btn-primary"
-                                onClick={() => window.print()}
+                                onClick={() => handlePrint()}
                                 style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
                             >
                                 <Printer size={16} /> Print Receipt
                             </button>
                         </div>
-                        <div ref={receiptRef}>
+                        <div ref={receiptRef} style={{ overflow: 'visible' }}>
                             <ProfessionalReceipt {...receiptData} />
                         </div>
                     </div>
                 )}
             </Modal>
 
-            <style>{`
-                @media print {
-                    /* Hide everything by default */
-                    body > *, #root > *, .modal-overlay, .modal-header, .no-print, nav, aside, footer, button, .btn-primary, .btn-secondary {
-                        display: none !important;
-                    }
-                    /* ONLY show the receipt container and its ancestors if needed, 
-                       but since Modal is a portal, it is at the end of body. 
-                    */
-                    body > .modal-overlay {
-                        display: block !important;
-                        position: static !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: none !important;
-                    }
-                    .modal-content {
-                        display: block !important;
-                        position: static !important;
-                        width: 100% !important;
-                        height: 100% !important;
-                        max-width: none !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                        background: none !important;
-                        transform: none !important;
-                        overflow: visible !important;
-                    }
-                    .receipt-premium-container {
-                        display: block !important;
-                    }
-                    /* Ensure background graphics are printed */
-                    * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-                    @page { size: A5 landscape; margin: 0; }
-                }
-            `}</style>
 
             {/* Concession Modal */}
             <AnimatePresence>

@@ -11,6 +11,7 @@ import { paymentService } from '../../api/services/payment.service';
 import { formatCurrency } from '../../utils/currency';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
+import { useReactToPrint } from 'react-to-print';
 import type { Student, Enrollment, PaymentMode, ProcessPaymentResult, AcademicClass, ClassTemplate } from '../../types';
 import apiClient from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
@@ -48,6 +49,11 @@ export function PaymentEntryPage() {
     const [downloading, setDownloading] = useState(false);
     const [receiptData, setReceiptData] = useState<any>(null);
 
+    const handlePrint = useReactToPrint({
+        contentRef: receiptRef,
+        documentTitle: `Receipt_NCP`,
+    });
+
     const fetchAndShowReceipt = async (paymentId: string) => {
         try {
             const receiptRes = await apiClient.get(`/receipts/by-payment/${paymentId}`);
@@ -56,7 +62,6 @@ export function PaymentEntryPage() {
             const payment = paymentsRes.data.data;
 
             // Fetch the updated enrollment to get the fresh post-payment outstandingBalance
-            // This exactly mirrors the LedgerPage logic where selectedEnrollment is always fresh
             const enrollmentRes = await apiClient.get(`/enrollments/${enrollment?._id}`);
             const freshEnrollment = enrollmentRes.data.data;
 
@@ -155,44 +160,6 @@ export function PaymentEntryPage() {
 
     return (
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <style>{`
-                @media print {
-                    /* Hide everything by default */
-                    body > *, #root > *, .modal-overlay, .modal-header, .no-print, nav, aside, footer, button, .btn-primary, .btn-secondary {
-                        display: none !important;
-                    }
-                    /* ONLY show the receipt container and its ancestors if needed, 
-                       but since Modal is a portal, it is at the end of body. 
-                    */
-                    body > .modal-overlay {
-                        display: block !important;
-                        position: static !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        background: none !important;
-                    }
-                    .modal-content {
-                        display: block !important;
-                        position: static !important;
-                        width: 100% !important;
-                        height: 100% !important;
-                        max-width: none !important;
-                        padding: 0 !important;
-                        margin: 0 !important;
-                        border: none !important;
-                        box-shadow: none !important;
-                        background: none !important;
-                        transform: none !important;
-                        overflow: visible !important;
-                    }
-                    .receipt-premium-container {
-                        display: block !important;
-                    }
-                    /* Ensure background graphics are printed */
-                    * { -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
-                    @page { size: A5 landscape; margin: 0; }
-                }
-            `}</style>
             <PageHeader
                 title="Fee Collection Interface"
                 subtitle="Record payments and generate receipts for student enrollments."
@@ -704,7 +671,7 @@ export function PaymentEntryPage() {
                     >
                         {receiptData && (
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                                <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                                     <button
                                         className="btn-secondary"
                                         onClick={downloadPDF}
@@ -715,13 +682,13 @@ export function PaymentEntryPage() {
                                     </button>
                                     <button
                                         className="btn-primary"
-                                        onClick={() => window.print()}
+                                        onClick={() => handlePrint()}
                                         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
                                     >
                                         <Printer size={16} /> Print Receipt
                                     </button>
                                 </div>
-                                <div ref={receiptRef}>
+                                <div ref={receiptRef} style={{ overflow: 'visible' }}>
                                     <ProfessionalReceipt {...receiptData} />
                                 </div>
                             </div>

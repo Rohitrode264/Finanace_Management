@@ -1,17 +1,25 @@
+import { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
+import { useReactToPrint } from 'react-to-print';
 import { receiptService } from '../../api/services/receipt.service';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
 
 export function ReceiptPage() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
+    const receiptRef = useRef<HTMLDivElement>(null);
 
     const { data, isLoading } = useQuery({
         queryKey: ['receipt', id],
         queryFn: () => receiptService.getById(id!),
         enabled: !!id,
+    });
+
+    const handlePrint = useReactToPrint({
+        contentRef: receiptRef,
+        documentTitle: `Receipt_${data?.data?.data?.receiptNumber || 'NCP'}`,
     });
 
     const receipt = data?.data?.data;
@@ -38,16 +46,9 @@ export function ReceiptPage() {
 
     return (
         <>
-            {/* Screen-only header — hidden during print via global print rule in ProfessionalReceipt */}
-            <style>{`
-                @media print {
-                    .receipt-screen-header { display: none !important; }
-                }
-            `}</style>
-
             <div style={{ maxWidth: 820, margin: '0 auto' }}>
                 {/* Screen-only controls */}
-                <div className="receipt-screen-header" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
+                <div className="receipt-screen-header no-print" style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
                     <button className="btn-secondary" onClick={() => navigate(-1)} style={{ padding: '8px 12px' }}>
                         <ArrowLeft size={14} />
                     </button>
@@ -57,7 +58,7 @@ export function ReceiptPage() {
                     </div>
                     <button
                         className="btn-primary"
-                        onClick={() => window.print()}
+                        onClick={() => handlePrint()}
                         style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}
                     >
                         <Printer size={15} /> Print Receipt
@@ -66,9 +67,9 @@ export function ReceiptPage() {
 
                 {/* Receipt area — this is the print target */}
                 <div
-                    className="ncp-receipt-print-wrapper card"
-                    style={{ overflow: 'hidden', padding: '28px 32px', background: '#fff' }}
-                    id="receipt-print-area"
+                    className="card"
+                    style={{ padding: '28px 32px', background: '#fff', overflow: 'visible' }}
+                    ref={receiptRef}
                 >
                     <ProfessionalReceipt
                         receipt={receipt}
