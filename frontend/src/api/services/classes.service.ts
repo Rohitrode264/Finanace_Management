@@ -11,6 +11,10 @@ export const classesService = {
     createTemplate: (data: { grade: string; stream?: string | null; board: Board }) =>
         apiClient.post<ApiResponse<ClassTemplate>>('/classes/templates', data),
 
+    // GET /classes/sessions — list all unique academic years
+    listSessions: () =>
+        apiClient.get<ApiResponse<string[]>>('/classes/sessions'),
+
     // ── Academic Classes ─────────────────────────────────────────────────────
     // GET /classes?year=<academicYear>
     listClasses: (academicYear: string) =>

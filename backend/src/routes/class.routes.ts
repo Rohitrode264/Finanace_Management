@@ -8,6 +8,7 @@ const router = Router();
 router.use(authMiddleware);
 
 router.get('/templates', permissionMiddleware('VIEW_CLASS', 'CLASS'), (req, res) => classController.listTemplates(req, res));
+router.get('/sessions', permissionMiddleware('VIEW_CLASS', 'CLASS'), (req, res) => classController.listSessions(req, res));
 router.get('/', permissionMiddleware('VIEW_CLASS', 'CLASS'), (req, res) => classController.getClassesByYear(req, res));
 router.get('/:id', permissionMiddleware('VIEW_CLASS', 'CLASS'), (req, res) => classController.getClass(req, res));
 router.post('/', permissionMiddleware('CREATE_CLASS', 'CLASS'), (req, res) => classController.createClass(req, res));

@@ -71,6 +71,13 @@ export class ClassController {
             sendSuccess(res, cls);
         } catch { sendError(res, 'Failed to fetch class', 500); }
     }
+
+    async listSessions(_req: Request, res: Response): Promise<void> {
+        try {
+            const sessions = await classService.getUniqueSessions();
+            sendSuccess(res, sessions);
+        } catch { sendError(res, 'Failed to fetch sessions', 500); }
+    }
 }
 
 export const classController = new ClassController();

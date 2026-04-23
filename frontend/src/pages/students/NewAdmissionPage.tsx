@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft, ChevronRight, GraduationCap,
-    Info, User, Tag, CheckCircle, Printer
+    Info, User, Tag, CheckCircle, Printer, Calendar, Search
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -63,7 +63,7 @@ const formatName = (name: string) => {
 export function NewAdmissionPage() {
     const qc = useQueryClient();
     const navigate = useNavigate();
-    const [enrollYear] = useState(CURRENT_YEAR);
+    const [enrollYear, setEnrollYear] = useState(CURRENT_YEAR);
     const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
 
     const { register, handleSubmit, formState: { errors }, getValues } = useForm<StudentForm>({
@@ -83,11 +83,17 @@ export function NewAdmissionPage() {
 
     const canCreate = usePermission('CREATE_STUDENT');
 
-    const { data: classesRes } = useQuery({
+    const { data: classesRes, isLoading: classesLoading } = useQuery({
         queryKey: ['classes-for-admission', enrollYear],
         queryFn: () => classesService.listClasses(enrollYear),
     });
     const classes: AcademicClass[] = (classesRes?.data?.data as AcademicClass[] | undefined) ?? [];
+
+    const { data: sessionsRes } = useQuery({
+        queryKey: ['unique-sessions'],
+        queryFn: () => classesService.listSessions(),
+    });
+    const sessions = sessionsRes?.data?.data || [];
 
     const { data: catRes } = useQuery({
         queryKey: ['categories'],
@@ -327,42 +333,88 @@ export function NewAdmissionPage() {
                                 animate={{ opacity: 1, x: 0 }}
                                 exit={{ opacity: 0, x: -20 }}
                             >
-                                <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 8 }}>Assign Course</h3>
-                                <p style={{ color: 'var(--text-muted)', marginBottom: 24, fontSize: '0.875rem' }}>Select the class student is enrolling into for the session {enrollYear}.</p>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: 24, gap: 16, flexWrap: 'wrap' }}>
+                                    <div>
+                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 4 }}>Assign Course</h3>
+                                        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Select the class for the academic session.</p>
+                                    </div>
+                                    
+                                    <div style={{ minWidth: 200 }}>
+                                        <label className="form-label" style={{ fontSize: '0.7rem', marginBottom: 4 }}>Academic Session</label>
+                                        <div style={{ position: 'relative' }}>
+                                            <Calendar size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
+                                            <input 
+                                                list="session-options"
+                                                className="form-input" 
+                                                value={enrollYear}
+                                                onChange={e => setEnrollYear(e.target.value)}
+                                                placeholder="e.g. 2026-27"
+                                                style={{ paddingLeft: 34, height: 40, fontSize: '0.9rem', fontWeight: 600 }}
+                                            />
+                                            <datalist id="session-options">
+                                                {sessions.map(s => <option key={s} value={s} />)}
+                                                <option value={CURRENT_YEAR} />
+                                            </datalist>
+                                        </div>
+                                    </div>
+                                </div>
 
                                 <div style={{ display: 'grid', gap: 12, maxHeight: 400, overflowY: 'auto', paddingRight: 8 }} className="custom-scrollbar">
-                                    {classes.map(cls => (
-                                        <div
-                                            key={cls._id}
-                                            onClick={() => setSelectedClassId(cls._id)}
-                                            style={{
-                                                padding: '16px 20px',
-                                                borderRadius: 16,
-                                                border: '1.5px solid',
-                                                borderColor: selectedClassId === cls._id ? 'var(--accent)' : 'var(--border)',
-                                                background: selectedClassId === cls._id ? 'var(--accent-light)' : 'var(--bg-surface)',
-                                                cursor: 'pointer',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center',
-                                                transition: 'all 0.2s'
-                                            }}
-                                        >
-                                            <div>
-                                                <div style={{ fontWeight: 700, fontSize: '1.05rem', color: selectedClassId === cls._id ? 'var(--accent)' : 'var(--text-primary)' }}>{templateLabel(cls)}</div>
-                                                <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                                                    Section: <span style={{ fontWeight: 600, color: 'var(--text-secondary)' }}>{cls.section}</span>
+                                    {classesLoading ? (
+                                        [1, 2, 3].map(i => (
+                                            <div key={i} className="skeleton" style={{ height: 80, borderRadius: 16 }} />
+                                        ))
+                                    ) : (
+                                        classes.map(cls => (
+                                            <div
+                                                key={cls._id}
+                                                onClick={() => setSelectedClassId(cls._id)}
+                                                style={{
+                                                    padding: '20px',
+                                                    borderRadius: 16,
+                                                    border: '2px solid',
+                                                    borderColor: selectedClassId === cls._id ? 'var(--accent)' : 'var(--border)',
+                                                    background: selectedClassId === cls._id ? 'var(--accent-light)' : 'var(--bg-surface)',
+                                                    cursor: 'pointer',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    transition: 'all 0.2s',
+                                                    boxShadow: selectedClassId === cls._id ? '0 4px 12px rgba(99, 102, 241, 0.12)' : 'none'
+                                                }}
+                                            >
+                                                <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                                                    <div style={{ 
+                                                        width: 44, height: 44, borderRadius: 12, 
+                                                        background: selectedClassId === cls._id ? 'var(--accent)' : 'var(--bg-subtle)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        color: selectedClassId === cls._id ? '#fff' : 'var(--accent)'
+                                                    }}>
+                                                        <GraduationCap size={20} />
+                                                    </div>
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, fontSize: '1.05rem', color: selectedClassId === cls._id ? 'var(--accent)' : 'var(--text-primary)' }}>{templateLabel(cls)}</div>
+                                                        <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4, display: 'flex', gap: 12 }}>
+                                                            <span>Section: <strong style={{ color: 'var(--text-secondary)' }}>{cls.section}</strong></span>
+                                                            <span>Session: <strong style={{ color: 'var(--text-secondary)' }}>{cls.academicYear}</strong></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '1.125rem', fontWeight: 800, color: 'var(--success)' }}>{formatCurrency(cls.totalFee)}</div>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Total Program Fee</div>
                                                 </div>
                                             </div>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--success)' }}>{formatCurrency(cls.totalFee)}</div>
-                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Total Fee</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                    {classes.length === 0 && (
-                                        <div style={{ textAlign: 'center', padding: 48, background: 'var(--bg-subtle)', borderRadius: 16, color: 'var(--text-muted)' }}>
-                                            No classes found for {enrollYear}.
+                                        ))
+                                    )}
+
+                                    {!classesLoading && classes.length === 0 && (
+                                        <div style={{ textAlign: 'center', padding: '48px 24px', background: 'var(--bg-subtle)', borderRadius: 20, border: '1px dashed var(--border)' }}>
+                                            <Search size={32} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.5 }} />
+                                            <h4 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-secondary)', marginBottom: 8 }}>No Classes Found</h4>
+                                            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: 300, margin: '0 auto' }}>
+                                                There are no active classes created for the <strong>{enrollYear}</strong> session. Try another year or create a class first.
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -371,7 +423,7 @@ export function NewAdmissionPage() {
                                     <button type="button" className="btn-secondary" onClick={() => setWizardStep(1)} style={{ flex: '1 1 auto', justifyContent: 'center' }}><ChevronLeft size={16} /> Back</button>
                                     <div style={{ display: 'flex', gap: 12, flex: '1 1 auto', flexWrap: 'wrap' }}>
                                         <button type="button" className="btn-ghost" onClick={() => { setSelectedClassId(''); setWizardStep(3); }} style={{ flex: '1 1 auto', justifyContent: 'center' }}>Skip Course</button>
-                                        <button type="button" className="btn-primary" onClick={() => setWizardStep(3)} style={{ flex: '1 1 auto', justifyContent: 'center' }}>Next: Concession <ChevronRight size={16} /></button>
+                                        <button type="button" className="btn-primary" onClick={() => setWizardStep(3)} style={{ flex: '1 1 auto', justifyContent: 'center' }} disabled={!selectedClassId && !enrollYear}>Next: Concession <ChevronRight size={16} /></button>
                                     </div>
                                 </div>
                             </motion.div>

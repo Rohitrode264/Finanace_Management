@@ -96,6 +96,11 @@ export class ClassService {
     async countTotal(): Promise<number> {
         return AcademicClass.countDocuments({ isActive: true });
     }
+
+    async getUniqueSessions(): Promise<string[]> {
+        const years = await AcademicClass.distinct('academicYear', { isActive: true });
+        return years.sort().reverse(); // Show latest sessions first
+    }
 }
 
 export const classService = new ClassService();
