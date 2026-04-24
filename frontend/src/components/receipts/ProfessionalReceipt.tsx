@@ -263,8 +263,13 @@ export function ProfessionalReceipt({
                                 <tr>
                                     <td style={{ padding: '6px 0 4px', fontSize: 12, fontWeight: 600, color: '#111827' }}>
                                         Academic Tuition Fee
+                                        {enrollment.totalFee > enrollment.netFee && (
+                                            <div style={{ fontSize: 8.5, color: '#6b7280', fontWeight: 500, marginTop: 1 }}>
+                                                Fees: {formatCurrency(enrollment.totalFee)} · Concession: {formatCurrency(enrollment.totalFee - enrollment.netFee)}
+                                            </div>
+                                        )}
                                     </td>
-                                    <td style={{ padding: '6px 0 4px', fontSize: 12, fontWeight: 700, textAlign: 'right', color: '#111827' }}>
+                                    <td style={{ padding: '6px 0 4px', fontSize: 12, fontWeight: 700, textAlign: 'right', color: '#111827', verticalAlign: 'top' }}>
                                         {formatCurrency(enrollment.netFee)}
                                     </td>
                                 </tr>
