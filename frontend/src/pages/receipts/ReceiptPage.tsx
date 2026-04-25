@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { useSilentPrint } from '../../hooks/useSilentPrint';
 import { receiptService } from '../../api/services/receipt.service';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
 
@@ -17,9 +17,9 @@ export function ReceiptPage() {
         enabled: !!id,
     });
 
-    const handlePrint = useReactToPrint({
+    const { handlePrint, isPrinting } = useSilentPrint({
         contentRef: receiptRef,
-        documentTitle: `Receipt_${data?.data?.data?.receiptNumber || 'NCP'}`,
+        docType: 'receipt'
     });
 
     const receipt = data?.data?.data;
@@ -58,10 +58,11 @@ export function ReceiptPage() {
                     </div>
                     <button
                         className="btn-primary"
-                        onClick={() => handlePrint()}
+                        onClick={handlePrint}
+                        disabled={isPrinting}
                         style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}
                     >
-                        <Printer size={15} /> Print Receipt
+                        <Printer size={15} /> {isPrinting ? 'Printing...' : 'Print Receipt'}
                     </button>
                 </div>
 

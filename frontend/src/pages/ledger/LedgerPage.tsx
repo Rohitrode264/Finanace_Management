@@ -13,6 +13,7 @@ import { useDebounce } from '../../hooks/useDebounce';
 import { useReactToPrint } from 'react-to-print';
 import type { Student, Enrollment, LedgerEntry, Receipt as ReceiptType, Payment, AcademicClass } from '../../types';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
+import { RECEIPT_PAGE_STYLE } from '../../utils/printConfig';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Modal } from '../../components/ui/Modal';
@@ -47,6 +48,7 @@ export function LedgerPage() {
     const handlePrint = useReactToPrint({
         contentRef: receiptRef,
         documentTitle: `Receipt_NCP`,
+        pageStyle: RECEIPT_PAGE_STYLE,
     });
 
     useEffect(() => {

@@ -377,7 +377,7 @@ export function StudentsPage() {
                                                     <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Education Background</h4>
                                                 </div>
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                                                    <DetailField label="Last Attended School" value={selectedStudentForView.history?.previousSchool} icon={GraduationCap} />
+                                                    <DetailField label="Current School" value={selectedStudentForView.history?.previousSchool} icon={GraduationCap} />
                                                     <DetailField label="Passout Year" value={selectedStudentForView.history?.yearPassout} icon={Calendar} />
                                                     <DetailField label="Percentage / Grade" value={selectedStudentForView.history?.percentage} icon={Info} />
                                                 </div>

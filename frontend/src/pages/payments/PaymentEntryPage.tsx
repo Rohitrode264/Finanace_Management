@@ -11,7 +11,7 @@ import { paymentService } from '../../api/services/payment.service';
 import { formatCurrency } from '../../utils/currency';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useReactToPrint } from 'react-to-print';
+import { useSilentPrint } from '../../hooks/useSilentPrint';
 import type { Student, Enrollment, PaymentMode, ProcessPaymentResult, AcademicClass, ClassTemplate } from '../../types';
 import apiClient from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
@@ -49,9 +49,9 @@ export function PaymentEntryPage() {
     const [downloading, setDownloading] = useState(false);
     const [receiptData, setReceiptData] = useState<any>(null);
 
-    const handlePrint = useReactToPrint({
+    const { handlePrint, isPrinting } = useSilentPrint({
         contentRef: receiptRef,
-        documentTitle: `Receipt_NCP`,
+        docType: 'receipt',
     });
 
     const fetchAndShowReceipt = async (paymentId: string) => {
@@ -682,10 +682,11 @@ export function PaymentEntryPage() {
                                     </button>
                                     <button
                                         className="btn-primary"
-                                        onClick={() => handlePrint()}
+                                        onClick={handlePrint}
+                                        disabled={isPrinting}
                                         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 16px' }}
                                     >
-                                        <Printer size={16} /> Print Receipt
+                                        <Printer size={16} /> {isPrinting ? 'Printing...' : 'Print Receipt'}
                                     </button>
                                 </div>
                                 <div ref={receiptRef} style={{ overflow: 'visible' }}>

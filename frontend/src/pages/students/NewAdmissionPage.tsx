@@ -286,11 +286,11 @@ export function NewAdmissionPage() {
                                         </div>
 
                                         <div style={{ gridColumn: '1 / -1' }}>
-                                            <label className="form-label">Primary School History</label>
+                                            <label className="form-label">Current School</label>
                                             <datalist id="schools-list">
                                                 {uniqueSchools.map((s: string) => <option key={s} value={s} />)}
                                             </datalist>
-                                            <input {...register('schoolName')} list="schools-list" className="form-input" placeholder="Previous or current school" />
+                                            <input {...register('schoolName')} list="schools-list" className="form-input" placeholder="Name of the current school" />
                                         </div>
 
                                         <div>

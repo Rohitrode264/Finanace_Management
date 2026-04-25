@@ -2,9 +2,10 @@ import { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { useReactToPrint } from 'react-to-print';
+import { useSilentPrint } from '../../hooks/useSilentPrint';
 import { studentsService } from '../../api/services/students.service';
 import { enrollmentService } from '../../api/services/enrollment.service';
+import { formatCurrency } from '../../utils/currency';
 import type { AcademicClass, ClassTemplate } from '../../types';
 
 export function AdmissionPrintPage() {
@@ -18,9 +19,9 @@ export function AdmissionPrintPage() {
         enabled: !!id,
     });
 
-    const handlePrint = useReactToPrint({
+    const { handlePrint, isPrinting } = useSilentPrint({
         contentRef: printRef,
-        documentTitle: `Admission_${data?.data?.data?.admissionNumber || 'NCP'}`,
+        docType: 'admission'
     });
     
     const { data: enrollRes } = useQuery({
@@ -77,274 +78,278 @@ export function AdmissionPrintPage() {
 
     const creatorName = student.createdBy && typeof student.createdBy === 'object' ? (student.createdBy as any).name || 'Administrator' : 'Administrator';
 
-    // A4 printing layout setup
+    // A4 printing layout setup - premium table-based design for bulletproof printing
     return (
         <>
-            <style>{`
-                .ncp-receipt {
-                    width: 100%;
-                    max-width: 720px;
-                    margin: 0 auto;
-                    background: #ffffff;
-                    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-                    color: #111827;
-                    box-sizing: border-box;
-                }
-                .label-title {
-                    font-size: 9px;
-                    font-weight: 700;
-                    letter-spacing: 0.08em;
-                    text-transform: uppercase;
-                    color: #6b7280;
-                    margin-bottom: 3px;
-                }
-                .value-text {
-                    font-size: 14px;
-                    font-weight: 700;
-                    color: #111827;
-                    line-height: 1.3;
-                }
-
-                /* ── Mobile responsiveness ── */
-                @media (max-width: 640px) {
-                    .screen-only { flex-direction: column; }
-                    .ncp-receipt { padding: 16px 12px !important; }
-                    .ncp-receipt-header { flex-direction: column !important; gap: 20px !important; }
-                    .ncp-receipt-header-meta { text-align: left !important; width: 100% !important; }
-                    .ncp-receipt-info-grid { grid-template-columns: 1fr !important; }
-                    .ncp-receipt-footer { flex-direction: column !important; align-items: center !important; gap: 32px !important; }
-                    .ncp-receipt-footer > div { width: 100% !important; }
-                }
-
-                /* ── Print rules ── */
-                @media print {
-                    html, body {
-                        background: white !important;
-                    }
-                    
-                    .ncp-receipt {
-                        max-width: 100% !important;
-                        padding: 8mm 12mm !important;
-                        box-shadow: none !important;
-                        border: none !important;
-                        overflow: visible !important;
-                    }
-
-                    .ncp-receipt-header, .ncp-receipt-footer, .ncp-hdr-brand {
-                        display: flex !important;
-                        flex-direction: row !important;
-                    }
-
-                    .ncp-receipt-header, .ncp-receipt-footer {
-                        justify-content: space-between !important;
-                        align-items: flex-start !important;
-                    }
-
-                    .ncp-hdr-brand {
-                        align-items: center !important;
-                        gap: 14px !important;
-                    }
-
-                    .ncp-receipt-footer {
-                        align-items: flex-end !important;
-                    }
-
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-
-                    @page {
-                        size: A4 portrait;
-                        margin: 0;
-                    }
-                }
-            `}</style>
-            
-            <div className="screen-only no-print" style={{ maxWidth: 720, margin: '20px auto 20px', display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+            <div className="screen-only no-print" style={{ maxWidth: 794, margin: '20px auto', display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '0 20px' }}>
                 <button className="btn-secondary" onClick={() => navigate(-1)}><ArrowLeft size={15}/> Back</button>
-                <button className="btn-primary" onClick={() => handlePrint()}><Printer size={15}/> Print Card</button>
+                <button className="btn-primary" onClick={handlePrint} disabled={isPrinting}>
+                    <Printer size={15}/> {isPrinting ? 'Printing...' : 'Print Form'}
+                </button>
             </div>
 
             <div className="ncp-receipt" ref={printRef}>
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+                    
+                    .ncp-receipt {
+                        width: 100%;
+                        max-width: 794px; /* A4 width roughly at 96dpi */
+                        margin: 0 auto;
+                        background: #ffffff !important;
+                        font-family: 'Outfit', system-ui, -apple-system, sans-serif;
+                        color: #000000 !important;
+                        box-sizing: border-box;
+                    }
+                    
+                    .ncp-receipt * {
+                        border-color: #000000 !important;
+                    }
+
+                    .form-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-bottom: 24px;
+                        border: 2px solid #000000;
+                    }
+
+                    .form-table td {
+                        border: 1px solid #000000;
+                        padding: 12px 16px;
+                        vertical-align: top;
+                    }
+
+                    .form-table td.bg-fill {
+                        background-color: #fafafa !important;
+                    }
+
+                    .label-title {
+                        font-size: 10px;
+                        font-weight: 700;
+                        letter-spacing: 0.1em;
+                        text-transform: uppercase;
+                        color: #4a4a4a !important; /* Slightly softened black for labels */
+                        margin-bottom: 6px;
+                    }
+
+                    .value-text {
+                        font-size: 15px;
+                        font-weight: 800;
+                        color: #000000 !important;
+                        line-height: 1.3;
+                    }
+
+                    @media print {
+                        .ncp-receipt {
+                            max-width: 100% !important;
+                            padding: 12mm !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                        }
+                    }
+                `}</style>
                 
                 {/* ═══════════════════════  HEADER  ══════════════════════════ */}
-                <div className="ncp-receipt-header" style={{
+                <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'flex-start',
-                    paddingBottom: 16,
-                    borderBottom: '2px solid #111827',
+                    paddingBottom: 20,
+                    borderBottom: '3px solid #000000',
+                    marginBottom: 24
                 }}>
-                    <div className="ncp-hdr-brand" style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
                         <img
                             src="/images/logo_bw.jpg"
                             alt="Logo"
-                            style={{ width: 64, height: 64, objectFit: 'contain', borderRadius: 6 }}
+                            style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8, border: '2px solid #000' }}
                         />
                         <div>
-                            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: '-0.03em', color: '#111827', lineHeight: 1 }}>
+                            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.02em', color: '#000000', lineHeight: 1, marginBottom: 6 }}>
                                 {INST.name}
                             </div>
-                            <div style={{ fontSize: 11.5, fontWeight: 600, color: '#374151', marginTop: 3 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: '#333333', marginBottom: 4 }}>
                                 {INST.subtitle}
                             </div>
-                            <div style={{ fontSize: 10.5, color: '#6b7280', marginTop: 3 }}>
-                                {INST.address} &nbsp;|&nbsp; {INST.phone}
+                            <div style={{ fontSize: 11, color: '#444444', marginBottom: 4 }}>
+                                {INST.address}  |  {INST.phone}
                             </div>
-                            <div style={{ fontSize: 9.5, color: '#9ca3af', marginTop: 2, display: 'flex', gap: 12 }}>
-                                <span>Reg. No: <strong style={{ color: '#6b7280' }}>{INST.regNo}</strong></span>
-                                <span>GSTIN: <strong style={{ color: '#6b7280' }}>{INST.gstin}</strong></span>
+                            <div style={{ fontSize: 10, color: '#555555', display: 'flex', gap: 16, fontWeight: 600 }}>
+                                <span>Reg. No: {INST.regNo}</span>
+                                <span>GSTIN: {INST.gstin}</span>
                             </div>
                         </div>
                     </div>
 
-                    <div className="ncp-receipt-header-meta" style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                        <div style={{ textAlign: 'right', flexShrink: 0, marginTop: 4 }}>
+                            <div style={{
+                                display: 'inline-block',
+                                border: '2px solid #000000',
+                                borderRadius: 6,
+                                padding: '6px 16px',
+                                fontSize: 12,
+                                fontWeight: 900,
+                                letterSpacing: '0.15em',
+                                textTransform: 'uppercase',
+                                color: '#000000',
+                                marginBottom: 16,
+                                background: '#fafafa !important'
+                            }}>
+                                Admission Form
+                            </div>
+                            <div style={{ fontSize: 22, fontWeight: 900, color: '#000000', letterSpacing: '-0.02em', marginBottom: 6 }}>
+                                {student.admissionNumber}
+                            </div>
+                            <div style={{ fontSize: 13, color: '#000000', fontWeight: 700 }}>
+                                {formattedDate}
+                            </div>
+                        </div>
+
                         <div style={{
-                            display: 'inline-block',
-                            border: '1.5px solid #111827',
-                            borderRadius: 4,
-                            padding: '3px 12px',
-                            fontSize: 10,
-                            fontWeight: 800,
-                            letterSpacing: '0.1em',
-                            textTransform: 'uppercase',
-                            color: '#111827',
-                            marginBottom: 8,
+                            width: '100px',
+                            height: '130px',
+                            border: '2px dashed #000',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            textAlign: 'center',
+                            padding: '10px'
                         }}>
-                            Admission Form
-                        </div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: '#111827', letterSpacing: '-0.02em' }}>
-                            {student.admissionNumber}
-                        </div>
-                        <div style={{ fontSize: 11.5, color: '#374151', fontWeight: 600, marginTop: 2 }}>
-                            {formattedDate}
+                            <span style={{ fontSize: 10, color: '#444', fontWeight: 700 }}>Affix Passport Size Photo Here</span>
                         </div>
                     </div>
                 </div>
 
                 {/* ══════════════  STUDENT PROFILE DETAILS  ═══════════ */}
-                <div style={{ margin: '24px 0', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 800, paddingLeft: 2 }}>
+                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#000', fontWeight: 900, marginBottom: 12, borderLeft: '4px solid #000', paddingLeft: 8 }}>
                     Primary Details
                 </div>
                 
-                <div className="ncp-receipt-info-grid" style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr 1fr 1fr',
-                    gap: 0,
-                    margin: '8px 0 24px',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 8,
-                    overflow: 'hidden',
-                }}>
-                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderRight: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Student Name</div>
-                        <div className="value-text">{student.firstName} {student.lastName}</div>
-                    </div>
-                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderRight: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Date of Birth</div>
-                        <div className="value-text">{student.dob || '—'}</div>
-                    </div>
-                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Blood Group</div>
-                        <div className="value-text">{student.bloodGroup || '—'}</div>
-                    </div>
-                    
-                    <div style={{ padding: '14px 16px', background: '#ffffff', borderRight: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Primary Phone</div>
-                        <div className="value-text">{student.phone}</div>
-                    </div>
-                    <div style={{ padding: '14px 16px', background: '#ffffff', borderRight: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Alternate Phone</div>
-                        <div className="value-text">{student.alternatePhone || student.motherPhone || '—'}</div>
-                    </div>
-                    <div style={{ padding: '14px 16px', background: '#ffffff' }}>
-                        <div className="label-title">Email</div>
-                        <div className="value-text" style={{ fontSize: 13, wordBreak: 'break-all' }}>{student.email || '—'}</div>
-                    </div>
-                </div>
+                <table className="form-table">
+                    <tbody>
+                        <tr>
+                            <td colSpan={2} className="bg-fill" style={{ width: '66%' }}>
+                                <div className="label-title">Student Full Name</div>
+                                <div className="value-text" style={{ fontSize: 18 }}>{student.firstName} {student.lastName}</div>
+                            </td>
+                            <td style={{ width: '34%' }}>
+                                <div className="label-title">Date of Birth</div>
+                                <div className="value-text">{student.dob ? new Date(student.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not Provided'}</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td className="bg-fill">
+                                <div className="label-title">Primary Phone</div>
+                                <div className="value-text">{student.phone}</div>
+                            </td>
+                            <td>
+                                <div className="label-title">Alternate Phone</div>
+                                <div className="value-text">{student.alternatePhone || student.motherPhone || 'Not Provided'}</div>
+                            </td>
+                            <td className="bg-fill">
+                                <div className="label-title">Blood Group</div>
+                                <div className="value-text">{student.bloodGroup || 'Not Provided'}</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colSpan={3}>
+                                <div className="label-title">Email Address</div>
+                                <div className="value-text">{student.email || 'Not Provided'}</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                <div style={{ margin: '24px 0 8px', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#6b7280', fontWeight: 800, paddingLeft: 2 }}>
+                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#000', fontWeight: 900, marginBottom: 12, borderLeft: '4px solid #000', paddingLeft: 8, marginTop: 32 }}>
                     Parental & Academic Details
                 </div>
                 
-                <div style={{
-                    display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: 0,
-                    border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden'
-                }}>
-                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderRight: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Father's Name</div>
-                        <div className="value-text">{student.fatherName}</div>
-                    </div>
-                    <div style={{ padding: '14px 16px', background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Mother's Name</div>
-                        <div className="value-text">{student.motherName || '—'}</div>
-                    </div>
-
-                    <div style={{ gridColumn: 'span 2', padding: '14px 16px', background: '#ffffff' }}>
-                        <div className="label-title">Previous School</div>
-                        <div className="value-text">{student.schoolName || '—'}</div>
-                    </div>
-
-                    <div style={{ gridColumn: 'span 2', padding: '14px 16px', background: '#f9fafb', borderTop: '1px solid #e5e7eb', borderBottom: '1px solid #e5e7eb' }}>
-                        <div className="label-title">Enrolled in (Course/Class)</div>
-                        <div className="value-text" style={{ fontSize: 16, color: '#6366f1' }}>{courseLabel}</div>
-                    </div>
-
-                    <div style={{ gridColumn: 'span 2', padding: '14px 16px', background: '#ffffff' }}>
-                        <div className="label-title">Residential Address</div>
-                        <div className="value-text" style={{ fontWeight: 600 }}>
-                            {student.address?.street ? student.address.street + ', ' : ''}
-                            {student.address?.city ? student.address.city + ', ' : ''}
-                            {student.address?.state ? student.address.state : '—'} 
-                            {student.address?.zipCode ? ' - ' + student.address.zipCode : ''}
-                        </div>
-                    </div>
-                </div>
+                <table className="form-table">
+                    <tbody>
+                        <tr>
+                            <td className="bg-fill" style={{ width: '50%' }}>
+                                <div className="label-title">Father's Name</div>
+                                <div className="value-text">{student.fatherName}</div>
+                            </td>
+                            <td style={{ width: '50%' }}>
+                                <div className="label-title">Mother's Name</div>
+                                <div className="value-text">{student.motherName || 'Not Provided'}</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colSpan={2} className="bg-fill">
+                                <div className="label-title">Current School Name</div>
+                                <div className="value-text" style={{ fontSize: 16 }}>{student.schoolName || 'Not Provided'}</div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colSpan={2}>
+                                <div className="label-title">Enrolled In (Course / Class)</div>
+                                <div className="value-text" style={{ fontSize: 18, fontWeight: 900 }}>{courseLabel}</div>
+                            </td>
+                        </tr>
+                        
+                        {currentEnrollment && (
+                            <tr>
+                                <td colSpan={2} className="bg-fill">
+                                    <div className="label-title">Fee Details (Academic Tuition)</div>
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                        <div style={{ fontSize: 24, fontWeight: 900, color: '#000' }}>
+                                            {formatCurrency(currentEnrollment.netFee)}
+                                        </div>
+                                        {currentEnrollment.totalFee > currentEnrollment.netFee && (
+                                            <div style={{ fontSize: 12, color: '#444', fontWeight: 600, textAlign: 'right' }}>
+                                                Base Fee: {formatCurrency(currentEnrollment.totalFee)}<br/>
+                                                Concession: {formatCurrency(currentEnrollment.totalFee - currentEnrollment.netFee)}
+                                            </div>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        )}
+                        <tr>
+                            <td colSpan={2}>
+                                <div className="label-title">Residential Address</div>
+                                <div className="value-text" style={{ fontWeight: 600, lineHeight: 1.5 }}>
+                                    {student.address?.street ? student.address.street + ', ' : ''}
+                                    {student.address?.city ? student.address.city + ', ' : ''}
+                                    {student.address?.state ? student.address.state : 'Not Provided'} 
+                                    {student.address?.zipCode ? ' - ' + student.address.zipCode : ''}
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
                 {/* ═══════════════════════  FOOTER  ═══════════════════════════ */}
-                <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '48px 0 20px' }} />
-                
-                <div className="ncp-receipt-footer" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div style={{ textAlign: 'center', minWidth: 160 }}>
-                        <div style={{ height: 36 }} />
-                        <div style={{ borderTop: '1px solid #374151', paddingTop: 6 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
+                <div style={{ marginTop: 60, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+                    <div style={{ textAlign: 'center', minWidth: 200 }}>
+                        <div style={{ borderTop: '2px solid #000000', paddingTop: 8 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#000' }}>
                                 Parent / Guardian Signature
                             </div>
                         </div>
                     </div>
 
-                    <div style={{
-                        width: 64, height: 64,
-                        border: '2px solid #e5e7eb',
-                        borderRadius: '50%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        transform: 'rotate(-5deg)', color: '#d1d5db',
-                        fontSize: 10, fontWeight: 900, textAlign: 'center', letterSpacing: '0.02em',
-                        padding: 4
-                    }}>
-                        OFFICE<br/>USE
-                    </div>
-
-                    <div style={{ textAlign: 'center', minWidth: 160 }}>
-                        <div style={{ fontSize: 13, fontWeight: 700, color: '#111827', marginBottom: 4 }}>
+                    <div style={{ textAlign: 'center', minWidth: 200 }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: '#000', marginBottom: 8 }}>
                             {creatorName}
                         </div>
-                        <div style={{ borderTop: '1px solid #374151', paddingTop: 6 }}>
-                            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
+                        <div style={{ borderTop: '2px solid #000000', paddingTop: 8 }}>
+                            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#000' }}>
                                 Authorized Signatory
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ marginTop: 20, paddingTop: 10, borderTop: '1px solid #e5e7eb', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: 9.5, color: '#9ca3af', fontWeight: 500, textAlign: 'left' }}>
+                <div style={{ marginTop: 40, paddingTop: 16, borderTop: '2px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontSize: 10, color: '#333', fontWeight: 600 }}>
                         Registered By: {creatorName}
                     </div>
-                    <div style={{ fontSize: 9.5, color: '#9ca3af', fontWeight: 500, textAlign: 'right' }}>
-                        This document serves as proof of admission record. Keep safe for future reference. &nbsp;|&nbsp; © {new Date().getFullYear()} {INST.name}
+                    <div style={{ fontSize: 10, color: '#333', fontWeight: 600 }}>
+                        This document serves as proof of admission record. Keep safe for future reference.  |  © {new Date().getFullYear()} {INST.name}
                     </div>
                 </div>
             </div>

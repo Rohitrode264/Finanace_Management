@@ -66,90 +66,71 @@ export function ProfessionalReceipt({
 
     return (
         <>
-            {/* ══════════════════════ STYLES ══════════════════════════════════ */}
-            <style>{`
-                @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
-
-                /* ── Shared container ── */
-                .r-wrap {
-                    width: 100%;
-                    max-width: 560px;
-                    margin: 0 auto;
-                    background: #fff;
-                    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-                    color: #111827;
-                    box-sizing: border-box;
-                }
-
-                /* ── Responsive (screen, narrow) ── */
-                @media (max-width: 560px) {
-                    .r-wrap { padding: 14px 12px !important; }
-                    .r-hdr  { flex-direction: column !important; gap: 10px !important; }
-                    .r-meta { text-align: left !important; }
-                    .r-info { grid-template-columns: 1fr !important; }
-                    .r-fin  { grid-template-columns: 1fr !important; gap: 10px !important; }
-                    .r-sig  { flex-direction: column !important; align-items: center !important; gap: 20px !important; }
-                }
-
-                /* ── Print ── */
-                @media print {
-                    @page {
-                        size: A5 portrait;
-                        margin: 0; /* Margin is handled by the receiver's wrapper or absolute positioning if needed, but 0 is safest for consistency */
-                    }
-                    
-                    html, body { 
-                        margin: 0 !important; 
-                        padding: 0 !important; 
-                        background: #fff !important;
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-
-                    .r-wrap {
-                        width: 148mm !important; /* A5 Width */
-                        max-width: 148mm !important;
-                        margin: 0 auto !important;
-                        padding: 10mm 12mm !important; /* Internal padding for the paper */
-                        box-shadow: none !important;
-                        border: none !important;
-                        background: #fff !important;
-                        page-break-inside: avoid !important;
-                        break-inside: avoid !important;
-                        overflow: visible !important;
-                    }
-
-                    .r-hdr, .r-sig, .r-hdr-brand, .r-hdr-regs {
-                        display: flex !important;
-                        flex-direction: row !important;
-                    }
-
-                    .r-hdr, .r-sig {
-                        justify-content: space-between !important;
-                    }
-
-                    .r-hdr-brand {
-                        align-items: center !important;
-                        gap: 9px !important;
-                    }
-
-                    .r-hdr-regs {
-                        gap: 9px !important;
-                    }
-
-                    .r-sig {
-                        align-items: flex-end !important;
-                    }
-
-                    * {
-                        -webkit-print-color-adjust: exact !important;
-                        print-color-adjust: exact !important;
-                    }
-                }
-            `}</style>
-
             {/* ═══════════════════════ RECEIPT BODY ═══════════════════════════ */}
             <div className="r-wrap">
+                {/* ══════════════════════ STYLES ══════════════════════════════════ */}
+                <style>{`
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+                    /* ── Shared container ── */
+                    .r-wrap {
+                        width: 100%;
+                        max-width: 560px;
+                        margin: 0 auto;
+                        background: #fff !important;
+                        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                        color: #111827 !important;
+                        box-sizing: border-box;
+                    }
+
+                    /* ── Responsive (screen, narrow) ── */
+                    @media (max-width: 560px) {
+                        .r-wrap { padding: 14px 12px !important; }
+                        .r-hdr  { flex-direction: column !important; gap: 10px !important; }
+                        .r-meta { text-align: left !important; }
+                        .r-info { grid-template-columns: 1fr !important; }
+                        .r-fin  { grid-template-columns: 1fr !important; gap: 10px !important; }
+                        .r-sig  { flex-direction: column !important; align-items: center !important; gap: 20px !important; }
+                    }
+
+                    /* ── Print (layout only — @page rules are injected via pageStyle in useReactToPrint) ── */
+                    @media print {
+                        .r-wrap {
+                            width: 148mm !important;
+                            max-width: 148mm !important;
+                            margin: 0 auto !important;
+                            padding: 10mm 12mm !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                            background: #fff !important;
+                            page-break-inside: avoid !important;
+                            break-inside: avoid !important;
+                            overflow: visible !important;
+                        }
+
+                        .r-hdr, .r-sig, .r-hdr-brand, .r-hdr-regs {
+                            display: flex !important;
+                            flex-direction: row !important;
+                        }
+
+                        .r-hdr, .r-sig {
+                            justify-content: space-between !important;
+                        }
+
+                        .r-hdr-brand {
+                            align-items: center !important;
+                            gap: 9px !important;
+                        }
+
+                        .r-hdr-regs {
+                            gap: 9px !important;
+                        }
+
+                        .r-sig {
+                            align-items: flex-end !important;
+                        }
+                    }
+                `}</style>
 
                 {/* ── HEADER ────────────────────────────────────────────────── */}
                 <div className="r-hdr" style={{
