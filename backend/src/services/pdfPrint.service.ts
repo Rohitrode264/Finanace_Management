@@ -1,4 +1,4 @@
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import path from 'path';
 import os from 'os';
 import fs from 'fs';
@@ -30,15 +30,9 @@ export class PdfPrintService {
             throw new Error(`Unknown docType: "${docType}". Add it to PRINT_CONFIG.`);
         }
 
-        const browser = await puppeteer.launch({
+        const browser = await chromium.launch({
             headless: true,
-            executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-            args: [
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-            ],
+            args: ['--no-sandbox', '--disable-dev-shm-usage'],
         });
 
         try {
@@ -46,15 +40,14 @@ export class PdfPrintService {
 
             // Set content and wait until all network requests are idle
             // (fonts, images embedded as data-URIs won't trigger network calls)
-            await page.setContent(html, { waitUntil: 'networkidle0' });
+            await page.setContent(html, { waitUntil: 'networkidle' });
 
             // Emulate screen media so we get the "what you see is what you get" 
             // version, bypassing any CSS that hides elements during print.
-            await page.emulateMediaType('screen');
+            await page.emulateMedia({ media: 'screen' });
 
-            // Cast to any to satisfy older @types/puppeteer vs runtime mismatch
             const pdfBuffer: Buffer = Buffer.from(
-                await (page as any).pdf({
+                await page.pdf({
                     ...config.pdf,
                     // Always output as a Buffer, not a file path
                 }),

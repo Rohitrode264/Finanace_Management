@@ -6,7 +6,7 @@
 import Bull from 'bull';
 import cron from 'node-cron';
 import nodemailer from 'nodemailer';
-import puppeteer from 'puppeteer';
+import { chromium } from 'playwright';
 import { env } from '../config/env';
 import { reportService } from '../services/report.service';
 import { auditService } from '../services/audit.service';
@@ -150,17 +150,16 @@ export async function processDailyReport(date: string, triggeredBy: string): Pro
       </div>
     `;
 
-        // Generate PDF using puppeteer
+        // Generate PDF using playwright
         let pdfBuffer: Buffer | null = null;
         try {
-            const browser = await puppeteer.launch({
+            const browser = await chromium.launch({
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                args: ['--no-sandbox', '--disable-dev-shm-usage']
             });
             const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle0' });
-            // the pdf method returns a Uint8Array natively in modern puppeteer versions,
-            // we wrap it with Buffer.from just in case.
+            await page.setContent(html, { waitUntil: 'networkidle' });
+            
             const pdfData = await page.pdf({ format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
             pdfBuffer = Buffer.from(pdfData);
             await browser.close();
