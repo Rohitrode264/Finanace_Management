@@ -1,0 +1,14 @@
+{
+  "name": "local-print-proxy",
+  "version": "1.0.0",
+  "description": "Silent Local Print Proxy for Web to USB Printing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "pdf-to-printer": "^5.6.0"
+  }
+}

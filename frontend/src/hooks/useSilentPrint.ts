@@ -83,16 +83,38 @@ export function useSilentPrint(options: SilentPrintOptions) {
                 </html>
             `;
 
-            await apiClient.post('/print/silent', {
+            // Step 1: AWS generates PDF safely in the cloud
+            toast.loading(`AWS Rendering PDF...`, { id: toastId });
+            const response = await apiClient.post('/print/pdf', {
                 html: fullHtml,
                 docType: options.docType
+            }, {
+                responseType: 'arraybuffer' // Important to get raw binary for proxy
             });
+
+            // Step 2: Push generated PDF Blob directly to local Physical Proxy
+            toast.loading(`Sending to Physical Printer...`, { id: toastId });
+            const printRes = await fetch('http://localhost:4000/print', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/pdf'
+                },
+                body: response.data
+            });
+
+            if (!printRes.ok) {
+                throw new Error('Local proxy is down! Please ensure the NCP Print Proxy is running.');
+            }
 
             toast.success('Print job sent! Please wait up to 2 mins for the printer to respond.', { id: toastId, duration: 8000 });
         } catch (error: any) {
             console.error('Silent print error:', error);
-            // Even if it times out locally, the backend might have successfully queried it.
-            toast.success('Print job queued. Please wait up to 2 mins for the printer to respond.', { id: toastId, duration: 8000 });
+            
+            if (error.message && error.message.includes('Failed to fetch')) {
+                toast.error('Local Print Proxy unavailable! Please start the Print Service on this computer.', { id: toastId, duration: 8000 });
+            } else {
+                toast.error('Print generation failed.', { id: toastId, duration: 8000 });
+            }
         } finally {
             setIsPrinting(false);
         }
