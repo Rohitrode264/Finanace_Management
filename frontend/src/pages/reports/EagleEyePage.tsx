@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Eye, AlertTriangle, Users, TrendingUp, Search, ChevronDown, ChevronRight, Send, Printer, FileSpreadsheet } from 'lucide-react';
+import { Eye, AlertTriangle, Users, TrendingUp, Search, ChevronDown, ChevronRight, Send, Printer, FileSpreadsheet, Filter } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { formatCurrency } from '../../utils/currency';
@@ -9,6 +9,7 @@ import apiClient from '../../api/client';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 import { downloadElementAsPdf } from '../../utils/reportPdf';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 interface EagleEyeStudentRow {
@@ -20,6 +21,7 @@ interface EagleEyeStudentRow {
 }
 interface EagleEyeClassGroup {
     className: string;
+    academicYear: string;
     enrolled: number;
     totalFees: number;
     collected: number;
@@ -28,9 +30,10 @@ interface EagleEyeClassGroup {
 }
 interface EagleEyeReport {
     generatedAt: string;
+    availableAcademicYears: string[];
     institution: { totalEnrolled: number; totalFees: number; totalCollected: number; totalOutstanding: number; };
     byClass: EagleEyeClassGroup[];
-    atRisk: (EagleEyeStudentRow & { className: string })[];
+    atRisk: (EagleEyeStudentRow & { className: string; academicYear: string })[];
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -87,89 +90,144 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                 style={{
                     width: '100%', padding: '14px 18px', background: 'var(--bg-subtle)',
                     border: 'none', cursor: 'pointer', textAlign: 'left',
-                    display: 'grid', gridTemplateColumns: '20px 1fr repeat(4,minmax(100px,1fr)) 52px',
-                    gap: 12, alignItems: 'center', fontFamily: 'var(--font-sans)',
+                    display: 'flex', flexDirection: 'column', gap: 12, fontFamily: 'var(--font-sans)',
                 }}
             >
-                <div style={{ color: 'var(--text-muted)' }}>
-                    {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                </div>
-                <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{group.className}</div>
-                    <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{group.enrolled} students</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Fees</div>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{formatCurrency(group.totalFees)}</div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Collected</div>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
-                    <ProgressBar value={group.collected} max={group.totalFees} color="#059669" />
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</div>
-                    <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
-                        {formatCurrency(group.outstanding)}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div style={{ color: 'var(--text-muted)' }}>
+                            {open ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                        </div>
+                        <div>
+                            <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)' }}>{group.className}</div>
+                            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>{group.enrolled} students · {group.academicYear}</div>
+                        </div>
+                    </div>
+                    
+                    <div className="desktop-only" style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+                        <div style={{ textAlign: 'right', minWidth: 90 }}>
+                            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Fees</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{formatCurrency(group.totalFees)}</div>
+                        </div>
+                        <div style={{ textAlign: 'right', minWidth: 100 }}>
+                            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Collected</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
+                            <ProgressBar value={group.collected} max={group.totalFees} color="#059669" />
+                        </div>
+                        <div style={{ textAlign: 'right', minWidth: 90 }}>
+                            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
+                                {formatCurrency(group.outstanding)}
+                            </div>
+                        </div>
+                        <div style={{ textAlign: 'right', minWidth: 70 }}>
+                            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Collection %</div>
+                            <div style={{ fontWeight: 800, fontSize: '0.92rem', color: collPct >= 80 ? '#059669' : collPct >= 50 ? '#d97706' : '#dc2626' }}>
+                                {collPct}%
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Collection %</div>
-                    <div style={{ fontWeight: 800, fontSize: '0.92rem', color: collPct >= 80 ? '#059669' : collPct >= 50 ? '#d97706' : '#dc2626' }}>
-                        {collPct}%
+
+                {/* Mobile view of class stats */}
+                <div className="mobile-only" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                    <div>
+                        <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Collected</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Outstanding</div>
+                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
+                            {formatCurrency(group.outstanding)}
+                        </div>
                     </div>
                 </div>
             </button>
 
             {/* Student Table */}
             {open && (
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-                                <th style={{ textAlign: 'left', padding: '10px 18px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Student</th>
-                                <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Adm. No.</th>
-                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Fee</th>
-                                <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid</th>
-                                <th style={{ textAlign: 'right', padding: '10px 18px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</th>
-                                <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {filtered.map((s, i) => (
-                                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}
-                                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
-                                    onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                                    <td style={{ padding: '10px 18px', fontWeight: 600 }}>{s.name}</td>
-                                    <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{s.admissionNumber}</td>
-                                    <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.netFee)}</td>
-                                    <td style={{ padding: '10px 12px', textAlign: 'right', color: '#059669', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.paid)}</td>
-                                    <td style={{ padding: '10px 18px', textAlign: 'right', color: s.outstanding > 0 ? '#dc2626' : '#059669', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.outstanding)}</td>
-                                    <td style={{ padding: '10px 12px', textAlign: 'center' }}>
-                                        <span style={{
-                                            display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
-                                            background: s.outstanding <= 0 ? 'rgba(5,150,105,0.1)' : s.outstanding > s.netFee * 0.5 ? 'rgba(220,38,38,0.1)' : 'rgba(217,119,6,0.1)',
-                                            color: s.outstanding <= 0 ? '#059669' : s.outstanding > s.netFee * 0.5 ? '#dc2626' : '#d97706',
-                                        }}>
-                                            {s.outstanding <= 0 ? 'Cleared' : s.outstanding > s.netFee * 0.5 ? 'High Due' : 'Partial'}
-                                        </span>
-                                    </td>
+                <div>
+                    <div className="table-container desktop-only">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                                    <th style={{ textAlign: 'left', padding: '10px 18px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Student</th>
+                                    <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Adm. No.</th>
+                                    <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Fee</th>
+                                    <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid</th>
+                                    <th style={{ textAlign: 'right', padding: '10px 18px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</th>
+                                    <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                        {/* Totals row */}
-                        <tfoot>
-                            <tr style={{ background: 'var(--bg-subtle)', borderTop: '2px solid var(--border)' }}>
-                                <td colSpan={2} style={{ padding: '10px 18px', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
-                                    Class Total ({group.enrolled} students)
-                                </td>
-                                <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(group.totalFees)}</td>
-                                <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>{formatCurrency(group.collected)}</td>
-                                <td style={{ padding: '10px 18px', textAlign: 'right', fontWeight: 700, color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>{formatCurrency(group.outstanding)}</td>
-                                <td />
-                            </tr>
-                        </tfoot>
-                    </table>
+                            </thead>
+                            <tbody>
+                                {filtered.map((s, i) => (
+                                    <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}
+                                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                                        onMouseLeave={e => (e.currentTarget.style.background = '')}>
+                                        <td style={{ padding: '10px 18px', fontWeight: 600 }}>{s.name}</td>
+                                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{s.admissionNumber}</td>
+                                        <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.netFee)}</td>
+                                        <td style={{ padding: '10px 12px', textAlign: 'right', color: '#059669', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.paid)}</td>
+                                        <td style={{ padding: '10px 18px', textAlign: 'right', color: s.outstanding > 0 ? '#dc2626' : '#059669', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.outstanding)}</td>
+                                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                            <span style={{
+                                                display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
+                                                background: s.outstanding <= 0 ? 'rgba(5,150,105,0.1)' : s.outstanding > s.netFee * 0.5 ? 'rgba(220,38,38,0.1)' : 'rgba(217,119,6,0.1)',
+                                                color: s.outstanding <= 0 ? '#059669' : s.outstanding > s.netFee * 0.5 ? '#dc2626' : '#d97706',
+                                            }}>
+                                                {s.outstanding <= 0 ? 'Cleared' : s.outstanding > s.netFee * 0.5 ? 'High Due' : 'Partial'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                            {/* Totals row */}
+                            <tfoot>
+                                <tr style={{ background: 'var(--bg-subtle)', borderTop: '2px solid var(--border)' }}>
+                                    <td colSpan={2} style={{ padding: '10px 18px', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                        Class Total ({group.enrolled} students)
+                                    </td>
+                                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(group.totalFees)}</td>
+                                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>{formatCurrency(group.collected)}</td>
+                                    <td style={{ padding: '10px 18px', textAlign: 'right', fontWeight: 700, color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>{formatCurrency(group.outstanding)}</td>
+                                    <td />
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    {/* Mobile Card View for Students */}
+                    <div className="mobile-only" style={{ padding: 10 }}>
+                        {filtered.map((s, i) => (
+                            <div key={i} className="mobile-card-item" style={{ marginBottom: 8 }}>
+                                <div className="mobile-card-header">
+                                    <div>
+                                        <div className="mobile-card-title">{s.name}</div>
+                                        <div className="mobile-card-subtitle">{s.admissionNumber}</div>
+                                    </div>
+                                    <span style={{
+                                        display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
+                                        background: s.outstanding <= 0 ? 'rgba(5,150,105,0.1)' : s.outstanding > s.netFee * 0.5 ? 'rgba(220,38,38,0.1)' : 'rgba(217,119,6,0.1)',
+                                        color: s.outstanding <= 0 ? '#059669' : s.outstanding > s.netFee * 0.5 ? '#dc2626' : '#d97706',
+                                    }}>
+                                        {s.outstanding <= 0 ? 'Cleared' : s.outstanding > s.netFee * 0.5 ? 'High Due' : 'Partial'}
+                                    </span>
+                                </div>
+                                <div className="mobile-card-row">
+                                    <span className="mobile-card-row-label">Net Fee</span>
+                                    <span className="mobile-card-row-value">{formatCurrency(s.netFee)}</span>
+                                </div>
+                                <div className="mobile-card-row">
+                                    <span className="mobile-card-row-label">Paid</span>
+                                    <span className="mobile-card-row-value" style={{ color: '#059669' }}>{formatCurrency(s.paid)}</span>
+                                </div>
+                                <div className="mobile-card-row">
+                                    <span className="mobile-card-row-label">Outstanding</span>
+                                    <span className="mobile-card-row-value" style={{ color: s.outstanding > 0 ? '#dc2626' : '#059669' }}>{formatCurrency(s.outstanding)}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
         </div>
@@ -180,6 +238,7 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
 export function EagleEyePage() {
     const canView = usePermission('VIEW_REPORT');
     const [search, setSearch] = useState('');
+    const [selectedYear, setSelectedYear] = useState('All');
 
     const { data: res, isLoading, refetch, isFetching } = useQuery({
         queryKey: ['eagle-eye'],
@@ -196,22 +255,66 @@ export function EagleEyePage() {
 
     const report: EagleEyeReport | undefined = res?.data?.data;
 
+    // Filter report data based on selected academic year
+    const filteredReport = useMemo(() => {
+        if (!report) return null;
+        if (selectedYear === 'All') return report;
+
+        const filteredByClass = report.byClass.filter(g => g.academicYear === selectedYear);
+        const filteredAtRisk = report.atRisk.filter(s => s.academicYear === selectedYear);
+
+        const filteredInstitution = filteredByClass.reduce(
+            (acc, g) => ({
+                totalEnrolled: acc.totalEnrolled + g.enrolled,
+                totalFees: acc.totalFees + g.totalFees,
+                totalCollected: acc.totalCollected + g.collected,
+                totalOutstanding: acc.totalOutstanding + g.outstanding,
+            }),
+            { totalEnrolled: 0, totalFees: 0, totalCollected: 0, totalOutstanding: 0 }
+        );
+
+        return {
+            ...report,
+            institution: filteredInstitution,
+            byClass: filteredByClass,
+            atRisk: filteredAtRisk
+        };
+    }, [report, selectedYear]);
+
+    // Data for Graphs
+    const barChartData = useMemo(() => {
+        if (!filteredReport) return [];
+        return filteredReport.byClass.map(g => ({
+            name: g.className,
+            Collected: g.collected,
+            Outstanding: g.outstanding,
+        }));
+    }, [filteredReport]);
+
+    const pieChartData = useMemo(() => {
+        if (!filteredReport) return [];
+        return [
+            { name: 'Collected', value: filteredReport.institution.totalCollected, color: '#059669' },
+            { name: 'Outstanding', value: filteredReport.institution.totalOutstanding, color: '#dc2626' }
+        ];
+    }, [filteredReport]);
+
     const downloadExcel = () => {
-        if (!report) return;
+        if (!filteredReport) return;
 
         const data: any[] = [];
-        // Add Header Row
         data.push(["NCP Eagle-Eye Report"]);
-        data.push([`Generated at: ${format(new Date(report.generatedAt), 'dd MMM yyyy, hh:mm a')}`]);
+        data.push([`Generated at: ${format(new Date(filteredReport.generatedAt), 'dd MMM yyyy, hh:mm a')}`]);
+        data.push([`Academic Year: ${selectedYear}`]);
         data.push([]); // Gap
 
-        // Headers
-        data.push(["Class", "Student Name", "Admission No.", "Net Fee", "Paid", "Outstanding", "Status"]);
+        data.push(["Academic Year", "Class", "Student Name", "Admission No.", "Net Fee", "Paid", "Outstanding", "Status"]);
 
-        for (const group of report.byClass) {
+        for (const group of filteredReport.byClass) {
             for (const s of group.students) {
                 const status = s.outstanding <= 0 ? 'Cleared' : s.outstanding > s.netFee * 0.5 ? 'High Due' : 'Partial';
                 data.push([
+                    group.academicYear,
                     group.className,
                     s.name,
                     s.admissionNumber,
@@ -223,21 +326,19 @@ export function EagleEyePage() {
             }
         }
 
-        // Add Summary
         data.push([]);
         data.push(["Institution Totals"]);
-        data.push(["Total Enrolled", report.institution.totalEnrolled]);
-        data.push(["Total Fees", report.institution.totalFees]);
-        data.push(["Total Collected", report.institution.totalCollected]);
-        data.push(["Total Outstanding", report.institution.totalOutstanding]);
+        data.push(["Total Enrolled", filteredReport.institution.totalEnrolled]);
+        data.push(["Total Fees", filteredReport.institution.totalFees]);
+        data.push(["Total Collected", filteredReport.institution.totalCollected]);
+        data.push(["Total Outstanding", filteredReport.institution.totalOutstanding]);
 
-        // Create Workbook
         const worksheet = XLSX.utils.aoa_to_sheet(data);
         const workbook = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(workbook, worksheet, "Eagle-Eye");
 
-        // Set column widths
         worksheet["!cols"] = [
+            { wch: 15 }, // Year
             { wch: 25 }, // Class
             { wch: 25 }, // Name
             { wch: 15 }, // Adm. No
@@ -247,19 +348,17 @@ export function EagleEyePage() {
             { wch: 15 }  // Status
         ];
 
-        // Export
-        XLSX.writeFile(workbook, `NCP_EagleEye_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+        XLSX.writeFile(workbook, `NCP_EagleEye_${selectedYear}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
     };
 
     const handleDownloadPdf = async () => {
         try {
-            await downloadElementAsPdf('eagle-eye-report', `NCP_EagleEye_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+            await downloadElementAsPdf('eagle-eye-report', `NCP_EagleEye_${selectedYear}_${format(new Date(), 'yyyy-MM-dd')}.pdf`);
             toast.success('📄 PDF downloaded successfully');
         } catch (error) {
             toast.error('Failed to generate PDF');
         }
     };
-
 
     if (!canView) {
         return <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>You do not have permission to view this report.</div>;
@@ -274,18 +373,33 @@ export function EagleEyePage() {
 
             {/* Action Bar */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap', background: 'var(--bg-surface)', padding: '12px 16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
-                <div style={{ position: 'relative', flex: '1 1 300px', maxWidth: 400 }}>
+                <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
                     <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
                     <input
                         value={search}
                         onChange={e => setSearch(e.target.value)}
                         className="form-input"
-                        placeholder="Search student or admission no..."
+                        placeholder="Search student..."
                         style={{ paddingLeft: 36, width: '100%', height: 40 }}
                     />
                 </div>
 
-                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 150px', maxWidth: 200 }}>
+                    <Filter size={15} color="var(--text-muted)" />
+                    <select 
+                        value={selectedYear} 
+                        onChange={e => setSelectedYear(e.target.value)}
+                        className="form-select"
+                        style={{ height: 40, flex: 1 }}
+                    >
+                        <option value="All">All Years</option>
+                        {report?.availableAcademicYears?.map(y => (
+                            <option key={y} value={y}>{y}</option>
+                        ))}
+                    </select>
+                </div>
+
+                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
                     <button className="btn-secondary" onClick={() => refetch()} disabled={isFetching} style={{ height: 40, padding: '0 16px' }}>
                         <Eye size={14} style={{ marginRight: 6 }} /> {isFetching ? '...' : 'Refresh'}
                     </button>
@@ -326,44 +440,96 @@ export function EagleEyePage() {
 
             {isLoading ? (
                 <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading Eagle-Eye report...</div>
-            ) : !report ? (
+            ) : !filteredReport ? (
                 <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>No data available.</div>
             ) : (
                 <div id="eagle-eye-report">
                     {/* Generated at */}
                     <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                        Generated at {format(new Date(report.generatedAt), 'dd MMM yyyy, hh:mm a')}
+                        Generated at {format(new Date(filteredReport.generatedAt), 'dd MMM yyyy, hh:mm a')} | Filter: {selectedYear}
                     </div>
 
                     {/* ── KPI Cards ── */}
                     <div className="stats-grid" style={{ marginBottom: 24 }}>
                         <KpiCard
                             label="Total Enrolled"
-                            value={report.institution.totalEnrolled}
+                            value={filteredReport.institution.totalEnrolled}
                             color="linear-gradient(90deg,#6366f1,#4f46e5)"
-                            sub="Active students this session"
+                            sub="Active students in filter"
                         />
                         <KpiCard
                             label="Total Fees (Net)"
-                            value={report.institution.totalFees}
+                            value={filteredReport.institution.totalFees}
                             color="linear-gradient(90deg,#0284c7,#0369a1)"
                             isCurrency
                             sub="After all concessions"
                         />
                         <KpiCard
                             label="Total Collected"
-                            value={report.institution.totalCollected}
+                            value={filteredReport.institution.totalCollected}
                             color="linear-gradient(90deg,#059669,#047857)"
                             isCurrency
-                            sub={`${pct(report.institution.totalCollected, report.institution.totalFees)}% of net fees`}
+                            sub={`${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}% of net fees`}
                         />
                         <KpiCard
                             label="Total Outstanding"
-                            value={report.institution.totalOutstanding}
+                            value={filteredReport.institution.totalOutstanding}
                             color="linear-gradient(90deg,#dc2626,#b91c1c)"
                             isCurrency
-                            sub={`${pct(report.institution.totalOutstanding, report.institution.totalFees)}% of net fees pending`}
+                            sub={`${pct(filteredReport.institution.totalOutstanding, filteredReport.institution.totalFees)}% of net fees pending`}
                         />
+                    </div>
+
+                    {/* ── Analytical Graphs ── */}
+                    <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 20 }}>Financial Analytics</div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+                            {/* Bar Chart: Collected vs Outstanding by Class */}
+                            <div style={{ height: 300 }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>Collection by Class</div>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={barChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                                        <YAxis tickFormatter={(val) => `₹${(val/1000)}k`} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                                        <Tooltip 
+                                            formatter={(value: any) => formatCurrency(value)}
+                                            contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)', borderRadius: 8, fontSize: '0.8rem' }}
+                                        />
+                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                        <Bar dataKey="Collected" stackId="a" fill="#059669" radius={[0, 0, 4, 4]} maxBarSize={40} />
+                                        <Bar dataKey="Outstanding" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+
+                            {/* Pie Chart: Overall Collection */}
+                            <div style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>Overall Institution Distribution</div>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <PieChart>
+                                        <Pie
+                                            data={pieChartData}
+                                            cx="50%"
+                                            cy="50%"
+                                            innerRadius={60}
+                                            outerRadius={80}
+                                            paddingAngle={5}
+                                            dataKey="value"
+                                        >
+                                            {pieChartData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                            ))}
+                                        </Pie>
+                                        <Tooltip 
+                                            formatter={(value: any) => formatCurrency(value)}
+                                            contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)', borderRadius: 8, fontSize: '0.8rem' }}
+                                        />
+                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                    </PieChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
                     </div>
 
                     {/* ── Collection Progress ── */}
@@ -373,12 +539,12 @@ export function EagleEyePage() {
                                 Overall Collection Progress
                             </div>
                             <div style={{ fontWeight: 800, fontSize: '1rem', color: '#059669' }}>
-                                {pct(report.institution.totalCollected, report.institution.totalFees)}%
+                                {pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%
                             </div>
                         </div>
                         <div style={{ height: 8, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
                             <div style={{
-                                width: `${pct(report.institution.totalCollected, report.institution.totalFees)}%`,
+                                width: `${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%`,
                                 height: '100%',
                                 background: 'linear-gradient(90deg,#059669,#34d399)',
                                 borderRadius: 99,
@@ -386,13 +552,13 @@ export function EagleEyePage() {
                             }} />
                         </div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            <span>Collected: {formatCurrency(report.institution.totalCollected)}</span>
-                            <span>Remaining: {formatCurrency(report.institution.totalOutstanding)}</span>
+                            <span>Collected: {formatCurrency(filteredReport.institution.totalCollected)}</span>
+                            <span>Remaining: {formatCurrency(filteredReport.institution.totalOutstanding)}</span>
                         </div>
                     </div>
 
                     {/* ── Two-column: At Risk + Class Summary ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24 }}>
                         {/* At Risk */}
                         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
                             <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -400,14 +566,14 @@ export function EagleEyePage() {
                                 <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>At-Risk Students</div>
                                 <div style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Top 10 by Outstanding</div>
                             </div>
-                            {report.atRisk.length === 0 ? (
+                            {filteredReport.atRisk.length === 0 ? (
                                 <div style={{ padding: '30px 18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                                     🎉 No outstanding dues!
                                 </div>
                             ) : (
-                                <div>
-                                    {report.atRisk.map((s, i) => (
-                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 18px', borderBottom: '1px solid var(--border)' }}>
+                                <div className="mobile-card" style={{ padding: 10 }}>
+                                    {filteredReport.atRisk.map((s, i) => (
+                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderBottom: '1px solid var(--border)' }}>
                                             <div style={{
                                                 width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
                                                 background: i < 3 ? 'rgba(220,38,38,0.1)' : 'var(--bg-subtle)',
@@ -419,7 +585,7 @@ export function EagleEyePage() {
                                             </div>
                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                 <div style={{ fontWeight: 600, fontSize: '0.83rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.admissionNumber} · {s.className}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.admissionNumber} · {s.className} · {s.academicYear}</div>
                                             </div>
                                             <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#dc2626', flexShrink: 0 }}>
                                                 {formatCurrency(s.outstanding)}
@@ -436,20 +602,21 @@ export function EagleEyePage() {
                                 <TrendingUp size={15} color="#6366f1" />
                                 <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Class Summary</div>
                             </div>
-                            <div style={{ overflowX: 'auto' }}>
+                            <div className="table-container">
                                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                                     <thead>
                                         <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                            {['Class', 'Students', 'Collected', '%'].map(h => (
-                                                <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Class' ? 'left' : 'right', fontWeight: 700, fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                                            {['Year', 'Class', 'Stds', 'Collected', '%'].map(h => (
+                                                <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Class' || h === 'Year' ? 'left' : 'right', fontWeight: 700, fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {report.byClass.map((g, i) => {
+                                        {filteredReport.byClass.map((g, i) => {
                                             const p = pct(g.collected, g.totalFees);
                                             return (
                                                 <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    <td style={{ padding: '9px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.7rem' }}>{g.academicYear}</td>
                                                     <td style={{ padding: '9px 12px', fontWeight: 600 }}>{g.className}</td>
                                                     <td style={{ padding: '9px 12px', textAlign: 'right', color: 'var(--text-muted)' }}>{g.enrolled}</td>
                                                     <td style={{ padding: '9px 12px', textAlign: 'right', color: '#059669', fontWeight: 600 }}>{formatCurrency(g.collected)}</td>
@@ -469,7 +636,7 @@ export function EagleEyePage() {
                         <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>Class-wise Student Details</span>
                         <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>— click to expand</span>
                     </div>
-                    {report.byClass.map((group, i) => (
+                    {filteredReport.byClass.map((group, i) => (
                         <ClassSection key={i} group={group} search={search} />
                     ))}
                 </div>

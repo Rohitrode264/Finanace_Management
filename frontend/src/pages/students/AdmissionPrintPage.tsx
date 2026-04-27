@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { useSilentPrint } from '../../hooks/useSilentPrint';
+import { useReactToPrint } from 'react-to-print';
 import { studentsService } from '../../api/services/students.service';
 import { enrollmentService } from '../../api/services/enrollment.service';
 import { formatCurrency } from '../../utils/currency';
@@ -19,15 +19,16 @@ export function AdmissionPrintPage() {
         enabled: !!id,
     });
 
-    const { handlePrint, isPrinting } = useSilentPrint({
-        contentRef: printRef,
-        docType: 'admission'
-    });
-    
     const { data: enrollRes } = useQuery({
         queryKey: ['student-enrollments', id],
         queryFn: () => enrollmentService.getByStudentId(id!),
         enabled: !!id,
+    });
+
+    const handlePrint = useReactToPrint({
+        contentRef: printRef,
+        documentTitle: `AdmissionForm_${id}`,
+        pageStyle: `@page { size: A5 portrait; margin: 10mm 10mm 12mm 14mm; }`,
     });
 
     const student = data?.data?.data;
@@ -61,296 +62,327 @@ export function AdmissionPrintPage() {
     };
 
     const formattedDate = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    
+
     // Find active enrollment
     const enrollments = enrollRes?.data?.data || [];
-    const currentEnrollment = enrollments.find(e => e.status === 'ONGOING') || enrollments[0];
-    
+    const currentEnrollment = enrollments.find((e: any) => e.status === 'ONGOING') || enrollments[0];
+
     let courseLabel = '—';
     if (currentEnrollment) {
         const ac = currentEnrollment.academicClassId as unknown as AcademicClass;
         const t = ac?.templateId as unknown as ClassTemplate;
         if (t) {
-            courseLabel = `${t.grade}${t.stream ? ` — ${t.stream}` : ''} (${t.board})`;
+            courseLabel = `${t.grade}${t.stream ? ` (${t.stream})` : ''} — ${t.board}`;
             if (ac.section) courseLabel += ` — Sec ${ac.section}`;
         }
     }
 
     const creatorName = student.createdBy && typeof student.createdBy === 'object' ? (student.createdBy as any).name || 'Administrator' : 'Administrator';
 
-    // A4 printing layout setup - premium table-based design for bulletproof printing
+    const label = (extra?: React.CSSProperties): React.CSSProperties => ({
+        fontSize: 8, fontWeight: 700, letterSpacing: '0.08em',
+        textTransform: 'uppercase', color: '#6b7280', marginBottom: 3,
+        ...extra,
+    });
+
     return (
         <>
-            <div className="screen-only no-print" style={{ maxWidth: 794, margin: '20px auto', display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '0 20px' }}>
-                <button className="btn-secondary" onClick={() => navigate(-1)}><ArrowLeft size={15}/> Back</button>
-                <button className="btn-primary" onClick={handlePrint} disabled={isPrinting}>
-                    <Printer size={15}/> {isPrinting ? 'Printing...' : 'Print Form'}
+            <div className="screen-only no-print" style={{ maxWidth: 600, margin: '20px auto', display: 'flex', gap: 12, justifyContent: 'flex-end', padding: '0 20px' }}>
+                <button className="btn-secondary" onClick={() => navigate(-1)}><ArrowLeft size={15} /> Back</button>
+                <button className="btn-primary" onClick={() => handlePrint()}>
+                    <Printer size={15} /> Print Form (A5)
                 </button>
             </div>
 
-            <div className="ncp-receipt" ref={printRef}>
+            <div className="r-wrap" ref={printRef}>
                 <style>{`
-                    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&display=swap');
+                    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
                     
-                    .ncp-receipt {
+                    .r-wrap {
                         width: 100%;
-                        max-width: 794px; /* A4 width roughly at 96dpi */
+                        max-width: 560px;
                         margin: 0 auto;
-                        background: #ffffff !important;
-                        font-family: 'Outfit', system-ui, -apple-system, sans-serif;
-                        color: #000000 !important;
+                        padding: 18px 16px 18px 20px;
+                        background: #fff !important;
+                        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+                        color: #111827 !important;
                         box-sizing: border-box;
-                    }
-                    
-                    .ncp-receipt * {
-                        border-color: #000000 !important;
-                    }
-
-                    .form-table {
-                        width: 100%;
-                        border-collapse: collapse;
-                        margin-bottom: 24px;
-                        border: 2px solid #000000;
-                    }
-
-                    .form-table td {
-                        border: 1px solid #000000;
-                        padding: 12px 16px;
-                        vertical-align: top;
-                    }
-
-                    .form-table td.bg-fill {
-                        background-color: #fafafa !important;
-                    }
-
-                    .label-title {
-                        font-size: 10px;
-                        font-weight: 700;
-                        letter-spacing: 0.1em;
-                        text-transform: uppercase;
-                        color: #4a4a4a !important; /* Slightly softened black for labels */
-                        margin-bottom: 6px;
-                    }
-
-                    .value-text {
-                        font-size: 15px;
-                        font-weight: 800;
-                        color: #000000 !important;
-                        line-height: 1.3;
                     }
 
                     @media print {
-                        .ncp-receipt {
-                            max-width: 100% !important;
-                            padding: 12mm !important;
+                        .r-wrap {
+                            width: 148mm !important;
+                            max-width: 148mm !important;
+                            margin: 0 auto !important;
+                            padding: 0 !important; /* Relying solely on @page margin */
                             box-shadow: none !important;
                             border: none !important;
+                            background: #fff !important;
+                            page-break-inside: avoid !important;
+                            break-inside: avoid !important;
+                            overflow: visible !important;
+                        }
+
+                        body { background: #fff !important; }
+                        
+                        .r-hdr, .r-sig, .r-hdr-brand, .r-hdr-regs {
+                            display: flex !important;
+                            flex-direction: row !important;
+                        }
+
+                        .r-hdr, .r-sig {
+                            justify-content: space-between !important;
+                        }
+
+                        .r-hdr-brand {
+                            align-items: center !important;
+                            gap: 10px !important;
+                        }
+
+                        .r-hdr-regs {
+                            gap: 10px !important;
+                        }
+
+                        .r-sig {
+                            align-items: flex-end !important;
                         }
                     }
                 `}</style>
-                
-                {/* ═══════════════════════  HEADER  ══════════════════════════ */}
-                <div style={{
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'flex-start',
-                    paddingBottom: 20,
-                    borderBottom: '3px solid #000000',
-                    marginBottom: 24
+
+                {/* ── HEADER ────────────────────────────────────────────────── */}
+                <div className="r-hdr" style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    paddingBottom: 12, borderBottom: '2.5px solid #111827', marginBottom: 12,
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+                    {/* Branding */}
+                    <div className="r-hdr-brand" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <img
-                            src="/images/logo_bw.jpg"
-                            alt="Logo"
-                            style={{ width: 80, height: 80, objectFit: 'contain', borderRadius: 8, border: '2px solid #000' }}
+                            src="/images/logo_bw.jpg" alt="Logo"
+                            style={{ width: 48, height: 48, objectFit: 'contain', borderRadius: 5 }}
                         />
                         <div>
-                            <div style={{ fontSize: 26, fontWeight: 900, letterSpacing: '-0.02em', color: '#000000', lineHeight: 1, marginBottom: 6 }}>
+                            <div style={{ fontSize: 18, fontWeight: 900, letterSpacing: '-0.03em', color: '#111827', lineHeight: 1 }}>
                                 {INST.name}
                             </div>
-                            <div style={{ fontSize: 13, fontWeight: 700, color: '#333333', marginBottom: 4 }}>
+                            <div style={{ fontSize: 10, fontWeight: 600, color: '#374151', marginTop: 3 }}>
                                 {INST.subtitle}
                             </div>
-                            <div style={{ fontSize: 11, color: '#444444', marginBottom: 4 }}>
-                                {INST.address}  |  {INST.phone}
+                            <div style={{ fontSize: 9, color: '#6b7280', marginTop: 3 }}>
+                                {INST.address}&nbsp;|&nbsp;{INST.phone}
                             </div>
-                            <div style={{ fontSize: 10, color: '#555555', display: 'flex', gap: 16, fontWeight: 600 }}>
-                                <span>Reg. No: {INST.regNo}</span>
-                                <span>GSTIN: {INST.gstin}</span>
+                            <div className="r-hdr-regs" style={{ fontSize: 8, color: '#9ca3af', marginTop: 3, display: 'flex', gap: 10 }}>
+                                <span>Reg: <strong style={{ color: '#6b7280' }}>{INST.regNo}</strong></span>
+                                <span>GSTIN: <strong style={{ color: '#6b7280' }}>{INST.gstin}</strong></span>
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
-                        <div style={{ textAlign: 'right', flexShrink: 0, marginTop: 4 }}>
-                            <div style={{
-                                display: 'inline-block',
-                                border: '2px solid #000000',
-                                borderRadius: 6,
-                                padding: '6px 16px',
-                                fontSize: 12,
-                                fontWeight: 900,
-                                letterSpacing: '0.15em',
-                                textTransform: 'uppercase',
-                                color: '#000000',
-                                marginBottom: 16,
-                                background: '#fafafa !important'
-                            }}>
-                                Admission Form
-                            </div>
-                            <div style={{ fontSize: 22, fontWeight: 900, color: '#000000', letterSpacing: '-0.02em', marginBottom: 6 }}>
-                                {student.admissionNumber}
-                            </div>
-                            <div style={{ fontSize: 13, color: '#000000', fontWeight: 700 }}>
-                                {formattedDate}
-                            </div>
-                        </div>
-
+                    <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        {/* Larger Photo Box */}
                         <div style={{
-                            width: '100px',
-                            height: '130px',
-                            border: '2px dashed #000',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            textAlign: 'center',
-                            padding: '10px'
+                            width: 75, height: 95, border: '1.5px dashed #6b7280', borderRadius: 5,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            textAlign: 'center', background: '#f9fafb', flexShrink: 0
                         }}>
-                            <span style={{ fontSize: 10, color: '#444', fontWeight: 700 }}>Affix Passport Size Photo Here</span>
+                            <span style={{ fontSize: 8.5, color: '#9ca3af', fontWeight: 700, letterSpacing: '0.05em' }}>AFFIX<br/>PHOTO</span>
                         </div>
                     </div>
                 </div>
 
-                {/* ══════════════  STUDENT PROFILE DETAILS  ═══════════ */}
-                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#000', fontWeight: 900, marginBottom: 12, borderLeft: '4px solid #000', paddingLeft: 8 }}>
-                    Primary Details
-                </div>
-                
-                <table className="form-table">
-                    <tbody>
-                        <tr>
-                            <td colSpan={2} className="bg-fill" style={{ width: '66%' }}>
-                                <div className="label-title">Student Full Name</div>
-                                <div className="value-text" style={{ fontSize: 18 }}>{student.firstName} {student.lastName}</div>
-                            </td>
-                            <td style={{ width: '34%' }}>
-                                <div className="label-title">Date of Birth</div>
-                                <div className="value-text">{student.dob ? new Date(student.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Not Provided'}</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td className="bg-fill">
-                                <div className="label-title">Primary Phone</div>
-                                <div className="value-text">{student.phone}</div>
-                            </td>
-                            <td>
-                                <div className="label-title">Alternate Phone</div>
-                                <div className="value-text">{student.alternatePhone || student.motherPhone || 'Not Provided'}</div>
-                            </td>
-                            <td className="bg-fill">
-                                <div className="label-title">Blood Group</div>
-                                <div className="value-text">{student.bloodGroup || 'Not Provided'}</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan={3}>
-                                <div className="label-title">Email Address</div>
-                                <div className="value-text">{student.email || 'Not Provided'}</div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                {/* ── FORM META BAR ─────────────────────────────────────── */}
+                <div style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    background: '#f9fafb', padding: '8px 12px',
+                    border: '1.5px solid #e5e7eb', borderRadius: 5, marginBottom: 16
+                }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', minWidth: 100 }}>
+                        <span style={{ fontSize: 8, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em', display: 'block', marginBottom: 2 }}>CP ID</span>
+                        {student.admissionNumber}
+                    </div>
+                    
+                    <div style={{
+                        fontSize: 12, fontWeight: 800, letterSpacing: '0.12em',
+                        textTransform: 'uppercase', color: '#111827', textAlign: 'center'
+                    }}>
+                        Admission Form
+                    </div>
 
-                <div style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.15em', color: '#000', fontWeight: 900, marginBottom: 12, borderLeft: '4px solid #000', paddingLeft: 8, marginTop: 32 }}>
-                    Parental & Academic Details
+                    <div style={{ fontSize: 11, fontWeight: 700, color: '#374151', minWidth: 100, textAlign: 'right' }}>
+                        <span style={{ fontSize: 8, textTransform: 'uppercase', color: '#6b7280', letterSpacing: '0.05em', display: 'block', marginBottom: 2 }}>Date</span>
+                        {formattedDate}
+                    </div>
                 </div>
-                
-                <table className="form-table">
-                    <tbody>
-                        <tr>
-                            <td className="bg-fill" style={{ width: '50%' }}>
-                                <div className="label-title">Father's Name</div>
-                                <div className="value-text">{student.fatherName}</div>
-                            </td>
-                            <td style={{ width: '50%' }}>
-                                <div className="label-title">Mother's Name</div>
-                                <div className="value-text">{student.motherName || 'Not Provided'}</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan={2} className="bg-fill">
-                                <div className="label-title">Current School Name</div>
-                                <div className="value-text" style={{ fontSize: 16 }}>{student.schoolName || 'Not Provided'}</div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td colSpan={2}>
-                                <div className="label-title">Enrolled In (Course / Class)</div>
-                                <div className="value-text" style={{ fontSize: 18, fontWeight: 900 }}>{courseLabel}</div>
-                            </td>
-                        </tr>
-                        
-                        {currentEnrollment && (
-                            <tr>
-                                <td colSpan={2} className="bg-fill">
-                                    <div className="label-title">Fee Details (Academic Tuition)</div>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                        <div style={{ fontSize: 24, fontWeight: 900, color: '#000' }}>
-                                            {formatCurrency(currentEnrollment.netFee)}
-                                        </div>
-                                        {currentEnrollment.totalFee > currentEnrollment.netFee && (
-                                            <div style={{ fontSize: 12, color: '#444', fontWeight: 600, textAlign: 'right' }}>
-                                                Base Fee: {formatCurrency(currentEnrollment.totalFee)}<br/>
-                                                Concession: {formatCurrency(currentEnrollment.totalFee - currentEnrollment.netFee)}
-                                            </div>
-                                        )}
-                                    </div>
-                                </td>
-                            </tr>
-                        )}
-                        <tr>
-                            <td colSpan={2}>
-                                <div className="label-title">Residential Address</div>
-                                <div className="value-text" style={{ fontWeight: 600, lineHeight: 1.5 }}>
-                                    {student.address?.street ? student.address.street + ', ' : ''}
-                                    {student.address?.city ? student.address.city + ', ' : ''}
-                                    {student.address?.state ? student.address.state : 'Not Provided'} 
-                                    {student.address?.zipCode ? ' - ' + student.address.zipCode : ''}
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
 
-                {/* ═══════════════════════  FOOTER  ═══════════════════════════ */}
-                <div style={{ marginTop: 60, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                    <div style={{ textAlign: 'center', minWidth: 200 }}>
-                        <div style={{ borderTop: '2px solid #000000', paddingTop: 8 }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#000' }}>
-                                Parent / Guardian Signature
+                {/* ── STUDENT DETAILS ───────────────────────── */}
+                <div style={label({ color: '#111827', marginBottom: 4 })}>Personal Details</div>
+                <div className="r-info" style={{
+                    display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr)',
+                    gap: 0, marginBottom: 14,
+                    border: '1.5px solid #e5e7eb', borderRadius: 5, overflow: 'hidden',
+                }}>
+                    <div style={{ padding: '8px 10px', background: '#f9fafb', borderRight: '1.5px solid #e5e7eb', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Student Name</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.2 }}>
+                            {student?.firstName} {student?.lastName}
+                        </div>
+                    </div>
+                    <div style={{ padding: '8px 10px', background: '#fff', borderRight: '1.5px solid #e5e7eb', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Date of Birth</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
+                            {student.dob ? new Date(student.dob).toLocaleDateString('en-GB') : 'N/A'}
+                        </div>
+                    </div>
+                    <div style={{ padding: '8px 10px', background: '#fff', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Blood Group</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#dc2626', lineHeight: 1.2 }}>
+                            {student.bloodGroup || 'N/A'}
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', background: '#fff', borderRight: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Email Address</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', lineHeight: 1.2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            {student.email || 'N/A'}
+                        </div>
+                    </div>
+                    <div style={{ padding: '8px 10px', background: '#fff', borderRight: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Primary Phone</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
+                            {student.phone}
+                        </div>
+                    </div>
+                    <div style={{ padding: '8px 10px', background: '#fff' }}>
+                        <div style={label()}>Alt. Phone</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#374151', lineHeight: 1.2 }}>
+                            {student.alternatePhone || student.motherPhone || 'N/A'}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── PARENTAL & ACADEMIC ───────────────────────── */}
+                <div style={label({ color: '#111827', marginBottom: 4 })}>Academic & Family Info</div>
+                <div className="r-info" style={{
+                    display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)',
+                    gap: 0, marginBottom: 14,
+                    border: '1.5px solid #e5e7eb', borderRadius: 5, overflow: 'hidden',
+                }}>
+                    <div style={{ padding: '8px 10px', background: '#fff', borderRight: '1.5px solid #e5e7eb', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Father's Name</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
+                            {student.fatherName}
+                        </div>
+                    </div>
+                    <div style={{ padding: '8px 10px', background: '#fff', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Mother's Name</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', lineHeight: 1.2 }}>
+                            {student.motherName || 'N/A'}
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', background: '#fff', borderRight: '1.5px solid #e5e7eb', gridColumn: 'span 2', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Current / Previous School Name</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', lineHeight: 1.3 }}>
+                            {student.schoolName || 'N/A'}
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', background: '#f9fafb', gridColumn: 'span 2', borderBottom: '1.5px solid #e5e7eb' }}>
+                        <div style={label()}>Enrolled Program (Course / Class)</div>
+                        <div style={{ fontSize: 13, fontWeight: 800, color: '#111827', lineHeight: 1.3 }}>
+                            {courseLabel}
+                        </div>
+                        <div style={{ fontSize: 9, color: '#6b7280', marginTop: 3, fontWeight: 600 }}>
+                            Session: {currentEnrollment?.academicYear || 'N/A'}
+                        </div>
+                    </div>
+
+                    <div style={{ padding: '8px 10px', background: '#fff', gridColumn: 'span 2' }}>
+                        <div style={label()}>Residential Address</div>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: '#374151', lineHeight: 1.3 }}>
+                            {student.address?.street ? student.address.street + ', ' : ''}
+                            {student.address?.city ? student.address.city + ', ' : ''}
+                            {student.address?.state ? student.address.state : 'N/A'}
+                            {student.address?.zipCode ? ' - ' + student.address.zipCode : ''}
+                        </div>
+                    </div>
+                </div>
+
+                {/* ── FEE SUMMARY TABLE ────────────────────────── */}
+                {currentEnrollment && (
+                    <div className="r-fin" style={{ marginBottom: 16 }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', border: '1.5px solid #e5e7eb', borderRadius: 5 }}>
+                            <thead>
+                                <tr style={{ background: '#f9fafb' }}>
+                                    <th style={{ textAlign: 'left', padding: '8px 10px', fontSize: 8, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6b7280', borderBottom: '1.5px solid #e5e7eb' }}>
+                                        Academic Fee Description
+                                    </th>
+                                    <th style={{ textAlign: 'right', padding: '8px 10px', fontSize: 8, fontWeight: 700, letterSpacing: '0.07em', textTransform: 'uppercase', color: '#6b7280', borderBottom: '1.5px solid #e5e7eb' }}>
+                                        Amount
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style={{ padding: '10px 10px 4px', fontSize: 13, fontWeight: 600, color: '#111827' }}>
+                                        Base Course Fee
+                                    </td>
+                                    <td style={{ padding: '10px 10px 4px', fontSize: 13, fontWeight: 700, textAlign: 'right', color: '#111827' }}>
+                                        {formatCurrency(currentEnrollment.totalFee || currentEnrollment.netFee)}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style={{ padding: '4px 10px 8px', fontSize: 12, fontWeight: 500, color: '#374151', borderBottom: '1.5px dashed #e5e7eb' }}>
+                                        Concession Applied
+                                    </td>
+                                    <td style={{ padding: '4px 10px 8px', fontSize: 12, fontWeight: 600, textAlign: 'right', color: '#059669', borderBottom: '1.5px dashed #e5e7eb' }}>
+                                        - {formatCurrency((currentEnrollment.totalFee || currentEnrollment.netFee) - currentEnrollment.netFee)}
+                                    </td>
+                                </tr>
+                                <tr style={{ background: '#ecfdf5' }}>
+                                    <td style={{ padding: '10px 10px', fontSize: 14, fontWeight: 800, color: '#059669' }}>
+                                        Net Payable Academic Fee
+                                    </td>
+                                    <td style={{ padding: '10px 10px', fontSize: 15, fontWeight: 900, textAlign: 'right', color: '#059669' }}>
+                                        {formatCurrency(currentEnrollment.netFee)}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+
+                {/* ── FOOTER (signatures + stamp) ──────────────────────────── */}
+                <hr style={{ border: 'none', borderTop: '1.5px solid #e5e7eb', margin: '20px 0 14px' }} />
+                <div className="r-sig" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 8px' }}>
+
+                    {/* Parent signature */}
+                    <div style={{ textAlign: 'center', minWidth: 120 }}>
+                        <div style={{ height: 32 }} />
+                        <div style={{ borderTop: '1.5px solid #374151', paddingTop: 6 }}>
+                            <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
+                                Parent / Guardian
                             </div>
                         </div>
                     </div>
 
-                    <div style={{ textAlign: 'center', minWidth: 200 }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: '#000', marginBottom: 8 }}>
+                    {/* Authorized signatory */}
+                    <div style={{ textAlign: 'center', minWidth: 120 }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#111827', marginBottom: 6 }}>
                             {creatorName}
                         </div>
-                        <div style={{ borderTop: '2px solid #000000', paddingTop: 8 }}>
-                            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#000' }}>
+                        <div style={{ borderTop: '1.5px solid #374151', paddingTop: 6 }}>
+                            <div style={{ fontSize: 8.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#374151' }}>
                                 Authorized Signatory
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div style={{ marginTop: 40, paddingTop: 16, borderTop: '2px solid #000', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ fontSize: 10, color: '#333', fontWeight: 600 }}>
-                        Registered By: {creatorName}
-                    </div>
-                    <div style={{ fontSize: 10, color: '#333', fontWeight: 600 }}>
-                        This document serves as proof of admission record. Keep safe for future reference.  |  © {new Date().getFullYear()} {INST.name}
-                    </div>
+                {/* ── DISCLAIMER ───────────────────────────────────────────── */}
+                <div style={{ marginTop: 18, paddingTop: 8, borderTop: '1.5px solid #e5e7eb', textAlign: 'center' }}>
+                    <p style={{ fontSize: 8, color: '#9ca3af', margin: 0, fontWeight: 500 }}>
+                        Keep this document safe for future reference.&nbsp;|&nbsp;© {new Date().getFullYear()} {INST.name}
+                    </p>
                 </div>
             </div>
         </>

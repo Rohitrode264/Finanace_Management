@@ -1372,3 +1372,358 @@ a {
 .spin {
   animation: spin 1s linear infinite;
 }
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RESPONSIVE UTILITIES
+══════════════════════════════════════════════════════════════════════════════ */
+.desktop-only {
+  display: revert;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* Mobile card view for tables */
+.mobile-card {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none !important;
+  }
+
+  .mobile-only {
+    display: block !important;
+  }
+
+  .mobile-card {
+    display: flex !important;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px;
+  }
+
+  .mobile-card-item {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 16px;
+    transition: box-shadow var(--transition-base);
+  }
+
+  .mobile-card-item:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  .mobile-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8125rem;
+    padding: 3px 0;
+  }
+
+  .mobile-card-row-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .mobile-card-row-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    text-align: right;
+    max-width: 60%;
+  }
+
+  .mobile-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .mobile-card-title {
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .mobile-card-subtitle {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  .mobile-card-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-subtle);
+    gap: 8px;
+  }
+
+  .mobile-card-actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  /* Responsive table container on mobile */
+  .table-container {
+    border: none;
+    box-shadow: none;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .table-container .data-table {
+    min-width: unset;
+  }
+
+  /* Page header on mobile */
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.8125rem;
+  }
+
+  /* Stats grid on mobile */
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .stat-card > div {
+    padding: 12px 14px !important;
+  }
+
+  .stat-card > div > div:last-child {
+    font-size: 1.15rem !important;
+  }
+
+  /* Modal on mobile */
+  .modal-overlay {
+    padding: 12px;
+    align-items: flex-end;
+  }
+
+  .modal-content {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    max-height: 90vh;
+    padding: 20px;
+  }
+
+  /* Filter bars */
+  .filter-bar {
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  .filter-bar > * {
+    width: 100% !important;
+  }
+
+  /* Enrollment detail grid */
+  .enrollment-detail-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ledger grid layout */
+  .ledger-grid-layout {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-card-item {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 1.125rem;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   ADMISSIONS SUMMARY CARD
+══════════════════════════════════════════════════════════════════════════════ */
+.admissions-summary-card {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.04), rgba(139, 92, 246, 0.06));
+  border: 1px solid rgba(99, 102, 241, 0.15);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.admissions-summary-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7);
+}
+
+.admissions-summary-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.admissions-summary-count {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.admissions-summary-number {
+  font-size: 2.5rem;
+  font-weight: 900;
+  line-height: 1;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.admissions-summary-label {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.admissions-summary-students {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.admissions-summary-student {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.8125rem;
+  transition: all var(--transition-fast);
+}
+
+.admissions-summary-student:hover {
+  border-color: rgba(99, 102, 241, 0.3);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.08);
+}
+
+@media (max-width: 768px) {
+  .admissions-summary-card {
+    padding: 16px;
+  }
+
+  .admissions-summary-number {
+    font-size: 2rem;
+  }
+
+  .admissions-summary-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .admissions-summary-student {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BADGE IMPROVEMENTS
+══════════════════════════════════════════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.badge-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.badge-danger {
+  background: var(--danger-light);
+  color: var(--danger);
+}
+
+.badge-warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.badge-indigo {
+  background: rgba(99, 102, 241, 0.1);
+  color: #6366f1;
+}
+
+.badge-gray {
+  background: var(--bg-muted);
+  color: var(--text-secondary);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   EMPTY STATE INLINE STYLES
+══════════════════════════════════════════════════════════════════════════════ */
+.empty-state-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.empty-state-container svg {
+  margin-bottom: 20px;
+  opacity: 0.85;
+}
+
+.empty-state-container h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.empty-state-container p {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.6;
+}

@@ -6,6 +6,7 @@ import { Enrollment, IEnrollment } from '../models/Enrollment.model';
 export class EnrollmentRepository {
     async findById(id: string | Types.ObjectId, session?: ClientSession): Promise<IEnrollment | null> {
         return Enrollment.findById(id)
+            .populate('studentId')
             .populate({
                 path: 'academicClassId',
                 populate: { path: 'templateId' }
@@ -47,6 +48,7 @@ export class EnrollmentRepository {
 
     async findMany(filter: FilterQuery<IEnrollment>, limit = 50, skip = 0): Promise<IEnrollment[]> {
         return Enrollment.find(filter)
+            .populate('studentId')
             .populate({
                 path: 'academicClassId',
                 populate: { path: 'templateId' }

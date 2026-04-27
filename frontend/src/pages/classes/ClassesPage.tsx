@@ -11,6 +11,7 @@ import { usePermission } from '../../hooks/usePermission';
 import { classesService } from '../../api/services/classes.service';
 import { formatCurrency } from '../../utils/currency';
 import { TruncatedText } from '../../components/ui/TruncatedText';
+import { EmptyState } from '../../components/ui/EmptyState';
 import toast from 'react-hot-toast';
 import type { AcademicClass, ClassTemplate, Board } from '../../types';
 
@@ -201,8 +202,12 @@ export function ClassesPage() {
                                     ))
                                 ) : classes.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6} style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)' }}>
-                                            No academic classes for {academicYear}. Try a different year or create one.
+                                        <td colSpan={6}>
+                                            <EmptyState
+                                                type="classes"
+                                                title={`No Classes for ${academicYear}`}
+                                                description="No academic classes found for this year. Try a different year or create one."
+                                            />
                                         </td>
                                     </tr>
                                 ) : (
@@ -241,6 +246,41 @@ export function ClassesPage() {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* Mobile card view */}
+                    {!cLoading && classes.length > 0 && (
+                        <div className="mobile-card">
+                            {classes.map((c) => {
+                                const tmpl = typeof c.templateId === 'object' ? c.templateId as ClassTemplate : null;
+                                const label = tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''} (${tmpl.board})` : c._id;
+                                return (
+                                    <div key={c._id} className="mobile-card-item" onClick={() => navigate(`/classes/${c._id}/students`)} style={{ cursor: 'pointer' }}>
+                                        <div className="mobile-card-header">
+                                            <div>
+                                                <div className="mobile-card-title">{label}</div>
+                                                <div className="mobile-card-subtitle">Section {c.section} · {c.academicYear}</div>
+                                            </div>
+                                            <span style={{
+                                                padding: '3px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 600,
+                                                background: c.isActive ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                                                color: c.isActive ? '#10b981' : '#ef4444',
+                                            }}>
+                                                {c.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                        </div>
+                                        <div className="mobile-card-row">
+                                            <span className="mobile-card-row-label">Total Fee</span>
+                                            <span className="mobile-card-row-value">{formatCurrency(c.totalFee)}</span>
+                                        </div>
+                                        <div className="mobile-card-row">
+                                            <span className="mobile-card-row-label">Installments</span>
+                                            <span className="mobile-card-row-value">{c.installmentPlan?.length ?? 0}</span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </motion.div>
             )}
 

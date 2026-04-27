@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Users, GraduationCap,
     CreditCard, School, BarChart3, ClipboardList,
     ShieldCheck, Settings, ChevronLeft, ChevronRight,
-    BookOpen, Eye,
+    BookOpen, Eye, UserPlus,
 } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
 import { useAuthStore } from '../../store/authStore';
@@ -19,6 +19,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
     { label: 'Dashboard', icon: LayoutDashboard, path: '/dashboard', permission: null, section: 'MAIN' },
+    { label: 'Daily Admissions', icon: UserPlus, path: '/admissions', permission: null, section: 'MAIN' },
     { label: 'Students', icon: GraduationCap, path: '/students', permission: 'VIEW_STUDENT', section: 'ACADEMIC' },
     { label: 'Programs & Fees', icon: School, path: '/classes', permission: 'VIEW_CLASS', section: 'ACADEMIC' },
     // { label: 'Categories', icon: ClipboardList, path: '/categories', permission: 'VIEW_CLASS', section: 'ACADEMIC' },

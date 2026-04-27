@@ -23,6 +23,7 @@ const SettingsPage = lazy(() => import('../pages/settings/SettingsPage').then(m 
 const LedgerPage = lazy(() => import('../pages/ledger/LedgerPage').then(m => ({ default: m.LedgerPage })));
 const ClassStudentsPage = lazy(() => import('../pages/classes/ClassStudentsPage').then(m => ({ default: m.ClassStudentsPage })));
 const EagleEyePage = lazy(() => import('../pages/reports/EagleEyePage').then(m => ({ default: m.EagleEyePage })));
+const AdmissionsPage = lazy(() => import('../pages/admissions/AdmissionsPage').then(m => ({ default: m.AdmissionsPage })));
 
 function PageLoader() {
     return (
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
                 children: [
                     { index: true, element: <Navigate to="/dashboard" replace /> },
                     { path: '/dashboard', element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
+                    { path: '/admissions', element: <SuspenseWrapper><AdmissionsPage /></SuspenseWrapper> },
                     { path: '/students', element: <SuspenseWrapper><StudentsPage /></SuspenseWrapper> },
                     { path: '/students/new', element: <SuspenseWrapper><NewAdmissionPage /></SuspenseWrapper> },
                     { path: '/students/:id/print', element: <SuspenseWrapper><AdmissionPrintPage /></SuspenseWrapper> },

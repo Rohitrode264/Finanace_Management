@@ -11,7 +11,7 @@ import { paymentService } from '../../api/services/payment.service';
 import { formatCurrency } from '../../utils/currency';
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
-import { useSilentPrint } from '../../hooks/useSilentPrint';
+import { useReactToPrint } from 'react-to-print';
 import type { Student, Enrollment, PaymentMode, ProcessPaymentResult, AcademicClass, ClassTemplate } from '../../types';
 import apiClient from '../../api/client';
 import { useAuthStore } from '../../store/authStore';
@@ -49,10 +49,12 @@ export function PaymentEntryPage() {
     const [downloading, setDownloading] = useState(false);
     const [receiptData, setReceiptData] = useState<any>(null);
 
-    const { handlePrint, isPrinting } = useSilentPrint({
+    const handlePrint = useReactToPrint({
         contentRef: receiptRef,
-        docType: 'receipt',
+        documentTitle: `Receipt_NCP`,
+        pageStyle: `@page { size: A5 portrait; margin: 10mm; }`,
     });
+    const isPrinting = false;
 
     const fetchAndShowReceipt = async (paymentId: string) => {
         try {

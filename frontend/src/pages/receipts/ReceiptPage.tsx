@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { useSilentPrint } from '../../hooks/useSilentPrint';
+import { useReactToPrint } from 'react-to-print';
 import { receiptService } from '../../api/services/receipt.service';
 import { ProfessionalReceipt } from '../../components/receipts/ProfessionalReceipt';
 
@@ -17,10 +17,13 @@ export function ReceiptPage() {
         enabled: !!id,
     });
 
-    const { handlePrint, isPrinting } = useSilentPrint({
+    const handlePrint = useReactToPrint({
         contentRef: receiptRef,
-        docType: 'receipt'
+        documentTitle: `Receipt_${id}`,
+        pageStyle: `@page { size: A5 portrait; margin: 10mm; }`
     });
+
+    const isPrinting = false;
 
     const receipt = data?.data?.data;
     const payment = receipt?.paymentId && typeof receipt.paymentId === 'object' ? receipt.paymentId as any : null;

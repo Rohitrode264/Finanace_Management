@@ -48,6 +48,7 @@ export interface EagleEyeStudentRow {
 
 export interface EagleEyeClassGroup {
     className: string;
+    academicYear: string;
     enrolled: number;
     totalFees: number;
     collected: number;
@@ -57,6 +58,7 @@ export interface EagleEyeClassGroup {
 
 export interface EagleEyeReport {
     generatedAt: string;
+    availableAcademicYears: string[];
     institution: {
         totalEnrolled: number;
         totalFees: number;
@@ -64,7 +66,7 @@ export interface EagleEyeReport {
         totalOutstanding: number;
     };
     byClass: EagleEyeClassGroup[];
-    atRisk: (EagleEyeStudentRow & { className: string })[];
+    atRisk: (EagleEyeStudentRow & { className: string, academicYear: string })[];
 }
 
 export class ReportService {
@@ -348,16 +350,18 @@ export class ReportService {
         paymentAgg.forEach((row: any) => paidMap.set(row._id.toString(), row.total));
 
         const classMap = new Map<string, EagleEyeClassGroup>();
-        const allRows: (EagleEyeStudentRow & { className: string })[] = [];
+        const allRows: (EagleEyeStudentRow & { className: string, academicYear: string })[] = [];
 
         for (const enrollment of enrollments as any[]) {
             const student = enrollment.studentId;
             if (!student) continue;
             const acClass = enrollment.academicClassId;
             const template = acClass?.templateId;
-            const className = template
+            const academicYear = acClass?.academicYear || 'Unknown Year';
+            const baseClassName = template
                 ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} — ${template.board}`
                 : (acClass?.section || 'Unknown Class');
+            const className = `${baseClassName} (Sec: ${acClass?.section || '-'})`;
 
             const paid = paidMap.get(enrollment._id.toString()) ?? 0;
             const outstanding = Math.max(0, enrollment.netFee - paid);
@@ -368,11 +372,15 @@ export class ReportService {
                 paid,
                 outstanding,
             };
-            allRows.push({ ...row, className });
-            if (!classMap.has(className)) {
-                classMap.set(className, { className, enrolled: 0, totalFees: 0, collected: 0, outstanding: 0, students: [] });
+            allRows.push({ ...row, className, academicYear });
+            
+            // Unique key for the map so same class names in different years don't merge
+            const groupKey = `${academicYear}|${className}`;
+            
+            if (!classMap.has(groupKey)) {
+                classMap.set(groupKey, { className, academicYear, enrolled: 0, totalFees: 0, collected: 0, outstanding: 0, students: [] });
             }
-            const group = classMap.get(className)!;
+            const group = classMap.get(groupKey)!;
             group.enrolled++;
             group.totalFees += enrollment.netFee;
             group.collected += paid;
@@ -396,7 +404,9 @@ export class ReportService {
         );
         const atRisk = [...allRows].filter(s => s.outstanding > 0).sort((a, b) => b.outstanding - a.outstanding).slice(0, 10);
 
-        return { generatedAt: new Date().toISOString(), institution, byClass, atRisk };
+        const availableAcademicYears = [...new Set(byClass.map(g => g.academicYear))].sort().reverse();
+
+        return { generatedAt: new Date().toISOString(), availableAcademicYears, institution, byClass, atRisk };
     }
 }
 

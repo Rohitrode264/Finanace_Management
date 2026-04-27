@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import {
     GraduationCap, Plus, CreditCard, FileText, ArrowUpRight,
     School, BookOpen, IndianRupee, Layers, RefreshCw,
-    TrendingUp, CheckCircle2, AlertCircle, Minus,
+    TrendingUp, CheckCircle2, AlertCircle, Minus, UserPlus, Calendar,
 } from 'lucide-react';
 import { StatsCard } from '../../components/ui/StatsCard';
 import { usePermission } from '../../hooks/usePermission';
@@ -61,6 +61,11 @@ export function DashboardPage() {
     const totalEnrollments = stats?.stats?.totalEnrollments ?? 0;
     const totalClasses = stats?.stats?.totalClasses ?? 0;
 
+    // Admissions data from daily report — accessible to ALL users
+    const newAdmissions = dailyReport?.newAdmissions;
+    const todayAdmissionCount = newAdmissions?.total ?? 0;
+    const todayAdmissionStudents: { name: string; admissionNumber: string; deposited: number; collectedBy: string }[] = newAdmissions?.students ?? [];
+
     const summaryRows = [
         { label: 'Total Collected', value: dailyReport?.totalCollected, color: 'var(--success)', icon: TrendingUp },
         { label: 'Concessions Applied', value: dailyReport?.totalConcessions, color: 'var(--warning)', icon: Minus },
@@ -114,6 +119,59 @@ export function DashboardPage() {
                 }}>
                     <RefreshCw size={12} style={{ color: 'var(--accent)' }} />
                     <span>Auto-refresh in <strong style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{countdown}s</strong></span>
+                </div>
+            </motion.div>
+
+            {/* ── Today's Admissions — Quick Summary + Link ── */}
+            <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                style={{ marginBottom: 24 }}
+            >
+                <div
+                    className="admissions-summary-card"
+                    onClick={() => navigate('/admissions')}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    onMouseEnter={(e) => { e.currentTarget.style.boxShadow = '0 6px 24px rgba(99,102,241,0.15)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.boxShadow = ''; e.currentTarget.style.transform = ''; }}
+                >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                                width: 40, height: 40,
+                                background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                borderRadius: 10,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                boxShadow: '0 4px 12px rgba(99,102,241,0.3)',
+                            }}>
+                                <UserPlus size={20} color="#fff" />
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '0.9375rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    Today's Admissions
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <Calendar size={10} />
+                                    {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                </div>
+                            </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{
+                                    fontSize: '2rem', fontWeight: 900, lineHeight: 1,
+                                    color: todayAdmissionCount > 0 ? '#6366f1' : 'var(--text-muted)',
+                                }}>
+                                    {todayAdmissionCount}
+                                </div>
+                                <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', fontWeight: 600, marginTop: 2 }}>
+                                    new {todayAdmissionCount === 1 ? 'student' : 'students'}
+                                </div>
+                            </div>
+                            <ArrowUpRight size={18} color="#6366f1" style={{ flexShrink: 0 }} />
+                        </div>
+                    </div>
                 </div>
             </motion.div>
 

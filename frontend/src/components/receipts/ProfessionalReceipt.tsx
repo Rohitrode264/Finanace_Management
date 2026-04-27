@@ -274,7 +274,7 @@ export function ProfessionalReceipt({
                                 Amount in Words
                             </div>
                             <div style={{ fontSize: 11, fontWeight: 600, color: '#111827', textTransform: 'capitalize', fontStyle: 'italic', lineHeight: 1.3 }}>
-                                Rupees {amountInWords} only
+                                Rupees {amountInWords}
                             </div>
                         </div>
                     </div>
