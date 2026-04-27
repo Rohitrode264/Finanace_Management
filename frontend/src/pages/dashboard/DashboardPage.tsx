@@ -64,7 +64,7 @@ export function DashboardPage() {
     // Admissions data from daily report — accessible to ALL users
     const newAdmissions = dailyReport?.newAdmissions;
     const todayAdmissionCount = newAdmissions?.total ?? 0;
-    const todayAdmissionStudents: { name: string; admissionNumber: string; deposited: number; collectedBy: string }[] = newAdmissions?.students ?? [];
+    // const todayAdmissionStudents: { name: string; admissionNumber: string; deposited: number; collectedBy: string }[] = newAdmissions?.students ?? [];
 
     const summaryRows = [
         { label: 'Total Collected', value: dailyReport?.totalCollected, color: 'var(--success)', icon: TrendingUp },

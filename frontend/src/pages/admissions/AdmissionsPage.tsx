@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { UserPlus, Calendar, Search, TrendingUp, Users } from 'lucide-react';
+import { UserPlus, Calendar, TrendingUp, Users } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { EmptyState } from '../../components/ui/EmptyState';
 import apiClient from '../../api/client';
