@@ -84,7 +84,7 @@ export class EnrollmentService {
     }
 
     async getAll(limit: number = 50, skip: number = 0, program?: string, classId?: string): Promise<IEnrollment[]> {
-        const query: any = {};
+        const query: any = { status: { $ne: 'CANCELLED' } };
         if (program) {
             const students = await Student.find({ program }).select('_id');
             query.studentId = { $in: students.map(s => s._id) };

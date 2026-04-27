@@ -36,6 +36,9 @@ export function ClassStudentsPage() {
         : null;
 
     const filteredEnrollments = enrollments.filter(e => {
+        // Don't show transferred/cancelled students in the active class list
+        if (e.status === 'CANCELLED') return false;
+
         const fullName = `${e.studentId?.firstName} ${e.studentId?.lastName}`.toLowerCase();
         const admissionNumber = (e.studentId?.admissionNumber || '').toLowerCase();
         const matchesSearch = fullName.includes(search.toLowerCase()) || admissionNumber.includes(search.toLowerCase());

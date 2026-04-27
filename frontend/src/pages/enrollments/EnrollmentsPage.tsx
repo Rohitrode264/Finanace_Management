@@ -261,9 +261,10 @@ export function EnrollmentsPage() {
                                                     style={{ width: '100%', padding: '12px 16px', border: 'none', borderBottom: '1px solid var(--border)', background: 'transparent', textAlign: 'left', cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4 }}
                                                     onClick={() => {
                                                         apiClient.get(`/enrollments/student/${s._id}`).then((res: any) => {
-                                                            const enrs = res.data?.data;
-                                                            if (enrs && enrs.length > 0) {
-                                                                setCurrentEnrollment(enrs[0]);
+                                                            const enrs = (res.data?.data || []) as Enrollment[];
+                                                            const activeEnr = enrs.find(e => e.status === 'ONGOING') || enrs[0];
+                                                            if (activeEnr) {
+                                                                setCurrentEnrollment(activeEnr);
                                                             } else {
                                                                 toast.error('No enrollments found for student');
                                                             }
@@ -283,68 +284,112 @@ export function EnrollmentsPage() {
                             </div>
                         </div>
 
-                        {/* Enrollments Table */}
-                        <div className="table-container">
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Enrollment ID</th>
-                                        <th>Student</th>
-                                        <th>Year / Class</th>
-                                        <th style={{ textAlign: 'right' }}>Total Fee</th>
-                                        <th style={{ textAlign: 'right' }}>Outstanding</th>
-                                        <th>Status</th>
-                                        <th style={{ textAlign: 'center' }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {ledgerLoading ? (
-                                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }}>Loading ledger...</td></tr>
-                                    ) : allEnrollments.length === 0 ? (
-                                        <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No enrollments found.</td></tr>
-                                    ) : (
-                                        allEnrollments.map(e => {
-                                            const student = e.studentId as unknown as Student;
-                                            const academicClass = e.academicClassId as unknown as AcademicClass;
-                                            const template = (academicClass?.templateId as unknown as ClassTemplate);
-                                            return (
-                                                <tr key={e._id}>
-                                                    <td><code style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e._id.toString().slice(-6)}</code></td>
-                                                    <td>
-                                                        <div style={{ fontWeight: 600 }}>
-                                                            <TruncatedText text={`${student?.firstName} ${student?.lastName}`} maxWidth="150px" modalTitle="Student Name" />
-                                                        </div>
-                                                    </td>
-                                                    <td>
-                                                        <div style={{ fontSize: '0.8125rem' }}>{e.academicYear}</div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            {template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}
-                                                        </div>
-                                                    </td>
-                                                    <td className="financial-value">{formatCurrency(e.netFee)}</td>
-                                                    <td className="financial-value" style={{ color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>
-                                                        {formatCurrency(e.outstandingBalance ?? 0)}
-                                                    </td>
-                                                    <td>
-                                                        <span style={{
-                                                            padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600,
-                                                            ...STATUS_STYLE[e.status],
-                                                        }}>
-                                                            {e.status}
-                                                        </span>
-                                                    </td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <button className="btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }} onClick={() => setCurrentEnrollment(e)}>
-                                                            View Details
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })
-                                    )}
-                                </tbody>
-                            </table>
+                        {/* Enrollments List */}
+                        <div className="desktop-only">
+                            <div className="table-container">
+                                <table className="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Enrollment ID</th>
+                                            <th>Student</th>
+                                            <th>Year / Class</th>
+                                            <th style={{ textAlign: 'right' }}>Total Fee</th>
+                                            <th style={{ textAlign: 'right' }}>Outstanding</th>
+                                            <th>Status</th>
+                                            <th style={{ textAlign: 'center' }}>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {ledgerLoading ? (
+                                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24 }}>Loading ledger...</td></tr>
+                                        ) : allEnrollments.length === 0 ? (
+                                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: 24, color: 'var(--text-muted)' }}>No enrollments found.</td></tr>
+                                        ) : (
+                                            allEnrollments.map(e => {
+                                                const student = e.studentId as unknown as Student;
+                                                const academicClass = e.academicClassId as unknown as AcademicClass;
+                                                const template = (academicClass?.templateId as unknown as ClassTemplate);
+                                                return (
+                                                    <tr key={e._id}>
+                                                        <td><code style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e._id.toString().slice(-6)}</code></td>
+                                                        <td>
+                                                            <div style={{ fontWeight: 600 }}>
+                                                                <TruncatedText text={`${student?.firstName} ${student?.lastName}`} maxWidth="150px" modalTitle="Student Name" />
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div style={{ fontSize: '0.8125rem' }}>{e.academicYear}</div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                                {template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}
+                                                            </div>
+                                                        </td>
+                                                        <td className="financial-value">{formatCurrency(e.netFee)}</td>
+                                                        <td className="financial-value" style={{ color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>
+                                                            {formatCurrency(e.outstandingBalance ?? 0)}
+                                                        </td>
+                                                        <td>
+                                                            <span style={{
+                                                                padding: '2px 8px', borderRadius: 99, fontSize: '0.75rem', fontWeight: 600,
+                                                                ...STATUS_STYLE[e.status],
+                                                            }}>
+                                                                {e.status}
+                                                            </span>
+                                                        </td>
+                                                        <td style={{ textAlign: 'center' }}>
+                                                            <button className="btn-secondary" style={{ padding: '4px 12px', fontSize: '0.75rem' }} onClick={() => setCurrentEnrollment(e)}>
+                                                                View Details
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
+
+                        {/* Mobile Cards for Enrollments */}
+                        {!ledgerLoading && allEnrollments.length > 0 && (
+                            <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                {allEnrollments.map(e => {
+                                    const student = e.studentId as unknown as Student;
+                                    const academicClass = e.academicClassId as unknown as AcademicClass;
+                                    const template = (academicClass?.templateId as unknown as ClassTemplate);
+                                    return (
+                                        <div key={e._id} className="card" style={{ padding: 16, border: '1px solid var(--border)' }} onClick={() => setCurrentEnrollment(e)}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                                                <div>
+                                                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{student?.firstName} {student?.lastName}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}</div>
+                                                </div>
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
+                                                    ...STATUS_STYLE[e.status],
+                                                }}>
+                                                    {e.status}
+                                                </span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 6 }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Year</span>
+                                                <span style={{ fontWeight: 600 }}>{e.academicYear}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 6 }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Net Fee</span>
+                                                <span style={{ fontWeight: 600 }}>{formatCurrency(e.netFee)}</span>
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                                <span style={{ color: 'var(--text-muted)' }}>Outstanding</span>
+                                                <span style={{ fontWeight: 700, color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(e.outstandingBalance ?? 0)}</span>
+                                            </div>
+                                            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>
+                                                TAP TO VIEW FULL LEDGER
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
 
                         {/* Pagination */}
                         <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', marginTop: 16, gap: 8 }}>
@@ -379,7 +424,7 @@ export function EnrollmentsPage() {
 
                         <div style={{ padding: 16, background: 'var(--bg-subtle)', borderRadius: 12, marginBottom: 24 }}>
                             <h4 style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-muted)', marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Student Information</h4>
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12, fontSize: '0.875rem' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, fontSize: '0.875rem' }}>
                                 <div><span style={{ color: 'var(--text-muted)' }}>Name:</span> <strong style={{ marginLeft: 4 }}>{(currentEnrollment.studentId as unknown as Student)?.firstName} {(currentEnrollment.studentId as unknown as Student)?.lastName}</strong></div>
                                 <div><span style={{ color: 'var(--text-muted)' }}>Phone:</span> <strong style={{ marginLeft: 4 }}>{(currentEnrollment.studentId as unknown as Student)?.phone}</strong></div>
                                 <div><span style={{ color: 'var(--text-muted)' }}>Father:</span> <strong style={{ marginLeft: 4 }}>{(currentEnrollment.studentId as unknown as Student)?.fatherName}</strong></div>
@@ -391,7 +436,7 @@ export function EnrollmentsPage() {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 20 }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16, marginBottom: 20 }}>
                             {[
                                 { label: 'Original Fee', value: formatCurrency(currentEnrollment.totalFee), color: 'var(--text-muted)' },
                                 {
