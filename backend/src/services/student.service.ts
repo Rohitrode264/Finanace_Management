@@ -115,7 +115,7 @@ export class StudentService {
         const before = student.toObject() as unknown as Record<string, unknown>;
         
         const updates = Object.fromEntries(Object.entries(params.data).filter(([_, v]) => v != null));
-        Object.assign(student, updates);
+        student.set(updates);
         await student.save();
 
         auditService.logAsync({

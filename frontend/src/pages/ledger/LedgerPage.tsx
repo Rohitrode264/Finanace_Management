@@ -244,24 +244,25 @@ export function LedgerPage() {
 
                     {selectedStudent && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card" style={{ padding: 20, borderLeft: '4px solid #6366f1' }}>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', smDirection: 'row', gap: 16 } as any}>
                                 <div style={{
                                     width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff'
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0
                                 }}>
                                     <UserIcon size={24} />
                                 </div>
                                 <div style={{ flex: 1 }}>
-                                    <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>{selectedStudent.firstName} {selectedStudent.lastName}</h3>
-                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{selectedStudent.admissionNumber}</p>
-                                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                        <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Phone:</span>
-                                            <span style={{ fontWeight: 500 }}>{selectedStudent.phone}</span>
+                                    <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4 }}>{selectedStudent.firstName} {selectedStudent.lastName}</h3>
+                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 12 }}>{selectedStudent.admissionNumber}</p>
+                                    
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+                                        <div style={{ fontSize: '0.75rem' }}>
+                                            <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Phone</div>
+                                            <div style={{ fontWeight: 600 }}>{selectedStudent.phone}</div>
                                         </div>
-                                        <div style={{ fontSize: '0.75rem', display: 'flex', justifyContent: 'space-between' }}>
-                                            <span style={{ color: 'var(--text-muted)' }}>Parent:</span>
-                                            <span style={{ fontWeight: 500 }}>{selectedStudent.fatherName}</span>
+                                        <div style={{ fontSize: '0.75rem' }}>
+                                            <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Parent</div>
+                                            <div style={{ fontWeight: 600 }}>{selectedStudent.fatherName}</div>
                                         </div>
                                     </div>
                                 </div>
@@ -321,25 +322,41 @@ export function LedgerPage() {
                         </div>
                     ) : (
                         <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                            <div className="ledger-header">
+                            <div className="ledger-header" style={{ borderBottom: 'none' }}>
                                 <div>
                                     <h3 style={{ fontSize: '1.125rem', fontWeight: 700 }}>Transaction History</h3>
-                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Detailed ledger for academic year {selectedEnrollment.academicYear}</p>
+                                    <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Financial ledger for {selectedEnrollment.academicYear}</p>
                                 </div>
-                                <div className="ledger-header-actions" style={{ display: 'flex', gap: 24, alignItems: 'center', flexWrap: 'wrap' }}>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>OUTSTANDING BALANCE</div>
-                                        <div style={{ fontSize: '1.5rem', fontWeight: 900, color: balance > 0 ? 'var(--danger)' : 'var(--success)', letterSpacing: '-0.02em' }}>{formatCurrency(balance)}</div>
-                                    </div>
-                                    {canConcession && selectedEnrollment?.status === 'ONGOING' && selectedEnrollment?.concessionType === 'NONE' && (
-                                        <button
-                                            className="btn-secondary"
-                                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderColor: 'var(--warning)', color: 'var(--warning)' }}
-                                            onClick={() => setShowConcessionModal(true)}
-                                        >
-                                            <Tag size={16} /> Apply Concession
-                                        </button>
-                                    )}
+                                {canConcession && selectedEnrollment?.status === 'ONGOING' && selectedEnrollment?.concessionType === 'NONE' && (
+                                    <button
+                                        className="btn-secondary"
+                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderColor: 'var(--warning)', color: 'var(--warning)' }}
+                                        onClick={() => setShowConcessionModal(true)}
+                                    >
+                                        <Tag size={16} /> Apply Concession
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Responsive Summary Grid */}
+                            <div style={{ 
+                                display: 'grid', 
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
+                                gap: 12, 
+                                padding: '0 24px 24px',
+                                borderBottom: '1px solid var(--border)'
+                            }}>
+                                <div style={{ padding: 12, background: 'rgba(99,102,241,0.04)', borderRadius: 10, border: '1px solid rgba(99,102,241,0.1)' }}>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Net Fee</div>
+                                    <div style={{ fontSize: '1.125rem', fontWeight: 700 }}>{formatCurrency(selectedEnrollment.netFee)}</div>
+                                </div>
+                                <div style={{ padding: 12, background: 'rgba(16,185,129,0.04)', borderRadius: 10, border: '1px solid rgba(16,185,129,0.1)' }}>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Total Paid</div>
+                                    <div style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--success)' }}>{formatCurrency(selectedEnrollment.netFee - balance)}</div>
+                                </div>
+                                <div style={{ padding: 12, background: balance > 0 ? 'rgba(239,68,68,0.04)' : 'rgba(16,185,129,0.04)', borderRadius: 10, border: `1px solid ${balance > 0 ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)'}` }}>
+                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontWeight: 800, textTransform: 'uppercase', marginBottom: 4 }}>Outstanding</div>
+                                    <div style={{ fontSize: '1.125rem', fontWeight: 700, color: balance > 0 ? 'var(--danger)' : 'var(--success)' }}>{formatCurrency(balance)}</div>
                                 </div>
                             </div>
 
@@ -501,7 +518,7 @@ export function LedgerPage() {
                 isOpen={showReceipt}
                 onClose={() => setShowReceipt(false)}
                 title="Official Receipt Preview"
-                maxWidth="max-w-5xl"
+                maxWidth="1024px"
             >
                 {receiptData && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
