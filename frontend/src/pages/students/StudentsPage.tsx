@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, ChevronLeft, ChevronRight, User, Tag,
-    Phone, MapPin, GraduationCap,
+    Phone, MapPin, GraduationCap, BookOpen,
     Calendar, Info, Printer, Edit
 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -111,14 +111,14 @@ export function StudentsPage() {
 
             {/* Table */}
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="table-container">
-                <table className="data-table">
+                <table className="data-table compact-table">
                     <thead>
                         <tr>
                             <th>Student Details</th>
                             <th>Father Details</th>
                             <th>Mother Details</th>
+                            <th>Current Enrollment</th>
                             <th>School</th>
-                            <th>Blood Group</th>
                             <th>City</th>
                             <th>Status</th>
                             {canUpdate && <th style={{ textAlign: 'center' }}>Actions</th>}
@@ -142,12 +142,6 @@ export function StudentsPage() {
                                     <tr key={s._id} onClick={() => { setSelectedStudentForView(s); setViewProfileDrawer(true); }} style={{ cursor: 'pointer' }}>
                                         <td>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                <div style={{
-                                                    width: 36, height: 36, borderRadius: 10, background: 'var(--bg-subtle)',
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.875rem'
-                                                }}>
-                                                    {s.firstName.charAt(0)}
-                                                </div>
                                                 <div>
                                                     <div style={{ fontWeight: 600 }}>{s.firstName} {s.lastName}</div>
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.admissionNumber}</div>
@@ -167,9 +161,25 @@ export function StudentsPage() {
                                             </div>
                                         </td>
                                         <td>
+                                            {s.currentEnrollment ? (
+                                                <div>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <BookOpen size={13} color="var(--accent)" style={{ flexShrink: 0 }} />
+                                                        <span style={{ fontWeight: 600, fontSize: '0.8125rem' }}>{s.currentEnrollment.className}</span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                        {s.currentEnrollment.academicYear}{s.currentEnrollment.section ? ` · Sec ${s.currentEnrollment.section}` : ''}
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <span style={{
+                                                    fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic'
+                                                }}>Not Enrolled</span>
+                                            )}
+                                        </td>
+                                        <td>
                                             <TruncatedText text={s.schoolName || '-'} maxWidth="140px" modalTitle="School Name" />
                                         </td>
-                                        <td>{s.bloodGroup || '-'}</td>
                                         <td>{s.address?.city || '-'}</td>
                                         <td>
                                             <span style={{
@@ -251,177 +261,177 @@ export function StudentsPage() {
                                 onClick={() => setViewProfileDrawer(false)}
                                 style={{ position: 'absolute', inset: 0, zIndex: 1000, backdropFilter: 'blur(4px)', background: 'rgba(0,0,0,0.4)' }}
                             />
-                        <motion.div
-                            initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
-                            transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-                            style={{
-                                position: 'fixed', right: 0, top: 0, bottom: 0, width: 'min(600px, 100vw)',
-                                background: 'var(--bg-surface)', zIndex: 1001,
-                                boxShadow: 'var(--shadow-xl)',
-                                overflowY: 'hidden', borderLeft: '1px solid var(--border)',
-                                display: 'flex', flexDirection: 'column'
-                            }}
-                        >
-                            {/* Industrial Header */}
-                            <div style={{
-                                padding: '24px 32px',
-                                background: 'var(--bg-surface)',
-                                borderBottom: '1px solid var(--border)',
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                                    <div style={{
-                                        width: 48, height: 48, borderRadius: 14,
-                                        background: 'var(--accent-light)', color: 'var(--accent)',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        fontSize: '1.25rem', fontWeight: 800
-                                    }}>
-                                        {selectedStudentForView.firstName.charAt(0)}
-                                    </div>
-                                    <div>
-                                        <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
-                                            {selectedStudentForView.firstName} {selectedStudentForView.lastName}
-                                        </h3>
-                                        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
-                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
-                                                ID: {selectedStudentForView.admissionNumber}
-                                            </span>
-                                            <span style={{
-                                                fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6,
-                                                background: STATUS_COLORS[selectedStudentForView.status]?.bg,
-                                                color: STATUS_COLORS[selectedStudentForView.status]?.color
-                                            }}>
-                                                {selectedStudentForView.status}
-                                            </span>
+                            <motion.div
+                                initial={{ x: '100%' }} animate={{ x: 0 }} exit={{ x: '100%' }}
+                                transition={{ type: 'spring', damping: 28, stiffness: 220 }}
+                                style={{
+                                    position: 'fixed', right: 0, top: 0, bottom: 0, width: 'min(600px, 100vw)',
+                                    background: 'var(--bg-surface)', zIndex: 1001,
+                                    boxShadow: 'var(--shadow-xl)',
+                                    overflowY: 'hidden', borderLeft: '1px solid var(--border)',
+                                    display: 'flex', flexDirection: 'column'
+                                }}
+                            >
+                                {/* Industrial Header */}
+                                <div style={{
+                                    padding: '24px 32px',
+                                    background: 'var(--bg-surface)',
+                                    borderBottom: '1px solid var(--border)',
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                                        <div style={{
+                                            width: 48, height: 48, borderRadius: 14,
+                                            background: 'var(--accent-light)', color: 'var(--accent)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            fontSize: '1.25rem', fontWeight: 800
+                                        }}>
+                                            {selectedStudentForView.firstName.charAt(0)}
+                                        </div>
+                                        <div>
+                                            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>
+                                                {selectedStudentForView.firstName} {selectedStudentForView.lastName}
+                                            </h3>
+                                            <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6, background: 'var(--bg-subtle)', color: 'var(--text-muted)' }}>
+                                                    ID: {selectedStudentForView.admissionNumber}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '0.75rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                                                    background: STATUS_COLORS[selectedStudentForView.status]?.bg,
+                                                    color: STATUS_COLORS[selectedStudentForView.status]?.color
+                                                }}>
+                                                    {selectedStudentForView.status}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        <button className="btn-secondary btn-sm" onClick={() => window.open(`/students/${selectedStudentForView._id}/print`, '_blank')} title="Print Form">
+                                            <Printer size={16} />
+                                        </button>
+                                        <button className="btn-secondary btn-sm" onClick={() => navigate(`/students/${selectedStudentForView._id}/edit`)} title="Edit Student">
+                                            <Edit size={16} />
+                                        </button>
+                                        <button className="btn-icon" onClick={() => setViewProfileDrawer(false)} style={{ background: 'transparent', border: 'none' }}>
+                                            <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                    <button className="btn-secondary btn-sm" onClick={() => window.open(`/students/${selectedStudentForView._id}/print`, '_blank')} title="Print Form">
-                                        <Printer size={16} />
-                                    </button>
-                                    <button className="btn-secondary btn-sm" onClick={() => navigate(`/students/${selectedStudentForView._id}/edit`)} title="Edit Student">
-                                        <Edit size={16} />
-                                    </button>
-                                    <button className="btn-icon" onClick={() => setViewProfileDrawer(false)} style={{ background: 'transparent', border: 'none' }}>
-                                        <Plus size={24} style={{ transform: 'rotate(45deg)' }} />
-                                    </button>
+
+                                {/* Tabs Navigation */}
+                                <div style={{ display: 'flex', gap: 24, padding: '0 32px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
+                                    {(['overview', 'academic', 'personal'] as const).map(tab => (
+                                        <button
+                                            key={tab}
+                                            onClick={() => setProfileTab(tab)}
+                                            style={{
+                                                padding: '16px 0', fontSize: '0.8125rem', fontWeight: 700, color: profileTab === tab ? 'var(--accent)' : 'var(--text-muted)',
+                                                borderBottom: `2px solid ${profileTab === tab ? 'var(--accent)' : 'transparent'}`,
+                                                background: 'none', border: 'none', cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.04em'
+                                            }}
+                                        >
+                                            {tab}
+                                        </button>
+                                    ))}
                                 </div>
-                            </div>
 
-                            {/* Tabs Navigation */}
-                            <div style={{ display: 'flex', gap: 24, padding: '0 32px', borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-                                {(['overview', 'academic', 'personal'] as const).map(tab => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setProfileTab(tab)}
-                                        style={{
-                                            padding: '16px 0', fontSize: '0.8125rem', fontWeight: 700, color: profileTab === tab ? 'var(--accent)' : 'var(--text-muted)',
-                                            borderBottom: `2px solid ${profileTab === tab ? 'var(--accent)' : 'transparent'}`,
-                                            background: 'none', border: 'none', cursor: 'pointer', transition: 'all 0.2s', textTransform: 'uppercase', letterSpacing: '0.04em'
-                                        }}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </div>
+                                {/* Active Tab Content */}
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }} className="custom-scrollbar">
+                                    <AnimatePresence mode="wait">
+                                        {profileTab === 'overview' && (
+                                            <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
+                                                    <DetailField label="Contact Number" value={selectedStudentForView.phone} icon={Phone} />
+                                                    <DetailField label="Mother's Phone" value={selectedStudentForView.motherPhone} icon={Phone} />
+                                                    <DetailField label="Email Address" value={selectedStudentForView.email} icon={Calendar} />
+                                                    <DetailField label="Admitted On" value={format(new Date(selectedStudentForView.createdAt), 'dd MMM yyyy')} icon={Calendar} />
+                                                </div>
 
-                            {/* Active Tab Content */}
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }} className="custom-scrollbar">
-                                <AnimatePresence mode="wait">
-                                    {profileTab === 'overview' && (
-                                        <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 32 }}>
-                                                <DetailField label="Contact Number" value={selectedStudentForView.phone} icon={Phone} />
-                                                <DetailField label="Mother's Phone" value={selectedStudentForView.motherPhone} icon={Phone} />
-                                                <DetailField label="Email Address" value={selectedStudentForView.email} icon={Calendar} />
-                                                <DetailField label="Admitted On" value={format(new Date(selectedStudentForView.createdAt), 'dd MMM yyyy')} icon={Calendar} />
-                                            </div>
-
-                                            <h4 style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 16 }}>Current Enrollments</h4>
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                                {profileEnrollments.map(en => (
-                                                    <div key={en._id} className="card" style={{ padding: 16, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
-                                                            <div>
-                                                                <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>Session {en.academicYear}</div>
-                                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Class ID: {typeof en.academicClassId === 'string' ? en.academicClassId : en.academicClassId._id}</div>
+                                                <h4 style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.05em', marginBottom: 16 }}>Current Enrollments</h4>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                                    {profileEnrollments.map(en => (
+                                                        <div key={en._id} className="card" style={{ padding: 16, background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
+                                                                <div>
+                                                                    <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>Session {en.academicYear}</div>
+                                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Class ID: {typeof en.academicClassId === 'string' ? en.academicClassId : en.academicClassId._id}</div>
+                                                                </div>
+                                                                <div style={{ textAlign: 'right' }}>
+                                                                    <div style={{ color: 'var(--success)', fontWeight: 800 }}>{formatCurrency(en.netFee)}</div>
+                                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Net Fee</div>
+                                                                </div>
                                                             </div>
-                                                            <div style={{ textAlign: 'right' }}>
-                                                                <div style={{ color: 'var(--success)', fontWeight: 800 }}>{formatCurrency(en.netFee)}</div>
-                                                                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Net Fee</div>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px dashed var(--border)' }}>
+                                                                <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Outstanding Balance:</span>
+                                                                <span style={{ fontWeight: 800, color: (en.outstandingBalance ?? 0) > 0 ? 'var(--danger)' : 'var(--success)' }}>
+                                                                    {formatCurrency(en.outstandingBalance ?? 0)}
+                                                                </span>
                                                             </div>
                                                         </div>
-                                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: 8, borderTop: '1px dashed var(--border)' }}>
-                                                            <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>Outstanding Balance:</span>
-                                                            <span style={{ fontWeight: 800, color: (en.outstandingBalance ?? 0) > 0 ? 'var(--danger)' : 'var(--success)' }}>
-                                                                {formatCurrency(en.outstandingBalance ?? 0)}
-                                                            </span>
+                                                    ))}
+                                                    {profileEnrollments.length === 0 && (
+                                                        <div style={{ padding: 24, textAlign: 'center', background: 'var(--bg-subtle)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                                                            No enrollment history found.
                                                         </div>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        )}
+
+                                        {profileTab === 'academic' && (
+                                            <motion.div key="academic" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                                <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />
+                                                        <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Education Background</h4>
                                                     </div>
-                                                ))}
-                                                {profileEnrollments.length === 0 && (
-                                                    <div style={{ padding: 24, textAlign: 'center', background: 'var(--bg-subtle)', borderRadius: 12, color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                                                        No enrollment history found.
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                                                        <DetailField label="Current School" value={selectedStudentForView.history?.previousSchool} icon={GraduationCap} />
+                                                        <DetailField label="Passout Year" value={selectedStudentForView.history?.yearPassout} icon={Calendar} />
+                                                        <DetailField label="Percentage / Grade" value={selectedStudentForView.history?.percentage} icon={Info} />
                                                     </div>
-                                                )}
-                                            </div>
-                                        </motion.div>
-                                    )}
+                                                    <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>Counseling Notes</div>
+                                                        <p style={{ fontSize: '0.875rem', lineHeight: 1.5, margin: 0, color: 'var(--text-secondary)' }}>{selectedStudentForView.history?.extraNote || 'No additional notes provided.'}</p>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        )}
 
-                                    {profileTab === 'academic' && (
-                                        <motion.div key="academic" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                            <div className="card" style={{ padding: 24, marginBottom: 24 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)' }} />
-                                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Education Background</h4>
+                                        {profileTab === 'personal' && (
+                                            <motion.div key="personal" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                                                <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warning)' }} />
+                                                        <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Identity & Address</h4>
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
+                                                        <DetailField label="Blood Group" value={selectedStudentForView.bloodGroup} icon={Tag} />
+                                                        <DetailField label="Category" value={selectedStudentForView.program} icon={User} />
+                                                    </div>
+                                                    <div style={{ paddingTop: 16, borderTop: '1px solid var(--border)' }}>
+                                                        <DetailField label="Residential Address" value={`${selectedStudentForView.address?.street || ''}, ${selectedStudentForView.address?.city || ''}, ${selectedStudentForView.address?.state || ''} - ${selectedStudentForView.address?.zipCode || ''}`} icon={MapPin} />
+                                                    </div>
                                                 </div>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                                                    <DetailField label="Current School" value={selectedStudentForView.history?.previousSchool} icon={GraduationCap} />
-                                                    <DetailField label="Passout Year" value={selectedStudentForView.history?.yearPassout} icon={Calendar} />
-                                                    <DetailField label="Percentage / Grade" value={selectedStudentForView.history?.percentage} icon={Info} />
-                                                </div>
-                                                <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, marginBottom: 4 }}>Counseling Notes</div>
-                                                    <p style={{ fontSize: '0.875rem', lineHeight: 1.5, margin: 0, color: 'var(--text-secondary)' }}>{selectedStudentForView.history?.extraNote || 'No additional notes provided.'}</p>
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
 
-                                    {profileTab === 'personal' && (
-                                        <motion.div key="personal" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                                            <div className="card" style={{ padding: 24, marginBottom: 24 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--warning)' }} />
-                                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Identity & Address</h4>
+                                                <div className="card" style={{ padding: 24 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                                                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--info)' }} />
+                                                        <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Parental Information</h4>
+                                                    </div>
+                                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
+                                                        <DetailField label="Father's Full Name" value={selectedStudentForView.fatherName} icon={User} />
+                                                        <DetailField label="Mother's Full Name" value={selectedStudentForView.motherName} icon={User} />
+                                                    </div>
                                                 </div>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-                                                    <DetailField label="Blood Group" value={selectedStudentForView.bloodGroup} icon={Tag} />
-                                                    <DetailField label="Category" value={selectedStudentForView.program} icon={User} />
-                                                </div>
-                                                <div style={{ paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                                                    <DetailField label="Residential Address" value={`${selectedStudentForView.address?.street || ''}, ${selectedStudentForView.address?.city || ''}, ${selectedStudentForView.address?.state || ''} - ${selectedStudentForView.address?.zipCode || ''}`} icon={MapPin} />
-                                                </div>
-                                            </div>
-
-                                            <div className="card" style={{ padding: 24 }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
-                                                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--info)' }} />
-                                                    <h4 style={{ fontSize: '0.875rem', fontWeight: 800, margin: 0 }}>Parental Information</h4>
-                                                </div>
-                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
-                                                    <DetailField label="Father's Full Name" value={selectedStudentForView.fatherName} icon={User} />
-                                                    <DetailField label="Mother's Full Name" value={selectedStudentForView.motherName} icon={User} />
-                                                </div>
-                                            </div>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.div>
-                    </div>
-                )}
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
                 </AnimatePresence>,
                 document.body
             )}

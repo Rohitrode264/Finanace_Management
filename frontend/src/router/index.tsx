@@ -24,7 +24,6 @@ const LedgerPage = lazy(() => import('../pages/ledger/LedgerPage').then(m => ({ 
 const ClassStudentsPage = lazy(() => import('../pages/classes/ClassStudentsPage').then(m => ({ default: m.ClassStudentsPage })));
 const EagleEyePage = lazy(() => import('../pages/reports/EagleEyePage').then(m => ({ default: m.EagleEyePage })));
 const AdmissionsPage = lazy(() => import('../pages/admissions/AdmissionsPage').then(m => ({ default: m.AdmissionsPage })));
-
 function PageLoader() {
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
@@ -54,14 +53,16 @@ export const router = createBrowserRouter([
         element: <SuspenseWrapper><LoginPage /></SuspenseWrapper>,
     },
     {
-        // Protected area — all children require authentication
         path: '/',
+        element: <Navigate to="/login" replace />,
+    },
+    {
+        // Protected area — all children require authentication
         element: <ProtectedRoute />,
         children: [
             {
                 element: <AppLayout />,
                 children: [
-                    { index: true, element: <Navigate to="/dashboard" replace /> },
                     { path: '/dashboard', element: <SuspenseWrapper><DashboardPage /></SuspenseWrapper> },
                     { path: '/admissions', element: <SuspenseWrapper><AdmissionsPage /></SuspenseWrapper> },
                     { path: '/students', element: <SuspenseWrapper><StudentsPage /></SuspenseWrapper> },

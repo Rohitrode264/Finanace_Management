@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { ClipboardList, Filter, ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { ClipboardList, Filter, ChevronLeft, ChevronRight, X, Activity } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import apiClient from '../../api/client';
 import { format } from 'date-fns';
@@ -74,6 +74,7 @@ export function AuditLogsPage() {
             <PageHeader
                 title="Security Audit Logs"
                 subtitle="Live tracking of critical system actions, permission changes, and staff activities."
+                icon={Activity}
             />
 
             {/* Filters Section */}

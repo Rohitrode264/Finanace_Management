@@ -18,6 +18,7 @@ export interface DailyReportSummary {
         students: {
             name: string;
             admissionNumber: string;
+            enrollmentClass: string;
             deposited: number;
             totalPaid: number;
             left: number;
@@ -27,6 +28,7 @@ export interface DailyReportSummary {
     existingStudentsActivity: {
         name: string;
         admissionNumber: string;
+        enrollmentClass: string;
         deposited: number;
         totalPaid: number;
         left: number;
@@ -110,7 +112,9 @@ export class ReportService {
         )];
 
         const studentActivity = await Promise.all(uniqueEnrollmentIds.map(async (eid) => {
-            const enrollment = await Enrollment.findById(eid).populate('studentId');
+            const enrollment = await Enrollment.findById(eid)
+                .populate('studentId')
+                .populate({ path: 'academicClassId', populate: { path: 'templateId', select: 'grade stream board' } });
             if (!enrollment) return null;
 
             const student = enrollment.studentId as any;
@@ -145,9 +149,16 @@ export class ReportService {
 
             const collectedByNames = [...new Set(paymentsToday.map(p => (p.receivedBy as any)?.firstName || (p.receivedBy as any)?.name || 'Admin'))].join(', ');
 
+            const acClass = enrollment.academicClassId as any;
+            const template = acClass?.templateId;
+            const enrollmentClass = template
+                ? `${template.grade}${template.stream ? ' – ' + template.stream : ''} (${template.board})`
+                : 'N/A';
+
             return {
                 name: `${student.firstName} ${student.lastName}`,
                 admissionNumber: student.admissionNumber,
+                enrollmentClass,
                 isNew: student.createdAt >= from && student.createdAt <= to,
                 paidToday: paidTodayRes[0]?.total || 0,
                 totalPaidToDate: totalPaid,
@@ -192,6 +203,7 @@ export class ReportService {
                 students: activeStudents.filter(s => s.isNew).map(s => ({
                     name: s.name,
                     admissionNumber: s.admissionNumber,
+                    enrollmentClass: s.enrollmentClass,
                     deposited: s.paidToday,
                     totalPaid: s.totalPaidToDate,
                     left: s.remainingBalance,
@@ -201,6 +213,7 @@ export class ReportService {
             existingStudentsActivity: activeStudents.filter(s => !s.isNew).map(s => ({
                 name: s.name,
                 admissionNumber: s.admissionNumber,
+                enrollmentClass: s.enrollmentClass,
                 deposited: s.paidToday,
                 totalPaid: s.totalPaidToDate,
                 left: s.remainingBalance,

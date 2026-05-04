@@ -130,15 +130,17 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                 </div>
 
                 {/* Mobile view of class stats */}
-                <div className="mobile-only" style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
-                    <div>
-                        <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Collected</div>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
-                    </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Outstanding</div>
-                        <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
-                            {formatCurrency(group.outstanding)}
+                <div className="mobile-only">
+                    <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
+                        <div>
+                            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Collected</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Outstanding</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
+                                {formatCurrency(group.outstanding)}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -148,15 +150,15 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
             {open && (
                 <div>
                     <div className="table-container desktop-only">
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8125rem' }}>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.78rem' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid var(--border)', background: 'var(--bg-surface)' }}>
-                                    <th style={{ textAlign: 'left', padding: '10px 18px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Student</th>
-                                    <th style={{ textAlign: 'left', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Adm. No.</th>
-                                    <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Fee</th>
-                                    <th style={{ textAlign: 'right', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid</th>
-                                    <th style={{ textAlign: 'right', padding: '10px 18px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</th>
-                                    <th style={{ textAlign: 'center', padding: '10px 12px', fontWeight: 700, fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</th>
+                                    <th style={{ textAlign: 'left', padding: '7px 10px', fontWeight: 700, fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Student</th>
+                                    <th style={{ textAlign: 'left', padding: '7px 10px', fontWeight: 700, fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Enrollment</th>
+                                    <th style={{ textAlign: 'right', padding: '7px 10px', fontWeight: 700, fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Net Fee</th>
+                                    <th style={{ textAlign: 'right', padding: '7px 10px', fontWeight: 700, fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Paid</th>
+                                    <th style={{ textAlign: 'right', padding: '7px 10px', fontWeight: 700, fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</th>
+                                    <th style={{ textAlign: 'center', padding: '7px 10px', fontWeight: 700, fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Status</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -164,14 +166,20 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                                     <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}
                                         onMouseEnter={e => (e.currentTarget.style.background = 'var(--bg-subtle)')}
                                         onMouseLeave={e => (e.currentTarget.style.background = '')}>
-                                        <td style={{ padding: '10px 18px', fontWeight: 600 }}>{s.name}</td>
-                                        <td style={{ padding: '10px 12px', fontFamily: 'monospace', fontSize: '0.78rem', color: 'var(--text-muted)' }}>{s.admissionNumber}</td>
-                                        <td style={{ padding: '10px 12px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.netFee)}</td>
-                                        <td style={{ padding: '10px 12px', textAlign: 'right', color: '#059669', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.paid)}</td>
-                                        <td style={{ padding: '10px 18px', textAlign: 'right', color: s.outstanding > 0 ? '#dc2626' : '#059669', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.outstanding)}</td>
-                                        <td style={{ padding: '10px 12px', textAlign: 'center' }}>
+                                        <td style={{ padding: '6px 10px' }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.78rem' }}>{s.name}</div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</div>
+                                        </td>
+                                        <td style={{ padding: '6px 10px', fontSize: '0.75rem' }}>
+                                            <div style={{ fontWeight: 600 }}>{group.className}</div>
+                                            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{group.academicYear}</div>
+                                        </td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.netFee)}</td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'right', color: '#059669', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.paid)}</td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'right', color: s.outstanding > 0 ? '#dc2626' : '#059669', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.outstanding)}</td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                                             <span style={{
-                                                display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
+                                                display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.65rem', fontWeight: 700,
                                                 background: s.outstanding <= 0 ? 'rgba(5,150,105,0.1)' : s.outstanding > s.netFee * 0.5 ? 'rgba(220,38,38,0.1)' : 'rgba(217,119,6,0.1)',
                                                 color: s.outstanding <= 0 ? '#059669' : s.outstanding > s.netFee * 0.5 ? '#dc2626' : '#d97706',
                                             }}>
@@ -184,12 +192,12 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                             {/* Totals row */}
                             <tfoot>
                                 <tr style={{ background: 'var(--bg-subtle)', borderTop: '2px solid var(--border)' }}>
-                                    <td colSpan={2} style={{ padding: '10px 18px', fontWeight: 700, fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                    <td colSpan={2} style={{ padding: '7px 10px', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                         Class Total ({group.enrolled} students)
                                     </td>
-                                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(group.totalFees)}</td>
-                                    <td style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>{formatCurrency(group.collected)}</td>
-                                    <td style={{ padding: '10px 18px', textAlign: 'right', fontWeight: 700, color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>{formatCurrency(group.outstanding)}</td>
+                                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700 }}>{formatCurrency(group.totalFees)}</td>
+                                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: '#059669' }}>{formatCurrency(group.collected)}</td>
+                                    <td style={{ padding: '7px 10px', textAlign: 'right', fontWeight: 700, color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>{formatCurrency(group.outstanding)}</td>
                                     <td />
                                 </tr>
                             </tfoot>
@@ -204,6 +212,7 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                                     <div>
                                         <div className="mobile-card-title">{s.name}</div>
                                         <div className="mobile-card-subtitle">{s.admissionNumber}</div>
+                                        <div style={{ fontSize: '0.68rem', color: 'var(--text-secondary)', fontWeight: 600, marginTop: 2 }}>{group.className} · {group.academicYear}</div>
                                     </div>
                                     <span style={{
                                         display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
@@ -369,6 +378,7 @@ export function EagleEyePage() {
             <PageHeader
                 title="Eagle-Eye Dashboard"
                 subtitle="Complete session overview — all enrollments, class-wise breakdown, and outstanding dues."
+                icon={Eye}
             />
 
             {/* Action Bar */}

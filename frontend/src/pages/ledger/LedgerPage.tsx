@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer, Trash2, AlertTriangle, FileText } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { studentsService } from '../../api/services/students.service';
@@ -194,6 +194,7 @@ export function LedgerPage() {
             <PageHeader
                 title="Student Ledger & Receipts"
                 subtitle="Search for a student to view their complete financial history and download past receipts."
+                icon={FileText}
             />
 
             <div className="ledger-grid-layout" style={{ marginTop: 24 }}>
@@ -244,7 +245,7 @@ export function LedgerPage() {
 
                     {selectedStudent && (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="card" style={{ padding: 20, borderLeft: '4px solid #6366f1' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', smDirection: 'row', gap: 16 } as any}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }}>
                                 <div style={{
                                     width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #6366f1, #8b5cf6)',
                                     display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', flexShrink: 0
@@ -254,7 +255,7 @@ export function LedgerPage() {
                                 <div style={{ flex: 1 }}>
                                     <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: 4 }}>{selectedStudent.firstName} {selectedStudent.lastName}</h3>
                                     <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: 12 }}>{selectedStudent.admissionNumber}</p>
-                                    
+
                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
                                         <div style={{ fontSize: '0.75rem' }}>
                                             <div style={{ color: 'var(--text-muted)', marginBottom: 2 }}>Phone</div>
@@ -314,9 +315,9 @@ export function LedgerPage() {
                 </div>
 
                 {/* Right Panel: Ledger Entries */}
-                <div>
+                <div style={{ minWidth: 0 }}>
                     {!selectedEnrollment ? (
-                        <div className="card" style={{ height: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text-muted)' }}>
+                        <div className="card" style={{ minHeight: '400px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, color: 'var(--text-muted)' }}>
                             <Receipt size={48} strokeWidth={1} />
                             <p>Select a student and enrollment to view ledger.</p>
                         </div>
@@ -339,10 +340,10 @@ export function LedgerPage() {
                             </div>
 
                             {/* Responsive Summary Grid */}
-                            <div style={{ 
-                                display: 'grid', 
-                                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', 
-                                gap: 12, 
+                            <div style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 180px), 1fr))',
+                                gap: 12,
                                 padding: '0 24px 24px',
                                 borderBottom: '1px solid var(--border)'
                             }}>
@@ -362,13 +363,13 @@ export function LedgerPage() {
 
                             <div className="table-container">
                                 {/* Desktop Table View */}
-                                <table className="data-table desktop-only">
+                                <table className="data-table compact-table">
                                     <thead>
                                         <tr>
                                             <th>Date & Time</th>
-                                            <th>Reference</th>
-                                            <th>Ref Type</th>
-                                            <th>Processed By</th>
+                                            <th>Description</th>
+                                            <th>Type</th>
+                                            <th>Actor</th>
                                             <th style={{ textAlign: 'right' }}>Credit</th>
                                             <th style={{ textAlign: 'right' }}>Debit</th>
                                             <th className="no-print" style={{ textAlign: 'center' }}>Receipt</th>
@@ -376,45 +377,40 @@ export function LedgerPage() {
                                     </thead>
                                     <tbody>
                                         {loadingLedger ? (
-                                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40 }}>Loading ledger entries...</td></tr>
+                                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40 }}>Loading ledger entries...</td></tr>
                                         ) : ledger.length === 0 ? (
-                                            <tr><td colSpan={7} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No transactions recorded yet.</td></tr>
+                                            <tr><td colSpan={8} style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No transactions recorded yet.</td></tr>
                                         ) : (
                                             ledger.map((entry) => (
                                                 <tr key={entry._id}>
-                                                    <td style={{ fontSize: '0.8125rem' }}>
+                                                    <td data-label="Date & Time" style={{ fontSize: '0.8125rem' }}>
                                                         <div style={{ fontWeight: 500 }}>{format(new Date(entry.createdAt), 'dd MMM yyyy')}</div>
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{format(new Date(entry.createdAt), 'hh:mm a')}</div>
                                                     </td>
-                                                    <td>
-                                                        <div style={{ fontWeight: 500, fontSize: '0.875rem' }}>
-                                                            <TruncatedText text={entry.description} maxWidth="180px" modalTitle="Transaction Description" />
-                                                        </div>
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                                            <TruncatedText text={`ID: ${entry.referenceId}`} maxWidth="120px" modalTitle="Reference ID" />
+                                                    <td data-label="Description">
+                                                        <div style={{ fontWeight: 600, fontSize: '0.8125rem' }}>
+                                                            <TruncatedText text={entry.description} maxWidth="180px" modalTitle="Description" />
                                                         </div>
                                                     </td>
-                                                    <td>
-                                                        <span style={{
-                                                            fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                                                    <td data-label="Type">
+                                                        <span style={{ 
+                                                            fontSize: '0.65rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6,
                                                             background: entry.referenceType === 'PAYMENT' ? 'rgba(16,185,129,0.1)' : 'rgba(99,102,241,0.1)',
                                                             color: entry.referenceType === 'PAYMENT' ? '#10b981' : '#6366f1'
                                                         }}>
                                                             {entry.referenceType}
                                                         </span>
                                                     </td>
-                                                    <td>
-                                                        <div style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
-                                                            {(entry as any).createdBy?.name || (entry as any).createdBy?.firstName || 'System'}
-                                                        </div>
+                                                    <td data-label="Actor" style={{ fontSize: '0.8125rem', fontWeight: 500 }}>
+                                                        {(entry as any).createdBy?.name || 'System'}
                                                     </td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 700, color: '#10b981', background: entry.type === 'CREDIT' ? 'rgba(16,185,129,0.02)' : 'transparent' }}>
+                                                    <td data-label="Credit" style={{ textAlign: 'right', fontWeight: 700, color: '#10b981' }}>
                                                         {entry.type === 'CREDIT' ? formatCurrency(entry.amount) : '-'}
                                                     </td>
-                                                    <td style={{ textAlign: 'right', fontWeight: 700, color: '#ef4444', background: entry.type === 'DEBIT' ? 'rgba(239,68,68,0.02)' : 'transparent' }}>
+                                                    <td data-label="Debit" style={{ textAlign: 'right', fontWeight: 700, color: '#ef4444' }}>
                                                         {entry.type === 'DEBIT' ? formatCurrency(entry.amount) : '-'}
                                                     </td>
-                                                    <td className="no-print" style={{ textAlign: 'center' }}>
+                                                    <td data-label="Receipt" className="no-print" style={{ textAlign: 'center' }}>
                                                         <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
                                                             {entry.referenceType === 'PAYMENT' ? (
                                                                 <>
@@ -434,7 +430,7 @@ export function LedgerPage() {
                                                                                 setDeletingPaymentId(entry.referenceId);
                                                                                 setDeletePhase(1);
                                                                             }}
-                                                                            title="Delete Payment (Admin Only)"
+                                                                            title="Delete Payment"
                                                                             style={{
                                                                                 padding: 6, borderRadius: 6, border: '1px solid #fee2e2', background: '#fffafa',
                                                                                 cursor: 'pointer', color: '#ef4444', display: 'inline-flex', alignItems: 'center', justifyContent: 'center'
@@ -453,60 +449,7 @@ export function LedgerPage() {
                                     </tbody>
                                 </table>
 
-                                {/* Mobile Card View */}
-                                <div className="mobile-only">
-                                    {loadingLedger ? (
-                                        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Loading...</div>
-                                    ) : ledger.length === 0 ? (
-                                        <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>No transactions yet.</div>
-                                    ) : (
-                                        ledger.map((entry) => (
-                                            <div key={entry._id} className="ledger-mobile-card">
-                                                <div className="ledger-mobile-card-header">
-                                                    <span>{format(new Date(entry.createdAt), 'dd MMM yyyy, hh:mm a')}</span>
-                                                    <span className="badge badge-gray" style={{ fontSize: '0.6rem' }}>{entry.referenceType}</span>
-                                                </div>
-                                                <div className="ledger-mobile-card-title">
-                                                    {entry.description}
-                                                </div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
-                                                    Ref: {entry.referenceId}
-                                                </div>
-                                                <div className="ledger-mobile-card-footer">
-                                                    <div>
-                                                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Amount</div>
-                                                        <div style={{ fontSize: '1.125rem', fontWeight: 800, color: entry.type === 'CREDIT' ? '#10b981' : '#ef4444' }}>
-                                                            {entry.type === 'CREDIT' ? '+' : '-'}{formatCurrency(entry.amount)}
-                                                        </div>
-                                                    </div>
-                                                    <div style={{ display: 'flex', gap: 8 }}>
-                                                        {entry.referenceType === 'PAYMENT' && (
-                                                            <button
-                                                                className="btn-secondary"
-                                                                onClick={() => fetchAndShowReceipt(entry.referenceId)}
-                                                                style={{ padding: '6px 12px', fontSize: '0.75rem' }}
-                                                            >
-                                                                <Download size={14} /> Receipt
-                                                            </button>
-                                                        )}
-                                                        {entry.referenceType === 'PAYMENT' && canDeletePayment && (
-                                                            <button
-                                                                className="btn-secondary"
-                                                                onClick={() => {
-                                                                    setDeletingPaymentId(entry.referenceId);
-                                                                    setDeletePhase(1);
-                                                                }}
-                                                                style={{ padding: '6px 12px', fontSize: '0.75rem', borderColor: '#fee2e2', color: '#ef4444' }}
-                                                            >
-                                                                <Trash2 size={14} />
-                                                            </button>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))
-                                    )}
-                                </div>
+
                             </div>
                         </motion.div>
                     )}
@@ -613,7 +556,7 @@ export function LedgerPage() {
                                 <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ef4444' }}>
                                     <AlertTriangle size={32} />
                                 </div>
-                                
+
                                 {deletePhase === 1 ? (
                                     <>
                                         <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Delete Payment Entry?</h3>
@@ -629,13 +572,13 @@ export function LedgerPage() {
                                     <>
                                         <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#ef4444' }}>Final Warning</h3>
                                         <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                            This action is <strong>irreversible</strong>. The receipt and ledger entries will be permanently purged from the system. <br/>Are you absolutely sure?
+                                            This action is <strong>irreversible</strong>. The receipt and ledger entries will be permanently purged from the system. <br />Are you absolutely sure?
                                         </p>
                                         <div style={{ display: 'flex', gap: 12, width: '100%', marginTop: 8 }}>
                                             <button className="btn-secondary" style={{ flex: 1 }} onClick={() => { setDeletePhase(0); setDeletingPaymentId(null); }}>No, Keep It</button>
-                                            <button 
-                                                className="btn-primary" 
-                                                style={{ flex: 1, background: '#b91c1c', borderColor: '#b91c1c' }} 
+                                            <button
+                                                className="btn-primary"
+                                                style={{ flex: 1, background: '#b91c1c', borderColor: '#b91c1c' }}
                                                 onClick={() => deletePaymentMutation.mutate(deletingPaymentId)}
                                                 disabled={deletePaymentMutation.isPending}
                                             >

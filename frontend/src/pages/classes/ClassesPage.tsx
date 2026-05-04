@@ -182,7 +182,7 @@ export function ClassesPage() {
                         />
                     </div>
                     <div className="table-container">
-                        <table className="data-table">
+                        <table className="data-table compact-table">
                             <thead>
                                 <tr>
                                     <th>Template</th>

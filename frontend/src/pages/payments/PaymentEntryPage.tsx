@@ -362,67 +362,69 @@ export function PaymentEntryPage() {
                     {enrollment.status === 'ONGOING' && (
                         <div className="card" style={{ padding: 20, marginBottom: 16 }}>
                             <h4 style={{ fontWeight: 700, marginBottom: 12 }}>Installment Plan</h4>
-                            <table className="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Due Date</th>
-                                        <th style={{ textAlign: 'right' }}>Amount</th>
-                                        <th style={{ textAlign: 'right' }}>Paid</th>
-                                        <th style={{ textAlign: 'right' }}>Remaining</th>
-                                        <th style={{ textAlign: 'center' }}>Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {(() => {
-                                        const plan = (typeof enrollment.academicClassId === 'object'
-                                            ? (enrollment.academicClassId as any).installmentPlan
-                                            : []) || [];
+                            <div className="table-container" style={{ margin: '0 -10px', width: 'calc(100% + 20px)', borderRadius: 8 }}>
+                                <table className="data-table compact-table">
+                                    <thead>
+                                        <tr>
+                                            <th>#</th>
+                                            <th>Due Date</th>
+                                            <th style={{ textAlign: 'right' }}>Amount</th>
+                                            <th style={{ textAlign: 'right' }}>Paid</th>
+                                            <th style={{ textAlign: 'right' }}>Remaining</th>
+                                            <th style={{ textAlign: 'center' }}>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {(() => {
+                                            const plan = (typeof enrollment.academicClassId === 'object'
+                                                ? (enrollment.academicClassId as any).installmentPlan
+                                                : []) || [];
 
-                                        const sortedPlan = [...plan].sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+                                            const sortedPlan = [...plan].sort((a: any, b: any) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
 
-                                        const totalPaidCash = enrollment.netFee - (enrollment.outstandingBalance ?? 0);
-                                        let tempRemainingCash = totalPaidCash;
-                                        let tempRemainingConcession = enrollment.totalFee - enrollment.netFee;
+                                            const totalPaidCash = enrollment.netFee - (enrollment.outstandingBalance ?? 0);
+                                            let tempRemainingCash = totalPaidCash;
+                                            let tempRemainingConcession = enrollment.totalFee - enrollment.netFee;
 
-                                        return sortedPlan.map((ins: any) => {
-                                            const amt = ins.amount;
+                                            return sortedPlan.map((ins: any) => {
+                                                const amt = ins.amount;
 
-                                            // 1. Concession covers it first
-                                            const concessionCover = Math.min(amt, tempRemainingConcession);
-                                            tempRemainingConcession -= concessionCover;
+                                                // 1. Concession covers it first
+                                                const concessionCover = Math.min(amt, tempRemainingConcession);
+                                                tempRemainingConcession -= concessionCover;
 
-                                            // 2. Cash covers the rest
-                                            const paid = Math.min(amt - concessionCover, Math.max(0, tempRemainingCash));
-                                            tempRemainingCash -= paid;
+                                                // 2. Cash covers the rest
+                                                const paid = Math.min(amt - concessionCover, Math.max(0, tempRemainingCash));
+                                                tempRemainingCash -= paid;
 
-                                            const remaining = amt - concessionCover - paid;
+                                                const remaining = amt - concessionCover - paid;
 
-                                            const isFullyPaid = remaining < 0.01;
-                                            const isPartiallyPaid = (paid + concessionCover) > 0.01 && !isFullyPaid;
+                                                const isFullyPaid = remaining < 0.01;
+                                                const isPartiallyPaid = (paid + concessionCover) > 0.01 && !isFullyPaid;
 
-                                            return (
-                                                <tr key={ins.installmentNo}>
-                                                    <td>{ins.installmentNo}</td>
-                                                    <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{format(new Date(ins.dueDate), 'dd MMM yyyy')}</td>
-                                                    <td className="financial-value" style={{ color: 'var(--text-primary)' }}>{formatCurrency(amt)}</td>
-                                                    <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(paid + concessionCover)}</td>
-                                                    <td className="financial-value" style={{ color: remaining > 0.01 ? '#ef4444' : 'var(--text-muted)' }}>{formatCurrency(remaining)}</td>
-                                                    <td style={{ textAlign: 'center' }}>
-                                                        <span style={{
-                                                            fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99,
-                                                            background: isFullyPaid ? 'rgba(16,185,129,0.1)' : isPartiallyPaid ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
-                                                            color: isFullyPaid ? '#10b981' : isPartiallyPaid ? '#f59e0b' : '#ef4444'
-                                                        }}>
-                                                            {isFullyPaid ? 'PAID' : isPartiallyPaid ? 'PARTIAL' : 'DUE'}
-                                                        </span>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        });
-                                    })()}
-                                </tbody>
-                            </table>
+                                                return (
+                                                    <tr key={ins.installmentNo}>
+                                                        <td>{ins.installmentNo}</td>
+                                                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{format(new Date(ins.dueDate), 'dd MMM yyyy')}</td>
+                                                        <td className="financial-value" style={{ color: 'var(--text-primary)' }}>{formatCurrency(amt)}</td>
+                                                        <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(paid + concessionCover)}</td>
+                                                        <td className="financial-value" style={{ color: remaining > 0.01 ? '#ef4444' : 'var(--text-muted)' }}>{formatCurrency(remaining)}</td>
+                                                        <td style={{ textAlign: 'center' }}>
+                                                            <span style={{
+                                                                fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: 99,
+                                                                background: isFullyPaid ? 'rgba(16,185,129,0.1)' : isPartiallyPaid ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)',
+                                                                color: isFullyPaid ? '#10b981' : isPartiallyPaid ? '#f59e0b' : '#ef4444'
+                                                            }}>
+                                                                {isFullyPaid ? 'PAID' : isPartiallyPaid ? 'PARTIAL' : 'DUE'}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            });
+                                        })()}
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     )}
 

@@ -50,7 +50,7 @@ export function EnrollmentsPage() {
 
     // Ledger / All Enrollments state
     const [currentEnrollment, setCurrentEnrollment] = useState<(Enrollment & { outstandingBalance?: number }) | null>(null);
-    
+
     // Helper for numeric inputs with react-hook-form
     const registerNumeric = (name: any, setValue: any) => ({
         onChange: (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -287,10 +287,9 @@ export function EnrollmentsPage() {
                         {/* Enrollments List */}
                         <div className="desktop-only">
                             <div className="table-container">
-                                <table className="data-table">
+                                <table className="data-table compact-table">
                                     <thead>
                                         <tr>
-                                            <th>Enrollment ID</th>
                                             <th>Student</th>
                                             <th>Year / Class</th>
                                             <th style={{ textAlign: 'right' }}>Total Fee</th>
@@ -311,16 +310,16 @@ export function EnrollmentsPage() {
                                                 const template = (academicClass?.templateId as unknown as ClassTemplate);
                                                 return (
                                                     <tr key={e._id}>
-                                                        <td><code style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{e._id.toString().slice(-6)}</code></td>
+
                                                         <td>
                                                             <div style={{ fontWeight: 600 }}>
                                                                 <TruncatedText text={`${student?.firstName} ${student?.lastName}`} maxWidth="150px" modalTitle="Student Name" />
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <div style={{ fontSize: '0.8125rem' }}>{e.academicYear}</div>
+                                                            <div style={{ fontSize: '0.8125rem' }}>{template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}</div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                                {template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}
+                                                                {e.academicYear}
                                                             </div>
                                                         </td>
                                                         <td className="financial-value">{formatCurrency(e.netFee)}</td>
@@ -351,43 +350,45 @@ export function EnrollmentsPage() {
 
                         {/* Mobile Cards for Enrollments */}
                         {!ledgerLoading && allEnrollments.length > 0 && (
-                            <div className="mobile-only" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                                {allEnrollments.map(e => {
-                                    const student = e.studentId as unknown as Student;
-                                    const academicClass = e.academicClassId as unknown as AcademicClass;
-                                    const template = (academicClass?.templateId as unknown as ClassTemplate);
-                                    return (
-                                        <div key={e._id} className="card" style={{ padding: 16, border: '1px solid var(--border)' }} onClick={() => setCurrentEnrollment(e)}>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                                                <div>
-                                                    <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{student?.firstName} {student?.lastName}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}</div>
+                            <div className="mobile-only">
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {allEnrollments.map(e => {
+                                        const student = e.studentId as unknown as Student;
+                                        const academicClass = e.academicClassId as unknown as AcademicClass;
+                                        const template = (academicClass?.templateId as unknown as ClassTemplate);
+                                        return (
+                                            <div key={e._id} className="card" style={{ padding: 16, border: '1px solid var(--border)' }} onClick={() => setCurrentEnrollment(e)}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+                                                    <div>
+                                                        <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{student?.firstName} {student?.lastName}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}</div>
+                                                    </div>
+                                                    <span style={{
+                                                        padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
+                                                        ...STATUS_STYLE[e.status],
+                                                    }}>
+                                                        {e.status}
+                                                    </span>
                                                 </div>
-                                                <span style={{
-                                                    padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
-                                                    ...STATUS_STYLE[e.status],
-                                                }}>
-                                                    {e.status}
-                                                </span>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 6 }}>
+                                                    <span style={{ color: 'var(--text-muted)' }}>Year</span>
+                                                    <span style={{ fontWeight: 600 }}>{e.academicYear}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 6 }}>
+                                                    <span style={{ color: 'var(--text-muted)' }}>Net Fee</span>
+                                                    <span style={{ fontWeight: 600 }}>{formatCurrency(e.netFee)}</span>
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                                    <span style={{ color: 'var(--text-muted)' }}>Outstanding</span>
+                                                    <span style={{ fontWeight: 700, color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(e.outstandingBalance ?? 0)}</span>
+                                                </div>
+                                                <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>
+                                                    TAP TO VIEW FULL LEDGER
+                                                </div>
                                             </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 6 }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>Year</span>
-                                                <span style={{ fontWeight: 600 }}>{e.academicYear}</span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', marginBottom: 6 }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>Net Fee</span>
-                                                <span style={{ fontWeight: 600 }}>{formatCurrency(e.netFee)}</span>
-                                            </div>
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
-                                                <span style={{ color: 'var(--text-muted)' }}>Outstanding</span>
-                                                <span style={{ fontWeight: 700, color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(e.outstandingBalance ?? 0)}</span>
-                                            </div>
-                                            <div style={{ marginTop: 12, paddingTop: 10, borderTop: '1px solid var(--border)', textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--accent)' }}>
-                                                TAP TO VIEW FULL LEDGER
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         )}
 
@@ -485,9 +486,9 @@ export function EnrollmentsPage() {
                             <button
                                 className="btn-secondary"
                                 style={{ marginLeft: canConcession && currentEnrollment.concessionType === 'NONE' ? 8 : 0 }}
-                                onClick={() => { 
-                                    setShowTransferModal(true); 
-                                    setTransferTargetClassId(''); 
+                                onClick={() => {
+                                    setShowTransferModal(true);
+                                    setTransferTargetClassId('');
                                     setTransferReason('');
                                     setTransferConcessionType(currentEnrollment.concessionType as any || 'NONE');
                                     setTransferConcessionValue(String(currentEnrollment.concessionValue || 0));
@@ -749,22 +750,22 @@ export function EnrollmentsPage() {
                             {transferTargetClassId && (() => {
                                 const targetCls = transferClasses.find(c => c._id === transferTargetClassId);
                                 const alreadyPaid = currentEnrollment.netFee - (currentEnrollment.outstandingBalance ?? 0);
-                                
+
                                 // Calculate new concession amount
                                 let cType = changeConcession ? transferConcessionType : (currentEnrollment.concessionType as any || 'NONE');
                                 let cValString = changeConcession ? transferConcessionValue : String(currentEnrollment.concessionValue || 0);
                                 let cVal = parseFloat(cValString) || 0;
-                                
+
                                 let newConcessionAmount = 0;
                                 if (cType === 'PERCENTAGE' && targetCls) {
                                     newConcessionAmount = (targetCls.totalFee * cVal) / 100;
                                 } else if (cType === 'FLAT') {
                                     newConcessionAmount = cVal;
                                 }
-                                
+
                                 const newNetFee = (targetCls?.totalFee ?? 0) - newConcessionAmount;
                                 const newOutstanding = Math.max(0, newNetFee - alreadyPaid);
-                                
+
                                 return targetCls ? (
                                     <div style={{
                                         padding: '12px 16px', background: 'rgba(99,102,241,0.06)',
@@ -787,11 +788,11 @@ export function EnrollmentsPage() {
                             })()}
 
                             {/* Concession Options */}
-                            <div style={{ 
-                                marginBottom: 20, 
-                                padding: 16, 
+                            <div style={{
+                                marginBottom: 20,
+                                padding: 16,
                                 background: changeConcession ? 'rgba(99,102,241,0.04)' : 'transparent',
-                                border: `1px ${changeConcession ? 'solid' : 'dashed'} ${changeConcession ? '#6366f1' : 'var(--border)'}`, 
+                                border: `1px ${changeConcession ? 'solid' : 'dashed'} ${changeConcession ? '#6366f1' : 'var(--border)'}`,
                                 borderRadius: 12,
                                 transition: 'all 0.2s ease'
                             }}>
@@ -800,12 +801,12 @@ export function EnrollmentsPage() {
                                         <Tag size={16} color={changeConcession ? '#6366f1' : 'var(--text-muted)'} />
                                         <div style={{ fontSize: '0.9375rem', fontWeight: 700, color: changeConcession ? '#6366f1' : 'var(--text-primary)' }}>Concession / Discount</div>
                                     </div>
-                                    <label style={{ 
-                                        display: 'flex', 
-                                        alignItems: 'center', 
-                                        gap: 10, 
-                                        cursor: 'pointer', 
-                                        padding: '6px 12px', 
+                                    <label style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 10,
+                                        cursor: 'pointer',
+                                        padding: '6px 12px',
                                         background: changeConcession ? '#6366f1' : 'var(--bg-subtle)',
                                         color: changeConcession ? '#fff' : 'var(--text-secondary)',
                                         borderRadius: 20,
@@ -814,10 +815,10 @@ export function EnrollmentsPage() {
                                         transition: 'all 0.2s ease',
                                         boxShadow: changeConcession ? '0 2px 8px rgba(99,102,241,0.3)' : 'none'
                                     }}>
-                                        <input 
-                                            type="checkbox" 
-                                            checked={changeConcession} 
-                                            onChange={(e) => setChangeConcession(e.target.checked)} 
+                                        <input
+                                            type="checkbox"
+                                            checked={changeConcession}
+                                            onChange={(e) => setChangeConcession(e.target.checked)}
                                             style={{ cursor: 'pointer', accentColor: '#fff', width: 14, height: 14 }}
                                         />
                                         {changeConcession ? 'MODIFIED' : 'CHANGE ?'}
@@ -833,8 +834,8 @@ export function EnrollmentsPage() {
                                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                                         <div>
                                             <label className="form-label" style={{ fontSize: '0.75rem' }}>New Type</label>
-                                            <select 
-                                                className="form-select" 
+                                            <select
+                                                className="form-select"
                                                 value={transferConcessionType}
                                                 onChange={(e) => setTransferConcessionType(e.target.value as any)}
                                             >
@@ -846,10 +847,10 @@ export function EnrollmentsPage() {
                                         {transferConcessionType !== 'NONE' && (
                                             <div>
                                                 <label className="form-label" style={{ fontSize: '0.75rem' }}>Value</label>
-                                                <input 
+                                                <input
                                                     type="text"
                                                     inputMode="numeric"
-                                                    className="form-input" 
+                                                    className="form-input"
                                                     value={transferConcessionValue}
                                                     onChange={(e) => {
                                                         const raw = e.target.value.replace(/[^0-9.]/g, '');
@@ -926,20 +927,20 @@ export function EnrollmentsPage() {
                                 </div>
                                 <div style={{ marginBottom: 16 }}>
                                     <label className="form-label">Value *</label>
-                                    <input 
-                                        type="text" 
+                                    <input
+                                        type="text"
                                         inputMode="numeric"
-                                        className={`form-input ${cErrors.concessionValue ? 'error' : ''}`} 
+                                        className={`form-input ${cErrors.concessionValue ? 'error' : ''}`}
                                         placeholder="e.g. 10 for 10% or 5000 for ₹5000"
                                         {...regConcession('concessionValue')}
                                         onChange={registerNumeric('concessionValue', setConcessionValue).onChange}
                                     />
-                                     {cErrors?.concessionValue && <p className="form-error">{cErrors.concessionValue.message}</p>}
+                                    {cErrors?.concessionValue && <p className="form-error">{cErrors.concessionValue.message}</p>}
                                 </div>
                                 <div style={{ marginBottom: 24 }}>
                                     <label className="form-label">Reason (Optional)</label>
                                     <textarea {...regConcession('reason')} className={`form-input ${cErrors.reason ? 'error' : ''}`} rows={3} placeholder="Optional reason for concession" />
-                                     {cErrors?.reason && <p className="form-error">{cErrors.reason.message}</p>}
+                                    {cErrors?.reason && <p className="form-error">{cErrors.reason.message}</p>}
                                 </div>
                                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
                                     <button type="button" className="btn-secondary" onClick={() => { setShowConcessionForm(false); resetConcession(); }}>Cancel</button>

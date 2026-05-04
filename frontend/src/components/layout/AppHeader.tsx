@@ -38,12 +38,11 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                 }}
             >
                 {/* ── Top row ─────────────────────────────────────── */}
-                <div style={{
+                <div className="app-header-inner" style={{
                     height: 64,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '0 20px',
                 }}>
                     {/* Left: menu + title */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -255,9 +254,7 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                 </div>
 
                 {/* ── Breadcrumb row ──────────────────────────────── */}
-                <div style={{
-                    paddingLeft: 20,
-                    paddingRight: 20,
+                <div className="app-header-breadcrumb" style={{
                     paddingBottom: 9,
                     borderTop: '1px solid var(--border-subtle)',
                     background: 'var(--bg-subtle)',

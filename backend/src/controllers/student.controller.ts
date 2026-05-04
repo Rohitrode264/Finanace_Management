@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { studentService } from '../services/student.service';
 import { auditService } from '../services/audit.service';
 import { sendSuccess, sendError } from '../utils/apiResponse';
+import { Enrollment } from '../models/Enrollment.model';
 import { z } from 'zod';
 
 const createStudentSchema = z.object({
@@ -125,7 +126,50 @@ export class StudentController {
                     s
                 );
             }
-            sendSuccess(res, result);
+
+            // Enrich each student with their current (latest ONGOING) enrollment
+            const studentIds = result.students.map((st: any) => st._id);
+            const enrollments = await Enrollment.find({
+                studentId: { $in: studentIds },
+                status: 'ONGOING',
+            })
+                .sort({ createdAt: -1 })
+                .populate({
+                    path: 'academicClassId',
+                    populate: { path: 'templateId', select: 'grade stream board' },
+                    select: 'templateId section academicYear',
+                })
+                .lean();
+
+            // Build a map: studentId -> latest enrollment
+            const enrollmentMap = new Map<string, any>();
+            for (const en of enrollments) {
+                const sid = en.studentId.toString();
+                if (!enrollmentMap.has(sid)) {
+                    enrollmentMap.set(sid, en);
+                }
+            }
+
+            const enrichedStudents = result.students.map((st: any) => {
+                const plain = st.toJSON ? st.toJSON() : st;
+                const en = enrollmentMap.get(plain._id.toString());
+                if (en && en.academicClassId && typeof en.academicClassId === 'object') {
+                    const ac = en.academicClassId as any;
+                    const tmpl = ac.templateId;
+                    plain.currentEnrollment = {
+                        academicYear: en.academicYear,
+                        className: tmpl
+                            ? `${tmpl.grade}${tmpl.stream ? ' – ' + tmpl.stream : ''} (${tmpl.board})`
+                            : 'N/A',
+                        section: ac.section || '',
+                    };
+                } else {
+                    plain.currentEnrollment = null;
+                }
+                return plain;
+            });
+
+            sendSuccess(res, { students: enrichedStudents, total: result.total });
         } catch (err) {
             sendError(res, 'Failed to list students', 500);
         }

@@ -1,5 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
 
 /* ══════════════════════════════════════════════════════════════════════════════
    DESIGN TOKENS — Light Theme
@@ -86,25 +86,71 @@
 ══════════════════════════════════════════════════════════════════════════════ */
 .page-content {
   padding: 32px 32px 48px;
-  max-width: 100%;
-  margin: 0;
+  max-width: 1600px; /* Cap width for extreme monitors */
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 1536px) {
+  .page-content {
+    padding: 24px 24px 40px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .page-content {
+    padding: 20px 20px 32px;
+  }
 }
 
 @media (max-width: 768px) {
-  .page-content {
-    padding: 16px 16px 24px;
+  .data-table thead {
+    display: none;
+  }
+
+  .data-table,
+  .data-table tbody,
+  .data-table tr,
+  .data-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .data-table tr {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px;
+    margin-bottom: 12px;
+  }
+
+  .data-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    white-space: normal;
+    border: none;
+  }
+
+  .data-table td::before {
+    content: attr(data-label);
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
   }
 }
 
 .ledger-grid-layout {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: 350px 1fr;
   gap: 24px;
 }
 
-@media (min-width: 992px) {
+@media (max-width: 1280px) {
   .ledger-grid-layout {
-    grid-template-columns: 350px 1fr;
+    grid-template-columns: 1fr;
   }
 }
 
@@ -239,7 +285,13 @@
 }
 
 .table-container .data-table {
-  min-width: 800px;
+  min-width: 900px;
+}
+
+@media (max-width: 1024px) {
+  .table-container .data-table {
+    min-width: 800px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -433,11 +485,30 @@ a {
   box-shadow: var(--shadow-sm);
 }
 
+.table-container::-webkit-scrollbar {
+  height: 6px;
+}
+
 .data-table {
   width: 100%;
+  min-width: 850px;
   border-collapse: collapse;
   text-align: left;
   white-space: nowrap;
+}
+
+.data-table th,
+.data-table td {
+  white-space: nowrap;
+}
+
+.data-table td:nth-child(2) {
+  white-space: normal;
+  max-width: 220px;
+}
+
+.data-table td:last-child {
+  min-width: 100px;
 }
 
 .data-table thead {
@@ -448,9 +519,9 @@ a {
 }
 
 .data-table thead th {
-  padding: 11px 16px;
+  padding: 7px 10px;
   text-align: left;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -474,15 +545,16 @@ a {
 }
 
 .data-table tbody td {
-  padding: 12px 16px;
-  font-size: 0.875rem;
+  padding: 6px 10px;
+  font-size: 0.78rem;
   color: var(--text-primary);
   vertical-align: middle;
+  line-height: 1.4;
 }
 
 .data-table tfoot td {
-  padding: 12px 16px;
-  font-size: 0.875rem;
+  padding: 7px 10px;
+  font-size: 0.78rem;
   font-weight: 700;
   border-top: 2px solid var(--border);
   background: var(--bg-subtle);
@@ -856,24 +928,38 @@ a {
   display: flex;
   flex-direction: column;
   border-right: 1px solid var(--sidebar-border);
-  transition: width 0.25s ease;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   flex-shrink: 0;
   z-index: 100;
+}
+
+@media (max-width: 1536px) {
+  .sidebar:not(.collapsed) {
+    width: 260px;
+  }
+}
+
+@media (max-width: 1366px) {
+  .sidebar:not(.collapsed) {
+    width: 240px;
+  }
 }
 
 .sidebar.collapsed {
   width: 64px;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 1024px) {
   .sidebar {
     position: fixed;
     top: 0;
     left: 0;
     height: 100vh;
     z-index: 1000;
+    transform: translateX(0);
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 20px 0 60px rgba(0, 0, 0, 0.25);
   }
 
   .sidebar.mobile-hidden {
@@ -886,7 +972,8 @@ a {
 }
 
 @media (max-width: 640px) {
-  .header-user-name {
+  .header-user-name,
+  .header-subtitle {
     display: none;
   }
 }
@@ -973,21 +1060,53 @@ a {
 ══════════════════════════════════════════════════════════════════════════════ */
 .page-header {
   margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
 }
 
 .page-title {
   font-size: 1.5rem;
   font-weight: 800;
   color: var(--text-primary);
-  line-height: 1.2;
+  line-height: 1.1;
   letter-spacing: -0.02em;
 }
 
 .page-subtitle {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   color: var(--text-muted);
   margin-top: 4px;
-  line-height: 1.5;
+  line-height: 1.4;
+}
+
+.page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .page-title {
+    font-size: 1.25rem;
+  }
+
+  .page-header-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .page-header-actions > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -1505,11 +1624,11 @@ a {
     gap: 10px;
   }
 
-  .stat-card > div {
+  .stat-card>div {
     padding: 12px 14px !important;
   }
 
-  .stat-card > div > div:last-child {
+  .stat-card>div>div:last-child {
     font-size: 1.15rem !important;
   }
 
@@ -1531,7 +1650,7 @@ a {
     gap: 10px !important;
   }
 
-  .filter-bar > * {
+  .filter-bar>* {
     width: 100% !important;
   }
 
@@ -1719,6 +1838,29 @@ a {
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 6px;
+}
+
+.empty-state-container p {
+  font-size: 0.8125rem;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+.empty-state-container h4 {
+  margin-bottom: 6px;
+}
+
+/* High-density table utility */
+.compact-table th,
+.compact-table td {
+  padding: 5px 8px !important;
+  font-size: 0.75rem !important;
+}
+
+.compact-table .financial-value {
+  font-family: var(--font-mono);
+  font-weight: 700;
 }
 
 .empty-state-container p {

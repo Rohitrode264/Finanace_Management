@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Shield, Plus, Check, Lock } from 'lucide-react';
+import { Shield, Plus, Check, Lock, ShieldCheck } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { rbacService } from '../../api/services/rbac.service';
 import type { Role } from '../../types';
@@ -66,6 +66,7 @@ export function RBACPage() {
             <PageHeader
                 title="Role-Based Access Control"
                 subtitle="Configure system permissions and role assignments for staff members."
+                icon={ShieldCheck}
                 actions={
                     <button className="btn-secondary" onClick={() => setAddingRole(true)}>
                         <Plus size={14} /> New Role

@@ -174,7 +174,7 @@ export function ClassStudentsPage() {
                             <tr>
                                 <th>Student</th>
                                 <th>Admission No.</th>
-                                <th>Phone</th>
+                                <th>Status</th>
                                 <th style={{ textAlign: 'right' }}>Total Fee</th>
                                 <th style={{ textAlign: 'right' }}>Paid</th>
                                 <th style={{ textAlign: 'right' }}>Outstanding</th>
@@ -218,7 +218,17 @@ export function ClassStudentsPage() {
                                             <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                                                 {e.studentId?.admissionNumber}
                                             </td>
-                                            <td style={{ fontSize: '0.8125rem' }}>{e.studentId?.phone}</td>
+                                            <td>
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 600,
+                                                    background: e.studentId?.status === 'ACTIVE' ? 'rgba(16,185,129,0.1)' :
+                                                               e.studentId?.status === 'DROPPED' ? 'rgba(239,68,68,0.1)' : 'var(--bg-muted)',
+                                                    color: e.studentId?.status === 'ACTIVE' ? '#10b981' :
+                                                           e.studentId?.status === 'DROPPED' ? '#ef4444' : 'var(--text-secondary)',
+                                                }}>
+                                                    {e.studentId?.status || '—'}
+                                                </span>
+                                            </td>
                                             <td className="financial-value">{formatCurrency(e.netFee)}</td>
                                             <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(paid)}</td>
                                             <td className="financial-value" style={{ color: (e.outstandingBalance ?? 0) > 0 ? '#ef4444' : 'var(--text-muted)' }}>

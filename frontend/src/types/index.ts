@@ -99,6 +99,11 @@ export interface Student {
         extraNote?: string;
     };
     status: StudentStatus;
+    currentEnrollment?: {
+        academicYear: string;
+        className: string;
+        section: string;
+    } | null;
     createdBy: string;
     createdAt: string;
     updatedAt: string;

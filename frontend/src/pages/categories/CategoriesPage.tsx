@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { PageHeader } from '../../components/ui/PageHeader';
-import { Plus, Power } from 'lucide-react';
+import { Plus, Power, Tag } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -60,6 +60,7 @@ export function CategoriesPage() {
             <PageHeader
                 title="Program Categories"
                 subtitle="Manage available programs that students can enroll in (e.g. JEE, NEET)."
+                icon={Tag}
                 actions={
                     canCreate && !showForm ? (
                         <button className="btn-primary" onClick={() => setShowForm(true)}>

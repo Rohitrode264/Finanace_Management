@@ -234,9 +234,9 @@ export function ReportsPage() {
         // New Admissions
         if (daily.newAdmissions?.students?.length > 0) {
             data.push(["New Admissions Today"]);
-            data.push(["Name", "Adm. No.", "Deposited", "Total Paid", "Balance", "Collected By"]);
+            data.push(["Name", "Enrollment", "Adm. No.", "Deposited", "Total Paid", "Balance", "Collected By"]);
             daily.newAdmissions.students.forEach((s: any) => {
-                data.push([s.name, s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
+                data.push([s.name, s.enrollmentClass || 'N/A', s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
             });
             data.push([]);
         }
@@ -244,9 +244,9 @@ export function ReportsPage() {
         // Installment Payments
         if (daily.existingStudentsActivity?.length > 0) {
             data.push(["Installment Payments"]);
-            data.push(["Name", "Adm. No.", "Paid Today", "Total Paid", "Balance", "Collected By"]);
+            data.push(["Name", "Enrollment", "Adm. No.", "Paid Today", "Total Paid", "Balance", "Collected By"]);
             daily.existingStudentsActivity.forEach((s: any) => {
-                data.push([s.name, s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
+                data.push([s.name, s.enrollmentClass || 'N/A', s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
             });
             data.push([]);
         }
@@ -454,7 +454,7 @@ export function ReportsPage() {
                                             <thead>
                                                 <tr>
                                                     <th>Student Name</th>
-                                                    <th>Adm. No.</th>
+                                                    <th>Enrollment</th>
                                                     <th style={{ textAlign: 'right' }}>Deposited</th>
                                                     <th style={{ textAlign: 'right' }}>Total Paid</th>
                                                     <th style={{ textAlign: 'right' }}>Balance</th>
@@ -464,14 +464,17 @@ export function ReportsPage() {
                                             <tbody>
                                                 {daily.newAdmissions.students.map((s: any, i: number) => (
                                                     <tr key={i}>
-                                                        <td style={{ fontWeight: 600 }}>
-                                                            <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                        <td>
+                                                            <div style={{ fontWeight: 600 }}>
+                                                                <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                            </div>
+                                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</div>
                                                         </td>
-                                                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</td>
+                                                        <td style={{ fontSize: '0.78rem', fontWeight: 600 }}>{s.enrollmentClass || 'N/A'}</td>
                                                         <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(s.deposited)}</td>
                                                         <td className="financial-value">{formatCurrency(s.totalPaid)}</td>
                                                         <td className="financial-value" style={{ color: s.left > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(s.left)}</td>
-                                                        <td style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6366f1' }}>{s.collectedBy}</td>
+                                                        <td style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6366f1' }}>{s.collectedBy}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
@@ -491,7 +494,7 @@ export function ReportsPage() {
                                             <thead>
                                                 <tr>
                                                     <th>Student Name</th>
-                                                    <th>Adm. No.</th>
+                                                    <th>Enrollment</th>
                                                     <th style={{ textAlign: 'right' }}>Paid Today</th>
                                                     <th style={{ textAlign: 'right' }}>Total Paid</th>
                                                     <th style={{ textAlign: 'right' }}>Balance</th>
@@ -501,14 +504,17 @@ export function ReportsPage() {
                                             <tbody>
                                                 {daily.existingStudentsActivity.map((s: any, i: number) => (
                                                     <tr key={i}>
-                                                        <td style={{ fontWeight: 600 }}>
-                                                            <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                        <td>
+                                                            <div style={{ fontWeight: 600 }}>
+                                                                <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                            </div>
+                                                            <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</div>
                                                         </td>
-                                                        <td style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</td>
+                                                        <td style={{ fontSize: '0.78rem', fontWeight: 600 }}>{s.enrollmentClass || 'N/A'}</td>
                                                         <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(s.deposited)}</td>
                                                         <td className="financial-value">{formatCurrency(s.totalPaid)}</td>
                                                         <td className="financial-value" style={{ color: s.left > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(s.left)}</td>
-                                                        <td style={{ fontSize: '0.8125rem', fontWeight: 600, color: '#6366f1' }}>{s.collectedBy}</td>
+                                                        <td style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6366f1' }}>{s.collectedBy}</td>
                                                     </tr>
                                                 ))}
                                             </tbody>
