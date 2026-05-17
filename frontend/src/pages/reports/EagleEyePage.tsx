@@ -581,7 +581,7 @@ export function EagleEyePage() {
                                     🎉 No outstanding dues!
                                 </div>
                             ) : (
-                                <div className="mobile-card" style={{ padding: 10 }}>
+                                <div style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     {filteredReport.atRisk.map((s, i) => (
                                         <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderBottom: '1px solid var(--border)' }}>
                                             <div style={{

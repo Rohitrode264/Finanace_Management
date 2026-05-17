@@ -72,7 +72,7 @@ export function AdmissionPrintPage() {
         const ac = currentEnrollment.academicClassId as unknown as AcademicClass;
         const t = ac?.templateId as unknown as ClassTemplate;
         if (t) {
-            courseLabel = `${t.grade}${t.stream ? ` (${t.stream})` : ''} — ${t.board}`;
+            courseLabel = `${t.grade}${t.stream ? ` (${t.stream})` : ''}${t.board ? ` — ${t.board}` : ''}`;
             if (ac.section) courseLabel += ` — Sec ${ac.section}`;
         }
     }

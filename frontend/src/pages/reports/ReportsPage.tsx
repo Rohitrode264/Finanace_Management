@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
 import { BarChart3, Calendar, Search, Mail, Send, ToggleLeft, ToggleRight, Printer, FileSpreadsheet } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { reportService } from '../../api/services/report.service';
 import { enrollmentService } from '../../api/services/enrollment.service';
@@ -234,9 +233,9 @@ export function ReportsPage() {
         // New Admissions
         if (daily.newAdmissions?.students?.length > 0) {
             data.push(["New Admissions Today"]);
-            data.push(["Name", "Enrollment", "Adm. No.", "Deposited", "Total Paid", "Balance", "Collected By"]);
+            data.push(["Name", "Enrollment", "Adm. No.", "Deposited", "Total Paid", "Balance", "Payment Via", "Collected By"]);
             daily.newAdmissions.students.forEach((s: any) => {
-                data.push([s.name, s.enrollmentClass || 'N/A', s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
+                data.push([s.name, s.enrollmentClass || 'N/A', s.admissionNumber, s.deposited, s.totalPaid, s.left, s.paymentMode || 'N/A', s.collectedBy]);
             });
             data.push([]);
         }
@@ -244,9 +243,9 @@ export function ReportsPage() {
         // Installment Payments
         if (daily.existingStudentsActivity?.length > 0) {
             data.push(["Installment Payments"]);
-            data.push(["Name", "Enrollment", "Adm. No.", "Paid Today", "Total Paid", "Balance", "Collected By"]);
+            data.push(["Name", "Enrollment", "Adm. No.", "Paid Today", "Total Paid", "Balance", "Payment Via", "Collected By"]);
             daily.existingStudentsActivity.forEach((s: any) => {
-                data.push([s.name, s.enrollmentClass || 'N/A', s.admissionNumber, s.deposited, s.totalPaid, s.left, s.collectedBy]);
+                data.push([s.name, s.enrollmentClass || 'N/A', s.admissionNumber, s.deposited, s.totalPaid, s.left, s.paymentMode || 'N/A', s.collectedBy]);
             });
             data.push([]);
         }
@@ -267,10 +266,12 @@ export function ReportsPage() {
         // Column widths
         worksheet["!cols"] = [
             { wch: 25 }, // Name
+            { wch: 15 }, // Enrollment
             { wch: 15 }, // Adm No
             { wch: 12 }, // Deposited/Paid
             { wch: 12 }, // Total Paid
             { wch: 12 }, // Balance
+            { wch: 15 }, // Payment Via
             { wch: 20 }  // Collected By
         ];
 
@@ -299,10 +300,7 @@ export function ReportsPage() {
 
     return (
         <div>
-            <PageHeader
-                title="Financial Reports"
-                subtitle="View daily collection summaries and enrollment-level ledger details."
-            />
+            
 
             {/* Tabs */}
             <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
@@ -458,6 +456,7 @@ export function ReportsPage() {
                                                     <th style={{ textAlign: 'right' }}>Deposited</th>
                                                     <th style={{ textAlign: 'right' }}>Total Paid</th>
                                                     <th style={{ textAlign: 'right' }}>Balance</th>
+                                                    <th>Payment Via</th>
                                                     <th>Collected By</th>
                                                 </tr>
                                             </thead>
@@ -474,6 +473,15 @@ export function ReportsPage() {
                                                         <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(s.deposited)}</td>
                                                         <td className="financial-value">{formatCurrency(s.totalPaid)}</td>
                                                         <td className="financial-value" style={{ color: s.left > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(s.left)}</td>
+                                                        <td>
+                                                            <span style={{
+                                                                padding: '2px 8px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 700,
+                                                                background: s.paymentMode === 'CASH' ? 'rgba(16,185,129,0.1)' : s.paymentMode === 'UPI' ? 'rgba(99,102,241,0.1)' : s.paymentMode === 'CARD' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
+                                                                color: s.paymentMode === 'CASH' ? '#059669' : s.paymentMode === 'UPI' ? '#6366f1' : s.paymentMode === 'CARD' ? '#3b82f6' : '#d97706',
+                                                            }}>
+                                                                {s.paymentMode || 'N/A'}
+                                                            </span>
+                                                        </td>
                                                         <td style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6366f1' }}>{s.collectedBy}</td>
                                                     </tr>
                                                 ))}
@@ -498,6 +506,7 @@ export function ReportsPage() {
                                                     <th style={{ textAlign: 'right' }}>Paid Today</th>
                                                     <th style={{ textAlign: 'right' }}>Total Paid</th>
                                                     <th style={{ textAlign: 'right' }}>Balance</th>
+                                                    <th>Payment Via</th>
                                                     <th>Collected By</th>
                                                 </tr>
                                             </thead>
@@ -514,6 +523,15 @@ export function ReportsPage() {
                                                         <td className="financial-value" style={{ color: '#10b981' }}>{formatCurrency(s.deposited)}</td>
                                                         <td className="financial-value">{formatCurrency(s.totalPaid)}</td>
                                                         <td className="financial-value" style={{ color: s.left > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(s.left)}</td>
+                                                        <td>
+                                                            <span style={{
+                                                                padding: '2px 8px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 700,
+                                                                background: s.paymentMode === 'CASH' ? 'rgba(16,185,129,0.1)' : s.paymentMode === 'UPI' ? 'rgba(99,102,241,0.1)' : s.paymentMode === 'CARD' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
+                                                                color: s.paymentMode === 'CASH' ? '#059669' : s.paymentMode === 'UPI' ? '#6366f1' : s.paymentMode === 'CARD' ? '#3b82f6' : '#d97706',
+                                                            }}>
+                                                                {s.paymentMode || 'N/A'}
+                                                            </span>
+                                                        </td>
                                                         <td style={{ fontSize: '0.78rem', fontWeight: 600, color: '#6366f1' }}>{s.collectedBy}</td>
                                                     </tr>
                                                 ))}

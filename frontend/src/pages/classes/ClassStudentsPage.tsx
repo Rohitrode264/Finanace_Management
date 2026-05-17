@@ -84,7 +84,7 @@ export function ClassStudentsPage() {
             </button>
 
             <PageHeader
-                title={tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''} (${tmpl.board})` : 'Class Students'}
+                title={tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''}${tmpl.board ? ` (${tmpl.board})` : ''}` : 'Class Students'}
                 subtitle={`${academicClass?.section || ''} | ${academicClass?.academicYear || ''} Enrollment List`}
             />
 

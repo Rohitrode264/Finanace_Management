@@ -4,11 +4,19 @@ interface SearchInputProps {
     value: string;
     onChange: (value: string) => void;
     placeholder?: string;
+    className?: string;
+    style?: React.CSSProperties;
 }
 
-export function SearchInput({ value, onChange, placeholder = 'Search...' }: SearchInputProps) {
+export function SearchInput({ 
+    value, 
+    onChange, 
+    placeholder = 'Search...', 
+    className = '', 
+    style 
+}: SearchInputProps) {
     return (
-        <div className="search-wrapper">
+        <div className={`search-wrapper ${className}`} style={style}>
             <Search size={14} className="search-icon" />
             <input
                 type="text"

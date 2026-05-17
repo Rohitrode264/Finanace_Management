@@ -132,14 +132,14 @@ export function EditStudentPage() {
 
     if (isLoading || !student) {
         return (
-            <div className="page-content" style={{ display: 'flex', justifyContent: 'center', padding: '64px 0', color: 'var(--text-muted)' }}>
+            <div className="" style={{ display: 'flex', justifyContent: 'center', padding: '64px 0', color: 'var(--text-muted)' }}>
                 Loading student details...
             </div>
         );
     }
 
     return (
-        <div className="page-content" style={{ margin: '0 auto', maxWidth: 800 }}>
+        <div className="" style={{ margin: '0 auto', maxWidth: 800 }}>
             <PageHeader
                 title="Edit Student Details"
                 subtitle={`Editing record for ${student.firstName} ${student.lastName} (${student.admissionNumber})`}

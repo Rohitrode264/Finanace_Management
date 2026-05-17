@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
     Plus, ChevronLeft, ChevronRight, User, Tag,
     Phone, MapPin, GraduationCap, BookOpen,
-    Calendar, Info, Printer, Edit
+    Calendar, Info, Printer, Edit,
+    UserPlus
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { createPortal } from 'react-dom';
@@ -89,20 +90,21 @@ export function StudentsPage() {
     });
 
     return (
-        <div className="page-content">
+        <div className="students-page-container">
             <PageHeader
-                title="Student Directory"
-                subtitle="Manage student admissions, track enrollments, and view academic history."
+                title=""
+                subtitle=""
                 actions={
-                    <div style={{ display: 'flex', gap: 12 }}>
+                    <div className="students-search-bar-container">
                         <SearchInput
+                            className="full-width"
                             value={search}
                             onChange={(val) => { setSearch(val); setSkip(0); }}
-                            placeholder="Search name, phone, or ID..."
+                            placeholder="Search Name"
                         />
                         {canCreate && (
-                            <button className="btn-primary" onClick={() => navigate('/students/new')} style={{ height: 42 }}>
-                                <Plus size={18} /> New Admission
+                            <button className="btn-primary new-admission-btn" onClick={() => navigate('/students/new')}>
+                                <UserPlus size={18} /> New Admission
                             </button>
                         )}
                     </div>

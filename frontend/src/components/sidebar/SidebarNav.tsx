@@ -4,7 +4,7 @@ import {
     LayoutDashboard, Users, GraduationCap,
     CreditCard, School, BarChart3, ClipboardList,
     ShieldCheck, Settings, ChevronLeft, ChevronRight,
-    BookOpen, Eye, UserPlus,
+    BookOpen, Eye, UserPlus, ArrowRightLeft,
 } from 'lucide-react';
 import { usePermission } from '../../hooks/usePermission';
 import { useAuthStore } from '../../store/authStore';
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
     { label: 'Collect Payment', icon: CreditCard, path: '/payments', permission: 'CREATE_PAYMENT', section: 'FINANCE' },
     { label: 'Ledger', icon: ClipboardList, path: '/ledger', permission: 'VIEW_ENROLLMENT', section: 'FINANCE' },
     // { label: 'Receipts', icon: Receipt, path: '/receipts', permission: 'VIEW_RECEIPT', section: 'FINANCE' },
+    { label: 'Transactions', icon: ArrowRightLeft, path: '/transactions', permission: 'VIEW_REPORT', section: 'FINANCE' },
     { label: 'Reports', icon: BarChart3, path: '/reports', permission: 'VIEW_REPORT', section: 'FINANCE' },
     { label: 'Eagle Eye', icon: Eye, path: '/eagle-eye', permission: 'VIEW_REPORT', section: 'FINANCE' },
     { label: 'Users', icon: Users, path: '/users', permission: ['MANAGE_USERS', 'CREATE_USER'], section: 'ADMIN' },

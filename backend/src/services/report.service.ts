@@ -23,6 +23,7 @@ export interface DailyReportSummary {
             totalPaid: number;
             left: number;
             collectedBy: string;
+            paymentMode: string;
         }[];
     };
     existingStudentsActivity: {
@@ -33,6 +34,7 @@ export interface DailyReportSummary {
         totalPaid: number;
         left: number;
         collectedBy: string;
+        paymentMode: string;
     }[];
     overallFinances: {
         paid: number;
@@ -148,11 +150,12 @@ export class ReportService {
             }).populate('receivedBy');
 
             const collectedByNames = [...new Set(paymentsToday.map(p => (p.receivedBy as any)?.firstName || (p.receivedBy as any)?.name || 'Admin'))].join(', ');
+            const paymentModes = [...new Set(paymentsToday.map(p => p.paymentMode))].join(', ');
 
             const acClass = enrollment.academicClassId as any;
             const template = acClass?.templateId;
             const enrollmentClass = template
-                ? `${template.grade}${template.stream ? ' – ' + template.stream : ''} (${template.board})`
+                ? `${template.grade}${template.stream ? ' – ' + template.stream : ''}${template.board ? ` (${template.board})` : ''}`
                 : 'N/A';
 
             return {
@@ -163,7 +166,8 @@ export class ReportService {
                 paidToday: paidTodayRes[0]?.total || 0,
                 totalPaidToDate: totalPaid,
                 remainingBalance: remaining,
-                collectedBy: collectedByNames || 'N/A'
+                collectedBy: collectedByNames || 'N/A',
+                paymentMode: paymentModes || 'N/A'
             };
         }));
 
@@ -207,7 +211,8 @@ export class ReportService {
                     deposited: s.paidToday,
                     totalPaid: s.totalPaidToDate,
                     left: s.remainingBalance,
-                    collectedBy: s.collectedBy
+                    collectedBy: s.collectedBy,
+                    paymentMode: s.paymentMode
                 }))
             },
             existingStudentsActivity: activeStudents.filter(s => !s.isNew).map(s => ({
@@ -217,7 +222,8 @@ export class ReportService {
                 deposited: s.paidToday,
                 totalPaid: s.totalPaidToDate,
                 left: s.remainingBalance,
-                collectedBy: s.collectedBy
+                collectedBy: s.collectedBy,
+                paymentMode: s.paymentMode
             })),
             overallFinances: {
                 paid: totalPaid,
@@ -372,7 +378,7 @@ export class ReportService {
             const template = acClass?.templateId;
             const academicYear = acClass?.academicYear || 'Unknown Year';
             const baseClassName = template
-                ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} — ${template.board}`
+                ? `${template.grade}${template.stream ? ` (${template.stream})` : ''}${template.board ? ` — ${template.board}` : ''}`
                 : (acClass?.section || 'Unknown Class');
             const className = `${baseClassName} (Sec: ${acClass?.section || '-'})`;
 
@@ -420,6 +426,172 @@ export class ReportService {
         const availableAcademicYears = [...new Set(byClass.map(g => g.academicYear))].sort().reverse();
 
         return { generatedAt: new Date().toISOString(), availableAcademicYears, institution, byClass, atRisk };
+    }
+
+    async getTransactions(filters: {
+        search?: string;
+        type?: string;
+        referenceType?: string;
+        startDate?: string;
+        endDate?: string;
+        createdBy?: string;
+        academicYear?: string;
+        paymentMode?: string;
+        limit?: number;
+        skip?: number;
+    }) {
+        const { LedgerEntry } = await import('../models/LedgerEntry.model');
+        const { Enrollment } = await import('../models/Enrollment.model');
+        const { Student } = await import('../models/Student.model');
+        const { User } = await import('../models/User.model');
+        const { Payment } = await import('../models/Payment.model');
+        const mongoose = await import('mongoose');
+
+        const query: any = {};
+
+        if (filters.startDate || filters.endDate) {
+            query.createdAt = {};
+            if (filters.startDate) {
+                const start = new Date(filters.startDate);
+                start.setHours(0, 0, 0, 0);
+                query.createdAt.$gte = start;
+            }
+            if (filters.endDate) {
+                const end = new Date(filters.endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+
+        if (filters.type) {
+            query.type = filters.type;
+        }
+        if (filters.referenceType) {
+            query.referenceType = filters.referenceType;
+        }
+        if (filters.createdBy) {
+            if (mongoose.default.Types.ObjectId.isValid(filters.createdBy)) {
+                query.createdBy = new mongoose.default.Types.ObjectId(filters.createdBy);
+            } else {
+                query.createdBy = filters.createdBy;
+            }
+        }
+
+        const limit = filters.limit ? parseInt(filters.limit as any, 10) : 100;
+        const skip = filters.skip ? parseInt(filters.skip as any, 10) : 0;
+
+        const entries = await LedgerEntry.find(query)
+            .sort({ createdAt: -1 })
+            .populate({
+                path: 'enrollmentId',
+                populate: [
+                    { path: 'studentId', select: 'firstName lastName admissionNumber phone' },
+                    { path: 'academicClassId', populate: { path: 'templateId', select: 'grade stream board' }, select: 'templateId section academicYear' }
+                ]
+            })
+            .populate('createdBy', 'firstName lastName name email')
+            .lean();
+
+        // Resolve Payment Modes for PAYMENT records
+        const paymentIds = entries
+            .filter((e: any) => e.referenceType === 'PAYMENT' && e.referenceId)
+            .map((e: any) => e.referenceId);
+
+        const paymentsList = await Payment.find({ _id: { $in: paymentIds } }).select('paymentMode').lean();
+        const paymentModeMap = new Map<string, string>();
+        paymentsList.forEach((p: any) => {
+            paymentModeMap.set(p._id.toString(), p.paymentMode);
+        });
+
+        let filteredEntries = entries.map((entry: any) => {
+            const enrollment = entry.enrollmentId;
+            const student = enrollment?.studentId;
+            const cls = enrollment?.academicClassId;
+            const template = cls?.templateId;
+
+            const studentName = student ? `${student.firstName} ${student.lastName}` : 'N/A';
+            const studentAdmNo = student?.admissionNumber || 'N/A';
+            
+            const className = template
+                ? `Class ${template.grade}${template.stream ? ` – ${template.stream}` : ''}${template.board ? ` (${template.board})` : ''} — Sec ${cls.section}`
+                : 'N/A';
+
+            const paymentMode = entry.referenceType === 'PAYMENT' && entry.referenceId
+                ? (paymentModeMap.get(entry.referenceId.toString()) || 'N/A')
+                : 'N/A';
+
+            return {
+                _id: entry._id,
+                enrollmentId: entry.enrollmentId?._id,
+                studentId: student?._id,
+                studentName,
+                studentAdmissionNumber: studentAdmNo,
+                studentPhone: student?.phone || 'N/A',
+                className,
+                academicYear: enrollment?.academicYear || 'N/A',
+                type: entry.type,
+                amount: entry.amount,
+                referenceType: entry.referenceType,
+                referenceId: entry.referenceId,
+                paymentMode,
+                description: entry.description,
+                createdAt: entry.createdAt,
+                createdBy: {
+                    _id: entry.createdBy?._id,
+                    name: entry.createdBy?.name || (entry.createdBy?.firstName 
+                        ? `${entry.createdBy.firstName} ${entry.createdBy.lastName || ''}`.trim()
+                        : 'System'),
+                    email: entry.createdBy?.email
+                }
+            };
+        });
+
+        if (filters.search) {
+            const q = filters.search.toLowerCase();
+            filteredEntries = filteredEntries.filter(entry => 
+                entry.studentName.toLowerCase().includes(q) || 
+                entry.studentAdmissionNumber.toLowerCase().includes(q) ||
+                (entry.description && entry.description.toLowerCase().includes(q))
+            );
+        }
+
+        if (filters.academicYear) {
+            filteredEntries = filteredEntries.filter(entry => 
+                entry.academicYear === filters.academicYear
+            );
+        }
+
+        if (filters.paymentMode) {
+            filteredEntries = filteredEntries.filter(entry => 
+                entry.paymentMode === filters.paymentMode
+            );
+        }
+
+        const totalCredits = filteredEntries
+            .filter(t => t.type === 'CREDIT')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const totalDebits = filteredEntries
+            .filter(t => t.type === 'DEBIT')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const totalConcessions = filteredEntries
+            .filter(t => t.referenceType === 'CONCESSION')
+            .reduce((sum, t) => sum + t.amount, 0);
+
+        const totalCount = filteredEntries.length;
+        const paginated = filteredEntries.slice(skip, skip + limit);
+
+        return {
+            transactions: paginated,
+            total: totalCount,
+            stats: {
+                totalCredits,
+                totalDebits,
+                totalConcessions,
+                totalCount
+            }
+        };
     }
 }
 

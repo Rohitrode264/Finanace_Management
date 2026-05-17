@@ -2,8 +2,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer, Trash2, AlertTriangle, FileText } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
+import { Search, Receipt, Download, User as UserIcon, ArrowRight, Printer, Trash2, AlertTriangle } from 'lucide-react';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { studentsService } from '../../api/services/students.service';
 import apiClient from '../../api/client';
@@ -191,11 +190,7 @@ export function LedgerPage() {
 
     return (
         <div style={{ paddingBottom: 40 }}>
-            <PageHeader
-                title="Student Ledger & Receipts"
-                subtitle="Search for a student to view their complete financial history and download past receipts."
-                icon={FileText}
-            />
+
 
             <div className="ledger-grid-layout" style={{ marginTop: 24 }}>
                 {/* Left Panel: Search & Student Info */}

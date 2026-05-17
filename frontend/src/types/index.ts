@@ -111,13 +111,13 @@ export interface Student {
 
 // ── ClassTemplate ─────────────────────────────────────────────────────────────
 // Matches backend ClassTemplate.model.ts exactly
-export type Board = 'CBSE' | 'ICSE' | 'STATE' | 'IB' | 'OTHER';
+export type Board = 'CBSE' | 'ICSE' | 'STATE' | 'IB' | 'OTHER' | '';
 
 export interface ClassTemplate {
     _id: string;
     grade: string;
     stream: string | null;
-    board: Board;
+    board: Board | null;
     createdBy: string;
     createdAt: string;
     updatedAt: string;
@@ -254,6 +254,7 @@ export interface DailyReport {
             totalPaid: number;
             left: number;
             collectedBy: string;
+            paymentMode: string;
         }[];
     };
     existingStudentsActivity: {
@@ -263,6 +264,7 @@ export interface DailyReport {
         totalPaid: number;
         left: number;
         collectedBy: string;
+        paymentMode: string;
     }[];
     overallFinances: {
         paid: number;

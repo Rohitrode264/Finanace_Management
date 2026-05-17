@@ -8,6 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
+import { useThemeStore } from '../../store/themeStore';
 import { classesService } from '../../api/services/classes.service';
 import { formatCurrency } from '../../utils/currency';
 import { TruncatedText } from '../../components/ui/TruncatedText';
@@ -22,7 +23,7 @@ const CURRENT_YEAR = `${new Date().getFullYear()}-${String(new Date().getFullYea
 const templateSchema = z.object({
     grade: z.string().min(1, 'Grade required').max(10),
     stream: z.string().max(20).optional(),
-    board: z.enum(['CBSE', 'ICSE', 'STATE', 'IB', 'OTHER'] as const),
+    board: z.enum(['CBSE', 'ICSE', 'STATE', 'IB', 'OTHER', ''] as const).optional().or(z.literal('')),
 });
 type TemplateForm = z.infer<typeof templateSchema>;
 
@@ -46,6 +47,7 @@ export function ClassesPage() {
     const [academicYear, setAcademicYear] = useState(CURRENT_YEAR);
     const navigate = useNavigate();
     const canCreate = usePermission('CREATE_CLASS');
+    const theme = useThemeStore((s) => s.theme);
 
     const { data: classesRes, isLoading: cLoading } = useQuery({
         queryKey: ['academic-classes', academicYear],
@@ -59,14 +61,22 @@ export function ClassesPage() {
         enabled: tab === 'create-class',
     });
 
+    const { data: sessionsRes } = useQuery({
+        queryKey: ['class-sessions'],
+        queryFn: () => classesService.listSessions(),
+    });
+
     const classes: AcademicClass[] = (classesRes?.data?.data as AcademicClass[] | undefined) ?? [];
     const templates: ClassTemplate[] = (templatesRes?.data?.data as ClassTemplate[] | undefined) ?? [];
+    const sessions: string[] = (sessionsRes?.data?.data as string[] | undefined) ?? [];
+
+    const sessionOptions = Array.from(new Set([CURRENT_YEAR, ...sessions])).sort((a, b) => b.localeCompare(a));
 
     const templateMutation = useMutation({
         mutationFn: (d: TemplateForm) => classesService.createTemplate({
             grade: d.grade,
             stream: d.stream || null,
-            board: d.board as Board,
+            board: (d.board || '') as Board,
         }),
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['class-templates'] });
@@ -97,6 +107,7 @@ export function ClassesPage() {
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ['academic-classes'] });
+            qc.invalidateQueries({ queryKey: ['class-sessions'] });
             toast.success('Academic class created');
             resetClass();
             setTab('classes');
@@ -128,59 +139,102 @@ export function ClassesPage() {
         border: 'none', borderRadius: 8, cursor: 'pointer',
         fontSize: '0.875rem', fontWeight: 600 as const,
         transition: 'all 0.2s',
+        flexShrink: 0,
     });
 
     return (
-        <div>
+        <div className="classes-page-container">
             <PageHeader
-                title="Class Management"
-                subtitle="Manage class templates, academic year classes, and fee structures."
-                actions={canCreate ? (
-                    <div style={{ display: 'flex', gap: 8 }}>
-                        <button className="btn-secondary" onClick={() => setTab('create-template')}>
-                            <School size={15} /> New Template
-                        </button>
-                        <button className="btn-primary" onClick={() => setTab('create-class')}>
-                            <Plus size={15} /> New Class
-                        </button>
-                    </div>
-                ) : undefined}
-            />
+                title=""
+                subtitle=""
+                actions={
+                    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', width: '100%', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                            <button style={tabStyle(tab === 'classes')} onClick={() => setTab('classes')} className="flex items-center">
+                                <Calendar size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                                Academic Classes
+                            </button>
+                            {canCreate && (
+                                <>
+                                    <button style={tabStyle(tab === 'create-template')} onClick={() => setTab('create-template')} className="flex items-center">
+                                        <School size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                                        Create Template
+                                    </button>
+                                    <button style={tabStyle(tab === 'create-class')} onClick={() => setTab('create-class')} className="flex items-center">
+                                        <Plus size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
+                                        Create Class
+                                    </button>
+                                </>
+                            )}
+                        </div>
 
-            {/* Tabs */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: 20 }}>
-                <button style={tabStyle(tab === 'classes')} onClick={() => setTab('classes')} className="flex items-center">
-                    <Calendar size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                    Academic Classes
-                </button>
-                {canCreate && (
-                    <>
-                        <button style={tabStyle(tab === 'create-template')} onClick={() => setTab('create-template')} className="flex items-center">
-                            <School size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                            Create Template
-                        </button>
-                        <button style={tabStyle(tab === 'create-class')} onClick={() => setTab('create-class')} className="flex items-center">
-                            <Plus size={14} style={{ marginRight: 6, verticalAlign: 'middle' }} />
-                            Create Class
-                        </button>
-                    </>
-                )}
-            </div>
+                        {tab === 'classes' && (
+                            <div style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: 10, 
+                                marginLeft: 'auto',
+                                background: 'var(--card-bg)',
+                                border: '1px solid var(--border)',
+                                padding: '6px 14px',
+                                borderRadius: 10,
+                                boxShadow: 'var(--shadow-sm)',
+                                transition: 'all 0.2s',
+                            }}>
+                                <span style={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    gap: 6,
+                                    fontSize: '0.8125rem', 
+                                    fontWeight: 600, 
+                                    color: 'var(--text-secondary)' 
+                                }}>
+                                    <Calendar size={14} style={{ color: 'var(--accent)', marginRight: 2 }} />
+                                    Academic Year
+                                </span>
+                                <div style={{ 
+                                    width: 1, 
+                                    height: 18, 
+                                    background: 'var(--border)' 
+                                }} />
+                                <select
+                                    value={academicYear}
+                                    onChange={e => setAcademicYear(e.target.value)}
+                                    style={{ 
+                                        background: 'transparent',
+                                        border: 'none',
+                                        color: 'var(--text-primary)',
+                                        fontSize: '0.8125rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        outline: 'none',
+                                        padding: '2px 8px',
+                                        marginRight: -4,
+                                        colorScheme: theme,
+                                    }}
+                                >
+                                    {sessionOptions.map(yr => (
+                                        <option 
+                                            key={yr} 
+                                            value={yr} 
+                                            style={{ 
+                                                background: theme === 'dark' ? '#2c2c2e' : '#ffffff', 
+                                                color: theme === 'dark' ? '#f5f5f7' : '#1d1d1f' 
+                                            }}
+                                        >
+                                            {yr}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+                    </div>
+                }
+            />
 
             {/* Academic Classes tab */}
             {tab === 'classes' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-                        <label className="form-label" style={{ margin: 0 }}>Academic Year:</label>
-                        <input
-                            type="text"
-                            className="form-input"
-                            value={academicYear}
-                            onChange={e => setAcademicYear(e.target.value)}
-                            placeholder="e.g. 2024-25"
-                            style={{ width: 140 }}
-                        />
-                    </div>
                     <div className="table-container">
                         <table className="data-table compact-table">
                             <thead>
@@ -216,8 +270,8 @@ export function ClassesPage() {
                                         return (
                                             <tr key={c._id} onClick={() => navigate(`/classes/${c._id}/students`)} style={{ cursor: 'pointer' }} onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-subtle)'} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                                 <td style={{ fontWeight: 600 }}>
-                                                    <TruncatedText
-                                                        text={tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''} (${tmpl.board})` : c._id}
+                                                                                    <TruncatedText
+                                                        text={tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''}${tmpl.board ? ` (${tmpl.board})` : ''}` : c._id}
                                                         maxWidth="200px"
                                                         modalTitle="Class Template Details"
                                                     />
@@ -242,7 +296,7 @@ export function ClassesPage() {
                                             </tr>
                                         );
                                     })
-                                )}
+                                 )}
                             </tbody>
                         </table>
                     </div>
@@ -252,7 +306,7 @@ export function ClassesPage() {
                         <div className="mobile-card">
                             {classes.map((c) => {
                                 const tmpl = typeof c.templateId === 'object' ? c.templateId as ClassTemplate : null;
-                                const label = tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''} (${tmpl.board})` : c._id;
+                                const label = tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''}${tmpl.board ? ` (${tmpl.board})` : ''}` : c._id;
                                 return (
                                     <div key={c._id} className="mobile-card-item" onClick={() => navigate(`/classes/${c._id}/students`)} style={{ cursor: 'pointer' }}>
                                         <div className="mobile-card-header">
@@ -300,10 +354,11 @@ export function ClassesPage() {
                                 <input {...regTemplate('stream')} className="form-input" placeholder="e.g. SCIENCE, COMMERCE, ARTS" />
                             </div>
                             <div style={{ marginBottom: 24 }}>
-                                <label className="form-label">Board *</label>
+                                <label className="form-label">Board (optional)</label>
                                 <select {...regTemplate('board')} className="form-select">
+                                    <option value="">— None (e.g. JEE, NEET) —</option>
                                     {(['CBSE', 'ICSE', 'STATE', 'IB', 'OTHER'] as Board[]).map(b => (
-                                        <option key={b} value={b}>{b}</option>
+                                        b ? <option key={b} value={b}>{b}</option> : null
                                     ))}
                                 </select>
                             </div>
@@ -331,7 +386,7 @@ export function ClassesPage() {
                                         <option value="">— Select a template —</option>
                                         {templates.map(t => (
                                             <option key={t._id} value={t._id}>
-                                                Class {t.grade}{t.stream ? ` – ${t.stream}` : ''} ({t.board})
+                                                Class {t.grade}{t.stream ? ` – ${t.stream}` : ''}{t.board ? ` (${t.board})` : ''}
                                             </option>
                                         ))}
                                     </select>

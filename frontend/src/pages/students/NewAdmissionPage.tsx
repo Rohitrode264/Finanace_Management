@@ -176,13 +176,13 @@ export function NewAdmissionPage() {
 
     const templateLabel = (cls: AcademicClass) => {
         const t = typeof cls.templateId === 'object' ? cls.templateId as ClassTemplate : null;
-        if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''} (${t.board})`;
+        if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''}`;
         return `Class ID: ${cls._id}`;
     };
 
     if (!canCreate) {
         return (
-            <div className="page-content">
+            <div className="">
                 <div style={{ textAlign: 'center', padding: '64px 0' }}>
                     <h3 style={{ color: 'var(--danger)' }}>Access Denied</h3>
                     <p style={{ color: 'var(--text-muted)' }}>You don't have permission to perform new admissions.</p>
@@ -195,7 +195,7 @@ export function NewAdmissionPage() {
     }
 
     return (
-        <div className="page-content" style={{ margin: '0 auto' }}>
+        <div className="" style={{ margin: '0 auto' }}>
             <PageHeader
                 title="New Student Admission"
                 subtitle="Complete the 3-step wizard to admit a new student into the system."

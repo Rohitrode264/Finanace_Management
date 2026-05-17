@@ -3,7 +3,6 @@ import apiClient from '../../api/client';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BookOpen, Tag, Search, X, ChevronLeft, ChevronRight, ArrowRightLeft } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { enrollmentService } from '../../api/services/enrollment.service';
 import { studentsService } from '../../api/services/students.service';
@@ -209,29 +208,19 @@ export function EnrollmentsPage() {
 
     const templateLabel = (cls: AcademicClass) => {
         const t = typeof cls.templateId === 'object' ? cls.templateId as ClassTemplate : null;
-        if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''} (${t.board}) — Section ${cls.section}`;
+        if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''} — Section ${cls.section}`;
         return `Class ID: ${cls._id} — Section ${cls.section}`;
     };
 
     return (
         <div>
-            <PageHeader
-                title="Enrollment Management"
-                subtitle="Enroll students in classes, view enrollment details, and manage concessions."
-                actions={canCreate ? (
-                    <button className="btn-primary" onClick={() => { setShowEnrollForm(true); setSelectedStudent(null); setSelectedClass(null); setStudentSearch(''); }}>
-                        <BookOpen size={15} /> New Enrollment
-                    </button>
-                ) : undefined}
-            />
-
             {/* Main Content Area */}
             {!currentEnrollment && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                     <div className="card" style={{ padding: 20 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
                             <h3 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Full Ledger & Enrollments</h3>
-                            <div style={{ display: 'flex', gap: 12 }}>
+                            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                                 {/* <select
                                     value={program}
                                     onChange={(e) => { setProgram(e.target.value); setLedgerSkip(0); }}
@@ -281,6 +270,15 @@ export function EnrollmentsPage() {
                                         </div>
                                     )}
                                 </div>
+                                {canCreate && (
+                                    <button 
+                                        className="btn-primary" 
+                                        onClick={() => { setShowEnrollForm(true); setSelectedStudent(null); setSelectedClass(null); setStudentSearch(''); }}
+                                        style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+                                    >
+                                        <BookOpen size={15} /> New Enrollment
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -317,7 +315,7 @@ export function EnrollmentsPage() {
                                                             </div>
                                                         </td>
                                                         <td>
-                                                            <div style={{ fontSize: '0.8125rem' }}>{template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}</div>
+                                                            <div style={{ fontSize: '0.8125rem' }}>{template ? `Class ${template.grade}${template.board ? ` (${template.board})` : ''}` : 'Unknown Class'}</div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                                 {e.academicYear}
                                                             </div>
@@ -361,7 +359,7 @@ export function EnrollmentsPage() {
                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
                                                     <div>
                                                         <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{student?.firstName} {student?.lastName}</div>
-                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{template ? `Class ${template.grade} (${template.board})` : 'Unknown Class'}</div>
+                                                        <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: 2 }}>{template ? `Class ${template.grade}${template.board ? ` (${template.board})` : ''}` : 'Unknown Class'}</div>
                                                     </div>
                                                     <span style={{
                                                         padding: '2px 8px', borderRadius: 99, fontSize: '0.7rem', fontWeight: 700,
@@ -702,7 +700,7 @@ export function EnrollmentsPage() {
                                     {(() => {
                                         const cls = currentEnrollment.academicClassId as any as AcademicClass;
                                         const t = typeof cls?.templateId === 'object' ? cls.templateId as ClassTemplate : null;
-                                        if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''} (${t.board}) — Sec ${cls.section}`;
+                                        if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''} — Sec ${cls.section}`;
                                         return `Enrollment ID: ${currentEnrollment._id.slice(-6)}`;
                                     })()}
                                     {' '}· Year: <strong>{currentEnrollment.academicYear}</strong>
@@ -734,7 +732,7 @@ export function EnrollmentsPage() {
                                     {transferClasses.map(c => {
                                         const t = typeof c.templateId === 'object' ? c.templateId as ClassTemplate : null;
                                         const label = t
-                                            ? `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''} (${t.board}) — Sec ${c.section} · ₹${c.totalFee.toLocaleString('en-IN')}`
+                                            ? `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''} — Sec ${c.section} · ₹${c.totalFee.toLocaleString('en-IN')}`
                                             : `Class ID: ${c._id} · ₹${c.totalFee.toLocaleString('en-IN')}`;
                                         return <option key={c._id} value={c._id}>{label}</option>;
                                     })}

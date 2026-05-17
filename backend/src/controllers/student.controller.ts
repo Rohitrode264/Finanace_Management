@@ -159,7 +159,7 @@ export class StudentController {
                     plain.currentEnrollment = {
                         academicYear: en.academicYear,
                         className: tmpl
-                            ? `${tmpl.grade}${tmpl.stream ? ' – ' + tmpl.stream : ''} (${tmpl.board})`
+                            ? `${tmpl.grade}${tmpl.stream ? ' – ' + tmpl.stream : ''}${tmpl.board ? ` (${tmpl.board})` : ''}`
                             : 'N/A',
                         section: ac.section || '',
                     };

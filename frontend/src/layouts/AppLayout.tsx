@@ -14,6 +14,7 @@ const ROUTE_META: Record<string, { title: string; subtitle: string }> = {
     '/payments': { title: 'Fee Collection', subtitle: 'Record payments, allocate installments, and generate receipts.' },
     '/ledger': { title: 'Student Ledger', subtitle: 'Complete financial history and searchable past receipts.' },
     '/receipts': { title: 'Receipts', subtitle: 'View and print payment receipts.' },
+    '/transactions': { title: 'Transaction History', subtitle: 'View and filter all financial ledger transactions across the institute.' },
     '/reports': { title: 'Reports', subtitle: 'Generate and export financial reports.' },
     '/users': { title: 'User & Access Control', subtitle: 'Manage system users, assign roles, and control access.' },
     '/rbac': { title: 'Roles & Permissions', subtitle: 'Configure roles and map permissions across the system.' },
@@ -59,8 +60,8 @@ export function AppLayout() {
                     onMenuClick={() => setMobileOpen(true)}
                 />
 
-                <main className="page-content" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-                    <div className="page-enter" key={location.pathname}>
+                <main className=" h-full">
+                    <div className="page-content page-enter" key={location.pathname}>
                         <Outlet />
                     </div>
                 </main>

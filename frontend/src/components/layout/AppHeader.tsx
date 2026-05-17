@@ -3,7 +3,6 @@ import { useThemeStore } from '../../store/themeStore';
 import { useAuthStore } from '../../store/authStore';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { Breadcrumb } from './Breadcrumb';
 import { NotificationPanel } from './NotificationPanel';
 
 interface AppHeaderProps {
@@ -35,6 +34,7 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                     top: 0,
                     zIndex: 50,
                     flexShrink: 0,
+                    
                 }}
             >
                 {/* ── Top row ─────────────────────────────────────── */}
@@ -43,6 +43,7 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    padding: '0 24px',
                 }}>
                     {/* Left: menu + title */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
@@ -252,15 +253,7 @@ export function AppHeader({ title, subtitle, onMenuClick }: AppHeaderProps) {
                         </div>
                     </div>
                 </div>
-
-                {/* ── Breadcrumb row ──────────────────────────────── */}
-                <div className="app-header-breadcrumb" style={{
-                    paddingBottom: 9,
-                    borderTop: '1px solid var(--border-subtle)',
-                    background: 'var(--bg-subtle)',
-                }}>
-                    <Breadcrumb />
-                </div>
+                
             </header>
 
             {/* Notification Panel */}

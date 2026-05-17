@@ -4,7 +4,6 @@ import { motion } from 'framer-motion';
 import {
     Search, CreditCard, X, Printer, UserCheck, Download, CheckCircle2, Eye
 } from 'lucide-react';
-import { PageHeader } from '../../components/ui/PageHeader';
 import { useDebounce } from '../../hooks/useDebounce';
 import { studentsService } from '../../api/services/students.service';
 import { paymentService } from '../../api/services/payment.service';
@@ -162,32 +161,93 @@ export function PaymentEntryPage() {
 
     return (
         <div style={{ maxWidth: 800, margin: '0 auto' }}>
-            <PageHeader
-                title="Fee Collection Interface"
-                subtitle="Record payments and generate receipts for student enrollments."
-            />
+            
 
-            {/* Progress */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 28 }}>
-                {steps.map((s, i) => {
-                    const doneIndex = steps.indexOf(step);
-                    const done = i < doneIndex;
-                    const active = step === s;
-                    return (
-                        <div key={s} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div style={{
-                                width: 28, height: 28, borderRadius: '50%',
-                                background: done ? '#10b981' : active ? '#6366f1' : 'var(--bg-muted)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: '0.75rem', fontWeight: 700, color: '#fff', transition: 'background 0.3s',
-                            }}>{i + 1}</div>
-                            <span style={{ fontSize: '0.8125rem', color: active ? 'var(--text-primary)' : 'var(--text-muted)', fontWeight: active ? 600 : 400 }}>
-                                {stepLabels[s]}
-                            </span>
-                            {i < steps.length - 1 && <div style={{ height: 1, width: 24, background: 'var(--border)' }} />}
-                        </div>
-                    );
-                })}
+            {/* Beautiful Progress Stepper */}
+            <div className="card" style={{ padding: '20px 24px', marginBottom: 28, background: 'var(--bg-surface)', border: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', width: '100%' }}>
+                    {/* Background connector line */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '18px',
+                        left: '40px',
+                        right: '40px',
+                        height: 2,
+                        background: 'var(--border)',
+                        zIndex: 1
+                    }} />
+
+                    {/* Active progress fill line */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '18px',
+                        left: '40px',
+                        width: (() => {
+                            const doneIndex = steps.indexOf(step);
+                            if (doneIndex === 0) return '0%';
+                            if (doneIndex === 1) return '33.3%';
+                            if (doneIndex === 2) return '66.6%';
+                            return '100%';
+                        })(),
+                        height: 2,
+                        background: '#6366f1',
+                        transition: 'width 0.4s ease',
+                        zIndex: 1
+                    }} />
+
+                    {steps.map((s, i) => {
+                        const doneIndex = steps.indexOf(step);
+                        const done = i < doneIndex;
+                        const active = step === s;
+                        return (
+                            <div 
+                                key={s} 
+                                style={{ 
+                                    display: 'flex', 
+                                    flexDirection: 'column', 
+                                    alignItems: 'center', 
+                                    position: 'relative',
+                                    zIndex: 2,
+                                    width: 100,
+                                    cursor: done ? 'pointer' : 'default'
+                                }}
+                                onClick={() => {
+                                    if (done) {
+                                        setStep(s);
+                                    }
+                                }}
+                            >
+                                <div style={{
+                                    width: 36, 
+                                    height: 36, 
+                                    borderRadius: '50%',
+                                    background: done ? '#10b981' : active ? '#6366f1' : 'var(--bg-surface)',
+                                    border: done ? '2px solid #10b981' : active ? '2px solid #6366f1' : '2px solid var(--border)',
+                                    display: 'flex', 
+                                    alignItems: 'center', 
+                                    justifyContent: 'center',
+                                    fontSize: '0.85rem', 
+                                    fontWeight: 700, 
+                                    color: done || active ? '#fff' : 'var(--text-muted)', 
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: active ? '0 0 12px rgba(99,102,241,0.3)' : 'none'
+                                }}>
+                                    {done ? '✓' : i + 1}
+                                </div>
+                                <span style={{ 
+                                    fontSize: '0.78rem', 
+                                    color: active ? '#6366f1' : 'var(--text-secondary)', 
+                                    fontWeight: active || done ? 700 : 500,
+                                    marginTop: 8,
+                                    textAlign: 'center',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {stepLabels[s]}
+                                </span>
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Step 1: Student Search */}
@@ -295,7 +355,7 @@ export function PaymentEntryPage() {
                                                     const cls = e.academicClassId as any as AcademicClass;
                                                     const t = typeof cls?.templateId === 'object' ? cls.templateId as ClassTemplate : null;
                                                     const program = selectedStudent?.program ? `${selectedStudent.program} — ` : '';
-                                                    if (t) return `${program}Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''} (${t.board}) — Sec ${cls.section}`;
+                                                    if (t) return `${program}Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''} — Sec ${cls.section}`;
                                                     return `${program}Enrollment ID: ${e._id.slice(-6)}`;
                                                 })()}
                                             </div>
@@ -331,7 +391,7 @@ export function PaymentEntryPage() {
                                     const cls = enrollment.academicClassId as any as AcademicClass;
                                     const t = typeof cls?.templateId === 'object' ? cls.templateId as ClassTemplate : null;
                                     const prog = selectedStudent?.program ? `${selectedStudent.program} — ` : '';
-                                    if (t) return `${prog}Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''} (${t.board}) — Sec ${cls.section}`;
+                                    if (t) return `${prog}Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''} — Sec ${cls.section}`;
                                     return `${prog}Enrollment: ${enrollment._id.slice(-6)}`;
                                 })()}
                             </span>

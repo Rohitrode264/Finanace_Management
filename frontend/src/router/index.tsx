@@ -24,6 +24,7 @@ const LedgerPage = lazy(() => import('../pages/ledger/LedgerPage').then(m => ({ 
 const ClassStudentsPage = lazy(() => import('../pages/classes/ClassStudentsPage').then(m => ({ default: m.ClassStudentsPage })));
 const EagleEyePage = lazy(() => import('../pages/reports/EagleEyePage').then(m => ({ default: m.EagleEyePage })));
 const AdmissionsPage = lazy(() => import('../pages/admissions/AdmissionsPage').then(m => ({ default: m.AdmissionsPage })));
+const TransactionsPage = lazy(() => import('../pages/transactions/TransactionsPage').then(m => ({ default: m.TransactionsPage })));
 function PageLoader() {
     return (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
                     { path: '/receipts/:id', element: <SuspenseWrapper><ReceiptPage /></SuspenseWrapper> },
                     { path: '/reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
                     { path: '/eagle-eye', element: <SuspenseWrapper><EagleEyePage /></SuspenseWrapper> },
+                    { path: '/transactions', element: <SuspenseWrapper><TransactionsPage /></SuspenseWrapper> },
                     { path: '/users', element: <SuspenseWrapper><UsersPage /></SuspenseWrapper> },
                     { path: '/rbac', element: <SuspenseWrapper><RBACPage /></SuspenseWrapper> },
                     { path: '/audit', element: <SuspenseWrapper><AuditLogsPage /></SuspenseWrapper> },
