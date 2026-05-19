@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ChevronLeft, ChevronRight, GraduationCap,
-    Info, User, Tag, CheckCircle, Printer, Calendar, Search
+    Info, User, Tag, CheckCircle, Printer, Search
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
