@@ -568,7 +568,7 @@ export class ReportService {
         }
 
         const totalCredits = filteredEntries
-            .filter(t => t.type === 'CREDIT')
+            .filter(t => t.type === 'CREDIT' && t.referenceType !== 'CONCESSION')
             .reduce((sum, t) => sum + t.amount, 0);
 
         const totalDebits = filteredEntries

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -93,7 +93,15 @@ export function NewAdmissionPage() {
         queryKey: ['unique-sessions'],
         queryFn: () => classesService.listSessions(),
     });
-    const sessions = sessionsRes?.data?.data || [];
+    const sessions: string[] = sessionsRes?.data?.data || [];
+
+    // Automatically select the first available session once active courses load
+    useEffect(() => {
+        if (sessions && sessions.length > 0) {
+            const defaultSession = sessions.includes(CURRENT_YEAR) ? CURRENT_YEAR : sessions[0];
+            setEnrollYear(defaultSession);
+        }
+    }, [sessions]);
 
     const { data: catRes } = useQuery({
         queryKey: ['categories'],
@@ -338,24 +346,24 @@ export function NewAdmissionPage() {
                                         <h3 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: 4 }}>Assign Course</h3>
                                         <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Select the class for the academic session.</p>
                                     </div>
-                                    
-                                    <div style={{ minWidth: 200 }}>
+                                                                         <div style={{ minWidth: 200 }}>
                                         <label className="form-label" style={{ fontSize: '0.7rem', marginBottom: 4 }}>Academic Session</label>
-                                        <div style={{ position: 'relative' }}>
-                                            <Calendar size={14} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--accent)' }} />
-                                            <input 
-                                                list="session-options"
-                                                className="form-input" 
+                                        {sessions.length === 0 ? (
+                                            <select className="form-select" disabled style={{ height: 40, fontSize: '0.9rem', fontWeight: 600 }}>
+                                                <option value="">No Sessions Available</option>
+                                            </select>
+                                        ) : (
+                                            <select
+                                                className="form-select"
                                                 value={enrollYear}
-                                                onChange={e => setEnrollYear(e.target.value)}
-                                                placeholder="e.g. 2026-27"
-                                                style={{ paddingLeft: 34, height: 40, fontSize: '0.9rem', fontWeight: 600 }}
-                                            />
-                                            <datalist id="session-options">
-                                                {sessions.map(s => <option key={s} value={s} />)}
-                                                <option value={CURRENT_YEAR} />
-                                            </datalist>
-                                        </div>
+                                                onChange={e => { setEnrollYear(e.target.value); setSelectedClassId(''); }}
+                                                style={{ height: 40, fontSize: '0.9rem', fontWeight: 600 }}
+                                            >
+                                                {sessions.map(year => (
+                                                    <option key={year} value={year}>{year}</option>
+                                                ))}
+                                            </select>
+                                        )}
                                     </div>
                                 </div>
 
