@@ -71,7 +71,7 @@ class EnrollmentService {
         return enrollmentRepo.findMany({ studentId: new mongoose_1.Types.ObjectId(studentId) });
     }
     async getAll(limit = 50, skip = 0, program, classId) {
-        const query = {};
+        const query = { status: { $ne: 'CANCELLED' } };
         if (program) {
             const students = await Student_model_1.Student.find({ program }).select('_id');
             query.studentId = { $in: students.map(s => s._id) };

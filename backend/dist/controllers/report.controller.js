@@ -79,6 +79,27 @@ class ReportController {
             (0, apiResponse_1.sendError)(res, message, 500);
         }
     }
+    async getTransactions(req, res) {
+        try {
+            const { search, type, referenceType, startDate, endDate, createdBy, academicYear, paymentMode, limit, skip } = req.query;
+            const result = await report_service_1.reportService.getTransactions({
+                search,
+                type,
+                referenceType,
+                startDate,
+                endDate,
+                createdBy,
+                academicYear,
+                paymentMode,
+                limit: limit ? parseInt(limit, 10) : 100,
+                skip: skip ? parseInt(skip, 10) : 0
+            });
+            (0, apiResponse_1.sendSuccess)(res, result);
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, 'Failed to fetch transactions', 500);
+        }
+    }
     async getEagleEye(req, res) {
         try {
             const report = await report_service_1.reportService.getEagleEye();

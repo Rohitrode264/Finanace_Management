@@ -214,6 +214,11 @@ export function ReportsPage() {
     const daily = dailyRes?.data?.data;
     const ledger = (ledgerRes?.data?.data as any);
 
+    const newAdmissionsDeposited = daily?.newAdmissions?.students?.reduce((sum: number, s: any) => sum + s.deposited, 0) ?? 0;
+    const newAdmissionsBalance = daily?.newAdmissions?.students?.reduce((sum: number, s: any) => sum + s.left, 0) ?? 0;
+    const installmentsDeposited = daily?.existingStudentsActivity?.reduce((sum: number, s: any) => sum + s.deposited, 0) ?? 0;
+    const installmentsBalance = daily?.existingStudentsActivity?.reduce((sum: number, s: any) => sum + s.left, 0) ?? 0;
+
     const tabStyle = (active: boolean) => ({
         padding: '8px 18px', border: 'none', cursor: 'pointer',
         background: active ? '#6366f1' : 'var(--bg-subtle)',
@@ -447,7 +452,7 @@ export function ReportsPage() {
                                     <h4 style={{ fontWeight: 700, marginBottom: 12, color: '#6366f1' }}>
                                         🎓 New Admissions Today ({daily.newAdmissions.total})
                                     </h4>
-                                    <div className="table-container">
+                                    <div className="table-container desktop-only">
                                         <table className="data-table">
                                             <thead>
                                                 <tr>
@@ -465,7 +470,7 @@ export function ReportsPage() {
                                                     <tr key={i}>
                                                         <td>
                                                             <div style={{ fontWeight: 600 }}>
-                                                                <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
+                                                                 <TruncatedText text={s.name} maxWidth="150px" modalTitle="Student Name" />
                                                             </div>
                                                             <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>{s.admissionNumber}</div>
                                                         </td>
@@ -488,6 +493,54 @@ export function ReportsPage() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {/* Mobile Cards View */}
+                                    <div className="mobile-only">
+                                        <div className="mobile-card">
+                                            {daily.newAdmissions.students.map((s: any, i: number) => (
+                                                <div key={i} className="mobile-card-item" style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 16, background: 'var(--bg-surface)' }}>
+                                                    <div className="mobile-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 10 }}>
+                                                        <div>
+                                                            <div className="mobile-card-title" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                                                {s.name} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6366f1', marginLeft: 6 }}>({s.enrollmentClass || 'N/A'})</span>
+                                                            </div>
+                                                            <div className="mobile-card-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'monospace' }}>{s.admissionNumber}</div>
+                                                        </div>
+                                                        <span style={{
+                                                            padding: '4px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 800,
+                                                            background: s.paymentMode === 'CASH' ? 'rgba(16,185,129,0.1)' : s.paymentMode === 'UPI' ? 'rgba(99,102,241,0.1)' : s.paymentMode === 'CARD' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
+                                                            color: s.paymentMode === 'CASH' ? '#059669' : s.paymentMode === 'UPI' ? '#6366f1' : s.paymentMode === 'CARD' ? '#3b82f6' : '#d97706',
+                                                            textTransform: 'uppercase', letterSpacing: '0.04em'
+                                                        }}>
+                                                            {s.paymentMode || 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Class / Enrollment</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>{s.enrollmentClass || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Deposited</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 800, color: '#10b981' }}>{formatCurrency(s.deposited)}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Total Paid</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>{formatCurrency(s.totalPaid)}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Outstanding Balance</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 800, color: s.left > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(s.left)}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Collected By</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 700, color: '#6366f1' }}>{s.collectedBy}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -497,7 +550,9 @@ export function ReportsPage() {
                                     <h4 style={{ fontWeight: 700, marginBottom: 12, color: '#6366f1' }}>
                                         📋 Installment Payments ({daily.existingStudentsActivity.length})
                                     </h4>
-                                    <div className="table-container">
+
+                                    {/* Desktop Table View */}
+                                    <div className="table-container desktop-only">
                                         <table className="data-table">
                                             <thead>
                                                 <tr>
@@ -538,6 +593,54 @@ export function ReportsPage() {
                                             </tbody>
                                         </table>
                                     </div>
+
+                                    {/* Mobile Cards View */}
+                                    <div className="mobile-only">
+                                        <div className="mobile-card">
+                                            {daily.existingStudentsActivity.map((s: any, i: number) => (
+                                                <div key={i} className="mobile-card-item" style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 16, background: 'var(--bg-surface)' }}>
+                                                    <div className="mobile-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 10 }}>
+                                                        <div>
+                                                            <div className="mobile-card-title" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                                                {s.name} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6366f1', marginLeft: 6 }}>({s.enrollmentClass || 'N/A'})</span>
+                                                            </div>
+                                                            <div className="mobile-card-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2, fontFamily: 'monospace' }}>{s.admissionNumber}</div>
+                                                        </div>
+                                                        <span style={{
+                                                            padding: '4px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 800,
+                                                            background: s.paymentMode === 'CASH' ? 'rgba(16,185,129,0.1)' : s.paymentMode === 'UPI' ? 'rgba(99,102,241,0.1)' : s.paymentMode === 'CARD' ? 'rgba(59,130,246,0.1)' : 'rgba(245,158,11,0.1)',
+                                                            color: s.paymentMode === 'CASH' ? '#059669' : s.paymentMode === 'UPI' ? '#6366f1' : s.paymentMode === 'CARD' ? '#3b82f6' : '#d97706',
+                                                            textTransform: 'uppercase', letterSpacing: '0.04em'
+                                                        }}>
+                                                            {s.paymentMode || 'N/A'}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Class / Enrollment</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>{s.enrollmentClass || 'N/A'}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Paid Today</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 800, color: '#10b981' }}>{formatCurrency(s.deposited)}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Total Paid</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>{formatCurrency(s.totalPaid)}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Outstanding Balance</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 800, color: s.left > 0 ? '#ef4444' : '#10b981' }}>{formatCurrency(s.left)}</span>
+                                                        </div>
+                                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Collected By</span>
+                                                            <span className="mobile-card-row-value" style={{ fontWeight: 700, color: '#6366f1' }}>{s.collectedBy}</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
                                 </div>
                             )}
 
@@ -550,14 +653,36 @@ export function ReportsPage() {
                                         <div style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginTop: 4 }}>Total Entries: {daily.entryCount}</div>
                                     </div>
                                     <div style={{ display: 'flex', gap: 20, alignItems: 'center', flexWrap: 'wrap' }}>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Overall Paid (Ongoing)</div>
-                                            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#10b981' }}>{formatCurrency(daily.overallFinances?.paid ?? 0)}</div>
+                                        {/* New Admissions Today Stats */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 20, borderRight: '1px solid var(--border, #e2e8f0)' }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Admissions Today</div>
+                                            <div style={{ display: 'flex', gap: 16 }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)' }}>Deposited</div>
+                                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#10b981' }}>{formatCurrency(newAdmissionsDeposited)}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)' }}>Balance</div>
+                                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#ef4444' }}>{formatCurrency(newAdmissionsBalance)}</div>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Outstanding</div>
-                                            <div style={{ fontWeight: 700, fontSize: '1.1rem', color: '#ef4444' }}>{formatCurrency(daily.overallFinances?.left ?? 0)}</div>
+
+                                        {/* Installments Today Stats */}
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, paddingRight: 20, borderRight: '1px solid var(--border, #e2e8f0)' }}>
+                                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-muted, #64748b)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Installments Today</div>
+                                            <div style={{ display: 'flex', gap: 16 }}>
+                                                <div>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)' }}>Deposited</div>
+                                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#10b981' }}>{formatCurrency(installmentsDeposited)}</div>
+                                                </div>
+                                                <div>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted, #94a3b8)' }}>Balance</div>
+                                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#ef4444' }}>{formatCurrency(installmentsBalance)}</div>
+                                                </div>
+                                            </div>
                                         </div>
+
                                         {/* CP Share Highlight */}
                                         <div style={{
                                             background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
@@ -641,7 +766,8 @@ export function ReportsPage() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="table-container">
+                            {/* Desktop View */}
+                            <div className="table-container desktop-only">
                                 <table className="data-table">
                                     <thead>
                                         <tr>
@@ -686,6 +812,50 @@ export function ReportsPage() {
                                         )}
                                     </tbody>
                                 </table>
+                            </div>
+
+                            {/* Mobile Cards View */}
+                            <div className="mobile-only">
+                                {ledger.ledger?.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                                        No ledger entries found.
+                                    </div>
+                                ) : (
+                                    <div className="mobile-card">
+                                        {ledger.ledger?.map((entry: any) => (
+                                            <div key={entry._id} className="mobile-card-item" style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 16, background: 'var(--bg-surface)' }}>
+                                                <div className="mobile-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 10 }}>
+                                                    <div>
+                                                        <div className="mobile-card-title" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>{entry.referenceType}</div>
+                                                        <div className="mobile-card-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                            {format(new Date(entry.createdAt), 'dd MMM yyyy hh:mm a')}
+                                                        </div>
+                                                    </div>
+                                                    <span style={{
+                                                        padding: '4px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 800,
+                                                        background: entry.type === 'CREDIT' ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                                                        color: entry.type === 'CREDIT' ? '#10b981' : '#ef4444',
+                                                        textTransform: 'uppercase', letterSpacing: '0.04em'
+                                                    }}>
+                                                        {entry.type}
+                                                    </span>
+                                                </div>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                                    <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                                        <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Description</span>
+                                                        <span className="mobile-card-row-value" style={{ fontWeight: 600 }}>{entry.description || 'N/A'}</span>
+                                                    </div>
+                                                    <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                        <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Amount</span>
+                                                        <span className="mobile-card-row-value" style={{ fontWeight: 800, color: entry.type === 'CREDIT' ? '#10b981' : '#ef4444' }}>
+                                                            {entry.type === 'CREDIT' ? '+' : '-'}{formatCurrency(entry.amount)}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </>
                     ) : lookupId ? (

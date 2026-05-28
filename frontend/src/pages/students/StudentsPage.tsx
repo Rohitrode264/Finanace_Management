@@ -112,7 +112,8 @@ export function StudentsPage() {
             />
 
             {/* Table */}
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="table-container">
+            {/* Desktop Table View */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="table-container desktop-only">
                 <table className="data-table compact-table">
                     <thead>
                         <tr>
@@ -217,6 +218,87 @@ export function StudentsPage() {
                     </tbody>
                 </table>
             </motion.div>
+
+            {/* Mobile Cards View */}
+            <div className="mobile-only">
+                {isLoading ? (
+                    Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="mobile-card-item" style={{ marginBottom: 12, padding: 16 }}>
+                            <div className="skeleton" style={{ height: 20, width: '40%', marginBottom: 10 }} />
+                            <div className="skeleton" style={{ height: 14, width: '70%', marginBottom: 6 }} />
+                            <div className="skeleton" style={{ height: 14, width: '60%' }} />
+                        </div>
+                    ))
+                ) : students.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '30px 0', color: 'var(--text-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                        No students found matching criteria.
+                    </div>
+                ) : (
+                    <div className="mobile-card">
+                        {students.map((s) => {
+                            const sc = STATUS_COLORS[s.status] || { bg: 'var(--bg-muted)', color: 'var(--text-secondary)' };
+                            return (
+                                <div key={s._id} className="mobile-card-item" onClick={() => { setSelectedStudentForView(s); setViewProfileDrawer(true); }} style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 16, background: 'var(--bg-surface)', cursor: 'pointer' }}>
+                                    <div className="mobile-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 10 }}>
+                                        <div>
+                                            <div className="mobile-card-title" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                                {s.firstName} {s.lastName}
+                                            </div>
+                                            <div className="mobile-card-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                ID: {s.admissionNumber}
+                                            </div>
+                                        </div>
+                                        <span style={{
+                                            padding: '4px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 800,
+                                            background: sc.bg, color: sc.color,
+                                            textTransform: 'uppercase', letterSpacing: '0.04em'
+                                        }}>
+                                            {s.status}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Class / Enrollment</span>
+                                            <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>
+                                                {s.currentEnrollment ? `${s.currentEnrollment.className} (${s.currentEnrollment.academicYear})` : 'Not Enrolled'}
+                                            </span>
+                                        </div>
+                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Father's Contact</span>
+                                            <span className="mobile-card-row-value" style={{ fontWeight: 600 }}>{s.fatherName} ({s.phone})</span>
+                                        </div>
+                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Mother's Contact</span>
+                                            <span className="mobile-card-row-value" style={{ fontWeight: 600 }}>{s.motherName || '—'} ({s.motherPhone || '—'})</span>
+                                        </div>
+                                        <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                            <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>School / City</span>
+                                            <span className="mobile-card-row-value" style={{ fontWeight: 600 }}>{s.schoolName || '—'} · {s.address?.city || '—'}</span>
+                                        </div>
+                                        {canUpdate && (
+                                            <div className="mobile-card-actions" style={{ marginTop: 8, paddingTop: 10, borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'flex-end' }} onClick={(e) => e.stopPropagation()}>
+                                                <select
+                                                    value={s.status}
+                                                    onChange={(e) => setConfirmChange({
+                                                        student: s,
+                                                        newStatus: e.target.value as StudentStatus
+                                                    })}
+                                                    className="form-select"
+                                                    style={{ height: 34, fontSize: '0.8125rem', width: 140, borderRadius: 8 }}
+                                                >
+                                                    <option value="ACTIVE">Mark Active</option>
+                                                    <option value="DROPPED">Mark Dropped</option>
+                                                    <option value="PASSED_OUT">Passed Out</option>
+                                                </select>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
 
             {/* Pagination */}
             <div className="pagination-container" style={{ marginTop: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

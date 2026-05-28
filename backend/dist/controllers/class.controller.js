@@ -88,6 +88,15 @@ class ClassController {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch class', 500);
         }
     }
+    async listSessions(_req, res) {
+        try {
+            const sessions = await class_service_1.classService.getUniqueSessions();
+            (0, apiResponse_1.sendSuccess)(res, sessions);
+        }
+        catch {
+            (0, apiResponse_1.sendError)(res, 'Failed to fetch sessions', 500);
+        }
+    }
 }
 exports.ClassController = ClassController;
 exports.classController = new ClassController();

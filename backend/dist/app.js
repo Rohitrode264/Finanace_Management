@@ -16,6 +16,7 @@ const payment_routes_1 = __importDefault(require("./routes/payment.routes"));
 const receipt_routes_1 = __importDefault(require("./routes/receipt.routes"));
 const report_routes_1 = __importDefault(require("./routes/report.routes"));
 const category_routes_1 = __importDefault(require("./routes/category.routes"));
+const print_routes_1 = __importDefault(require("./routes/print.routes"));
 const rbac_routes_1 = __importDefault(require("./routes/rbac.routes"));
 const audit_routes_1 = __importDefault(require("./routes/audit.routes"));
 const settings_routes_1 = __importDefault(require("./routes/settings.routes"));
@@ -34,12 +35,12 @@ app.use((0, cors_1.default)({
         }
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 // ── Body parsing ─────────────────────────────────────────────────────────────
-app.use(express_1.default.json({ limit: '1mb' }));
-app.use(express_1.default.urlencoded({ extended: false }));
+app.use(express_1.default.json({ limit: '10mb' }));
+app.use(express_1.default.urlencoded({ limit: '10mb', extended: false }));
 // ── Health check (no auth required) ─────────────────────────────────────────
 app.get('/health', (_req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString(), env: env_1.env.NODE_ENV });
@@ -56,6 +57,7 @@ app.use('/api/rbac', rbac_routes_1.default);
 app.use('/api/audit-logs', audit_routes_1.default);
 app.use('/api/categories', category_routes_1.default);
 app.use('/api/settings', settings_routes_1.default);
+app.use('/api/print', print_routes_1.default);
 // ── 404 handler ──────────────────────────────────────────────────────────────
 app.use((_req, res) => {
     res.status(404).json({ success: false, error: 'Route not found' });

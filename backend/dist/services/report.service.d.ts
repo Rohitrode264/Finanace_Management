@@ -11,19 +11,23 @@ export interface DailyReportSummary {
         students: {
             name: string;
             admissionNumber: string;
+            enrollmentClass: string;
             deposited: number;
             totalPaid: number;
             left: number;
             collectedBy: string;
+            paymentMode: string;
         }[];
     };
     existingStudentsActivity: {
         name: string;
         admissionNumber: string;
+        enrollmentClass: string;
         deposited: number;
         totalPaid: number;
         left: number;
         collectedBy: string;
+        paymentMode: string;
     }[];
     overallFinances: {
         paid: number;
@@ -39,6 +43,7 @@ export interface EagleEyeStudentRow {
 }
 export interface EagleEyeClassGroup {
     className: string;
+    academicYear: string;
     enrolled: number;
     totalFees: number;
     collected: number;
@@ -47,6 +52,7 @@ export interface EagleEyeClassGroup {
 }
 export interface EagleEyeReport {
     generatedAt: string;
+    availableAcademicYears: string[];
     institution: {
         totalEnrolled: number;
         totalFees: number;
@@ -56,6 +62,7 @@ export interface EagleEyeReport {
     byClass: EagleEyeClassGroup[];
     atRisk: (EagleEyeStudentRow & {
         className: string;
+        academicYear: string;
     })[];
 }
 export declare class ReportService {
@@ -105,6 +112,48 @@ export declare class ReportService {
      * Eagle-Eye: full session overview grouped by class.
      */
     getEagleEye(): Promise<EagleEyeReport>;
+    getTransactions(filters: {
+        search?: string;
+        type?: string;
+        referenceType?: string;
+        startDate?: string;
+        endDate?: string;
+        createdBy?: string;
+        academicYear?: string;
+        paymentMode?: string;
+        limit?: number;
+        skip?: number;
+    }): Promise<{
+        transactions: {
+            _id: any;
+            enrollmentId: any;
+            studentId: any;
+            studentName: string;
+            studentAdmissionNumber: any;
+            studentPhone: any;
+            className: string;
+            academicYear: any;
+            type: any;
+            amount: any;
+            referenceType: any;
+            referenceId: any;
+            paymentMode: string;
+            description: any;
+            createdAt: any;
+            createdBy: {
+                _id: any;
+                name: any;
+                email: any;
+            };
+        }[];
+        total: number;
+        stats: {
+            totalCredits: number;
+            totalDebits: number;
+            totalConcessions: number;
+            totalCount: number;
+        };
+    }>;
 }
 export declare const reportService: ReportService;
 //# sourceMappingURL=report.service.d.ts.map

@@ -13,7 +13,7 @@ exports.scheduleDailyReport = scheduleDailyReport;
 const bull_1 = __importDefault(require("bull"));
 const node_cron_1 = __importDefault(require("node-cron"));
 const nodemailer_1 = __importDefault(require("nodemailer"));
-const puppeteer_1 = __importDefault(require("puppeteer"));
+const playwright_1 = require("playwright");
 const env_1 = require("../config/env");
 const report_service_1 = require("../services/report.service");
 const audit_service_1 = require("../services/audit.service");
@@ -124,19 +124,7 @@ async function processDailyReport(date, triggeredBy) {
 
           ${existingStudentsHtml}
 
-          <div style="margin-top: 40px; border-top: 2px solid #f3f4f6; padding-top: 24px;">
-              <h3 style="color: #4b5563;">Overall Portfolio Health</h3>
-              <table border="0" cellpadding="8" style="width:100%; border-collapse: collapse;">
-                <tr>
-                    <td style="color: #6b7280;">Aggregate Fees Paid (Ongoing)</td>
-                    <td align="right" style="font-weight: 600; font-size: 1.1rem;">₹${summary.overallFinances.paid.toFixed(2)}</td>
-                </tr>
-                <tr>
-                    <td style="color: #6b7280;">Total Outstanding Receivables</td>
-                    <td align="right" style="font-weight: 600; font-size: 1.1rem; color: #ef4444;">₹${summary.overallFinances.left.toFixed(2)}</td>
-                </tr>
-              </table>
-          </div>
+
 
           <div style="text-align: center; margin-top: 50px; padding-top: 20px; border-top: 1px solid #f3f4f6;">
               <p style="font-size: 12px; color: #9ca3af;">
@@ -146,17 +134,15 @@ async function processDailyReport(date, triggeredBy) {
           </div>
       </div>
     `;
-        // Generate PDF using puppeteer
+        // Generate PDF using playwright
         let pdfBuffer = null;
         try {
-            const browser = await puppeteer_1.default.launch({
+            const browser = await playwright_1.chromium.launch({
                 headless: true,
-                args: ['--no-sandbox', '--disable-setuid-sandbox']
+                args: ['--no-sandbox', '--disable-dev-shm-usage']
             });
             const page = await browser.newPage();
-            await page.setContent(html, { waitUntil: 'networkidle0' });
-            // the pdf method returns a Uint8Array natively in modern puppeteer versions,
-            // we wrap it with Buffer.from just in case.
+            await page.setContent(html, { waitUntil: 'networkidle' });
             const pdfData = await page.pdf({ format: 'A4', margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' } });
             pdfBuffer = Buffer.from(pdfData);
             await browser.close();

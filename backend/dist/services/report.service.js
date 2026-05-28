@@ -74,7 +74,9 @@ class ReportService {
                 .filter(e => e.type === 'CREDIT' && e.referenceType === 'PAYMENT')
                 .map(e => e.enrollmentId.toString()))];
         const studentActivity = await Promise.all(uniqueEnrollmentIds.map(async (eid) => {
-            const enrollment = await Enrollment.findById(eid).populate('studentId');
+            const enrollment = await Enrollment.findById(eid)
+                .populate('studentId')
+                .populate({ path: 'academicClassId', populate: { path: 'templateId', select: 'grade stream board' } });
             if (!enrollment)
                 return null;
             const student = enrollment.studentId;
@@ -104,14 +106,22 @@ class ReportService {
                 createdAt: { $gte: from, $lte: to }
             }).populate('receivedBy');
             const collectedByNames = [...new Set(paymentsToday.map(p => p.receivedBy?.firstName || p.receivedBy?.name || 'Admin'))].join(', ');
+            const paymentModes = [...new Set(paymentsToday.map(p => p.paymentMode))].join(', ');
+            const acClass = enrollment.academicClassId;
+            const template = acClass?.templateId;
+            const enrollmentClass = template
+                ? `${template.grade}${template.stream ? ' – ' + template.stream : ''}${template.board ? ` (${template.board})` : ''}`
+                : 'N/A';
             return {
                 name: `${student.firstName} ${student.lastName}`,
                 admissionNumber: student.admissionNumber,
+                enrollmentClass,
                 isNew: student.createdAt >= from && student.createdAt <= to,
                 paidToday: paidTodayRes[0]?.total || 0,
                 totalPaidToDate: totalPaid,
                 remainingBalance: remaining,
-                collectedBy: collectedByNames || 'N/A'
+                collectedBy: collectedByNames || 'N/A',
+                paymentMode: paymentModes || 'N/A'
             };
         }));
         const activeStudents = studentActivity.filter(s => s !== null);
@@ -145,19 +155,23 @@ class ReportService {
                 students: activeStudents.filter(s => s.isNew).map(s => ({
                     name: s.name,
                     admissionNumber: s.admissionNumber,
+                    enrollmentClass: s.enrollmentClass,
                     deposited: s.paidToday,
                     totalPaid: s.totalPaidToDate,
                     left: s.remainingBalance,
-                    collectedBy: s.collectedBy
+                    collectedBy: s.collectedBy,
+                    paymentMode: s.paymentMode
                 }))
             },
             existingStudentsActivity: activeStudents.filter(s => !s.isNew).map(s => ({
                 name: s.name,
                 admissionNumber: s.admissionNumber,
+                enrollmentClass: s.enrollmentClass,
                 deposited: s.paidToday,
                 totalPaid: s.totalPaidToDate,
                 left: s.remainingBalance,
-                collectedBy: s.collectedBy
+                collectedBy: s.collectedBy,
+                paymentMode: s.paymentMode
             })),
             overallFinances: {
                 paid: totalPaid,
@@ -283,9 +297,11 @@ class ReportService {
                 continue;
             const acClass = enrollment.academicClassId;
             const template = acClass?.templateId;
-            const className = template
-                ? `${template.grade}${template.stream ? ` (${template.stream})` : ''} — ${template.board}`
+            const academicYear = acClass?.academicYear || 'Unknown Year';
+            const baseClassName = template
+                ? `${template.grade}${template.stream ? ` (${template.stream})` : ''}${template.board ? ` — ${template.board}` : ''}`
                 : (acClass?.section || 'Unknown Class');
+            const className = `${baseClassName} (Sec: ${acClass?.section || '-'})`;
             const paid = paidMap.get(enrollment._id.toString()) ?? 0;
             const outstanding = Math.max(0, enrollment.netFee - paid);
             const row = {
@@ -295,11 +311,13 @@ class ReportService {
                 paid,
                 outstanding,
             };
-            allRows.push({ ...row, className });
-            if (!classMap.has(className)) {
-                classMap.set(className, { className, enrolled: 0, totalFees: 0, collected: 0, outstanding: 0, students: [] });
+            allRows.push({ ...row, className, academicYear });
+            // Unique key for the map so same class names in different years don't merge
+            const groupKey = `${academicYear}|${className}`;
+            if (!classMap.has(groupKey)) {
+                classMap.set(groupKey, { className, academicYear, enrolled: 0, totalFees: 0, collected: 0, outstanding: 0, students: [] });
             }
-            const group = classMap.get(className);
+            const group = classMap.get(groupKey);
             group.enrolled++;
             group.totalFees += enrollment.netFee;
             group.collected += paid;
@@ -317,7 +335,137 @@ class ReportService {
             totalOutstanding: acc.totalOutstanding + g.outstanding,
         }), { totalEnrolled: 0, totalFees: 0, totalCollected: 0, totalOutstanding: 0 });
         const atRisk = [...allRows].filter(s => s.outstanding > 0).sort((a, b) => b.outstanding - a.outstanding).slice(0, 10);
-        return { generatedAt: new Date().toISOString(), institution, byClass, atRisk };
+        const availableAcademicYears = [...new Set(byClass.map(g => g.academicYear))].sort().reverse();
+        return { generatedAt: new Date().toISOString(), availableAcademicYears, institution, byClass, atRisk };
+    }
+    async getTransactions(filters) {
+        const { LedgerEntry } = await Promise.resolve().then(() => __importStar(require('../models/LedgerEntry.model')));
+        const { Enrollment } = await Promise.resolve().then(() => __importStar(require('../models/Enrollment.model')));
+        const { Student } = await Promise.resolve().then(() => __importStar(require('../models/Student.model')));
+        const { User } = await Promise.resolve().then(() => __importStar(require('../models/User.model')));
+        const { Payment } = await Promise.resolve().then(() => __importStar(require('../models/Payment.model')));
+        const mongoose = await Promise.resolve().then(() => __importStar(require('mongoose')));
+        const query = {};
+        if (filters.startDate || filters.endDate) {
+            query.createdAt = {};
+            if (filters.startDate) {
+                const start = new Date(filters.startDate);
+                start.setHours(0, 0, 0, 0);
+                query.createdAt.$gte = start;
+            }
+            if (filters.endDate) {
+                const end = new Date(filters.endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+        if (filters.type) {
+            query.type = filters.type;
+        }
+        if (filters.referenceType) {
+            query.referenceType = filters.referenceType;
+        }
+        if (filters.createdBy) {
+            if (mongoose.default.Types.ObjectId.isValid(filters.createdBy)) {
+                query.createdBy = new mongoose.default.Types.ObjectId(filters.createdBy);
+            }
+            else {
+                query.createdBy = filters.createdBy;
+            }
+        }
+        const limit = filters.limit ? parseInt(filters.limit, 10) : 100;
+        const skip = filters.skip ? parseInt(filters.skip, 10) : 0;
+        const entries = await LedgerEntry.find(query)
+            .sort({ createdAt: -1 })
+            .populate({
+            path: 'enrollmentId',
+            populate: [
+                { path: 'studentId', select: 'firstName lastName admissionNumber phone' },
+                { path: 'academicClassId', populate: { path: 'templateId', select: 'grade stream board' }, select: 'templateId section academicYear' }
+            ]
+        })
+            .populate('createdBy', 'firstName lastName name email')
+            .lean();
+        // Resolve Payment Modes for PAYMENT records
+        const paymentIds = entries
+            .filter((e) => e.referenceType === 'PAYMENT' && e.referenceId)
+            .map((e) => e.referenceId);
+        const paymentsList = await Payment.find({ _id: { $in: paymentIds } }).select('paymentMode').lean();
+        const paymentModeMap = new Map();
+        paymentsList.forEach((p) => {
+            paymentModeMap.set(p._id.toString(), p.paymentMode);
+        });
+        let filteredEntries = entries.map((entry) => {
+            const enrollment = entry.enrollmentId;
+            const student = enrollment?.studentId;
+            const cls = enrollment?.academicClassId;
+            const template = cls?.templateId;
+            const studentName = student ? `${student.firstName} ${student.lastName}` : 'N/A';
+            const studentAdmNo = student?.admissionNumber || 'N/A';
+            const className = template
+                ? `Class ${template.grade}${template.stream ? ` – ${template.stream}` : ''}${template.board ? ` (${template.board})` : ''} — Sec ${cls.section}`
+                : 'N/A';
+            const paymentMode = entry.referenceType === 'PAYMENT' && entry.referenceId
+                ? (paymentModeMap.get(entry.referenceId.toString()) || 'N/A')
+                : 'N/A';
+            return {
+                _id: entry._id,
+                enrollmentId: entry.enrollmentId?._id,
+                studentId: student?._id,
+                studentName,
+                studentAdmissionNumber: studentAdmNo,
+                studentPhone: student?.phone || 'N/A',
+                className,
+                academicYear: enrollment?.academicYear || 'N/A',
+                type: entry.type,
+                amount: entry.amount,
+                referenceType: entry.referenceType,
+                referenceId: entry.referenceId,
+                paymentMode,
+                description: entry.description,
+                createdAt: entry.createdAt,
+                createdBy: {
+                    _id: entry.createdBy?._id,
+                    name: entry.createdBy?.name || (entry.createdBy?.firstName
+                        ? `${entry.createdBy.firstName} ${entry.createdBy.lastName || ''}`.trim()
+                        : 'System'),
+                    email: entry.createdBy?.email
+                }
+            };
+        });
+        if (filters.search) {
+            const q = filters.search.toLowerCase();
+            filteredEntries = filteredEntries.filter(entry => entry.studentName.toLowerCase().includes(q) ||
+                entry.studentAdmissionNumber.toLowerCase().includes(q) ||
+                (entry.description && entry.description.toLowerCase().includes(q)));
+        }
+        if (filters.academicYear) {
+            filteredEntries = filteredEntries.filter(entry => entry.academicYear === filters.academicYear);
+        }
+        if (filters.paymentMode) {
+            filteredEntries = filteredEntries.filter(entry => entry.paymentMode === filters.paymentMode);
+        }
+        const totalCredits = filteredEntries
+            .filter(t => t.type === 'CREDIT' && t.referenceType !== 'CONCESSION')
+            .reduce((sum, t) => sum + t.amount, 0);
+        const totalDebits = filteredEntries
+            .filter(t => t.type === 'DEBIT')
+            .reduce((sum, t) => sum + t.amount, 0);
+        const totalConcessions = filteredEntries
+            .filter(t => t.referenceType === 'CONCESSION')
+            .reduce((sum, t) => sum + t.amount, 0);
+        const totalCount = filteredEntries.length;
+        const paginated = filteredEntries.slice(skip, skip + limit);
+        return {
+            transactions: paginated,
+            total: totalCount,
+            stats: {
+                totalCredits,
+                totalDebits,
+                totalConcessions,
+                totalCount
+            }
+        };
     }
 }
 exports.ReportService = ReportService;

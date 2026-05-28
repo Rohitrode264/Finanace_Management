@@ -5,6 +5,7 @@ const Enrollment_model_1 = require("../models/Enrollment.model");
 class EnrollmentRepository {
     async findById(id, session) {
         return Enrollment_model_1.Enrollment.findById(id)
+            .populate('studentId')
             .populate({
             path: 'academicClassId',
             populate: { path: 'templateId' }
@@ -28,6 +29,7 @@ class EnrollmentRepository {
     }
     async findMany(filter, limit = 50, skip = 0) {
         return Enrollment_model_1.Enrollment.find(filter)
+            .populate('studentId')
             .populate({
             path: 'academicClassId',
             populate: { path: 'templateId' }

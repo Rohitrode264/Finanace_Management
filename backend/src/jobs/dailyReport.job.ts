@@ -57,6 +57,11 @@ export async function processDailyReport(date: string, triggeredBy: string): Pro
 
         const summary = await reportService.getDailyReport(reportDate);
 
+        const newAdmissionsDeposited = summary.newAdmissions.students.reduce((sum, s) => sum + s.deposited, 0);
+        const newAdmissionsBalance = summary.newAdmissions.students.reduce((sum, s) => sum + s.left, 0);
+        const installmentsDeposited = summary.existingStudentsActivity.reduce((sum, s) => sum + s.deposited, 0);
+        const installmentsBalance = summary.existingStudentsActivity.reduce((sum, s) => sum + s.left, 0);
+
         // Fetch target email from system settings
         const emailSetting = await SystemSetting.findOne({ key: 'DAILY_REPORT_EMAIL' });
         const targetEmail = emailSetting?.value || env.REPORT_EMAIL_TO;
@@ -126,17 +131,18 @@ export async function processDailyReport(date: string, triggeredBy: string): Pro
           ${newAdmissionsHtml}
 
           ${existingStudentsHtml}
-
           <div style="margin-top: 40px; border-top: 2px solid #f3f4f6; padding-top: 24px;">
-              <h3 style="color: #4b5563;">Overall Portfolio Health</h3>
+              <h3 style="color: #4b5563;">Today's Breakdown</h3>
               <table border="0" cellpadding="8" style="width:100%; border-collapse: collapse;">
                 <tr>
-                    <td style="color: #6b7280;">Aggregate Fees Paid (Ongoing)</td>
-                    <td align="right" style="font-weight: 600; font-size: 1.1rem;">₹${summary.overallFinances.paid.toFixed(2)}</td>
+                    <td style="color: #6b7280; font-weight: 600;">New Admissions Today</td>
+                    <td align="right" style="color: #6b7280;">Deposited: <span style="font-weight: 600; color: #10b981;">₹${newAdmissionsDeposited.toFixed(2)}</span></td>
+                    <td align="right" style="color: #6b7280;">Balance: <span style="font-weight: 600; color: #ef4444;">₹${newAdmissionsBalance.toFixed(2)}</span></td>
                 </tr>
                 <tr>
-                    <td style="color: #6b7280;">Total Outstanding Receivables</td>
-                    <td align="right" style="font-weight: 600; font-size: 1.1rem; color: #ef4444;">₹${summary.overallFinances.left.toFixed(2)}</td>
+                    <td style="color: #6b7280; font-weight: 600;">Installment Payments Today</td>
+                    <td align="right" style="color: #6b7280;">Deposited: <span style="font-weight: 600; color: #10b981;">₹${installmentsDeposited.toFixed(2)}</span></td>
+                    <td align="right" style="color: #6b7280;">Balance: <span style="font-weight: 600; color: #ef4444;">₹${installmentsBalance.toFixed(2)}</span></td>
                 </tr>
               </table>
           </div>

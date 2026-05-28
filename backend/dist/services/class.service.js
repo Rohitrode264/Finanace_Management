@@ -70,6 +70,10 @@ class ClassService {
     async countTotal() {
         return AcademicClass_model_1.AcademicClass.countDocuments({ isActive: true });
     }
+    async getUniqueSessions() {
+        const years = await AcademicClass_model_1.AcademicClass.distinct('academicYear', { isActive: true });
+        return years.sort().reverse(); // Show latest sessions first
+    }
 }
 exports.ClassService = ClassService;
 exports.classService = new ClassService();

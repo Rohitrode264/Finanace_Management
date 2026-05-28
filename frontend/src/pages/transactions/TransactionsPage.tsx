@@ -489,7 +489,8 @@ export function TransactionsPage() {
                     )}
                 </div>
 
-                <div className="table-container">
+                {/* Desktop View */}
+                <div className="table-container desktop-only">
                     <table className="data-table">
                         <thead>
                             <tr>
@@ -663,6 +664,79 @@ export function TransactionsPage() {
                             )}
                         </tbody>
                     </table>
+                </div>
+
+                {/* Mobile Cards View */}
+                <div className="mobile-only">
+                    {isLoading ? (
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <div key={i} className="mobile-card-item" style={{ marginBottom: 12, padding: 16 }}>
+                                <div className="skeleton" style={{ height: 20, width: '40%', marginBottom: 10 }} />
+                                <div className="skeleton" style={{ height: 14, width: '70%', marginBottom: 6 }} />
+                                <div className="skeleton" style={{ height: 14, width: '60%' }} />
+                            </div>
+                        ))
+                    ) : paginatedTransactions.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--text-muted)', background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: 12 }}>
+                            No transactions found matching filters.
+                        </div>
+                    ) : (
+                        <div className="mobile-card" style={{ padding: '0 16px' }}>
+                            {paginatedTransactions.map((tx) => {
+                                const isCredit = tx.type === 'CREDIT';
+                                return (
+                                    <div key={tx._id} className="mobile-card-item" style={{ marginBottom: 12, border: '1px solid var(--border)', borderRadius: 12, padding: 16, background: 'var(--bg-surface)' }}>
+                                        <div className="mobile-card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border)', paddingBottom: 10, marginBottom: 10 }}>
+                                            <div>
+                                                <div className="mobile-card-title" style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                                                    {tx.studentName} <span style={{ fontSize: '0.75rem', fontWeight: 600, color: '#6366f1', marginLeft: 6 }}>({tx.className})</span>
+                                                </div>
+                                                <div className="mobile-card-subtitle" style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
+                                                    ID: {tx.studentAdmissionNumber} · {format(new Date(tx.createdAt), 'dd MMM yyyy hh:mm a')}
+                                                </div>
+                                            </div>
+                                            <span style={{
+                                                padding: '4px 10px', borderRadius: 99, fontSize: '0.72rem', fontWeight: 800,
+                                                background: isCredit ? 'rgba(16,185,129,0.1)' : 'rgba(239,68,68,0.1)',
+                                                color: isCredit ? '#10b981' : '#ef4444',
+                                                textTransform: 'uppercase', letterSpacing: '0.04em'
+                                            }}>
+                                                {tx.type}
+                                            </span>
+                                        </div>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                            <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem' }}>
+                                                <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Category</span>
+                                                <span style={{
+                                                    fontSize: '0.72rem', fontWeight: 700, padding: '2px 8px', borderRadius: 6,
+                                                    background: tx.referenceType === 'PAYMENT' ? 'rgba(99,102,241,0.08)' : 'rgba(245,158,11,0.08)',
+                                                    color: tx.referenceType === 'PAYMENT' ? '#6366f1' : '#f59e0b'
+                                                }}>{tx.referenceType}</span>
+                                            </div>
+                                            <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Payment Mode</span>
+                                                <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>{tx.paymentMode}</span>
+                                            </div>
+                                            <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Receiver</span>
+                                                <span className="mobile-card-row-value" style={{ fontWeight: 600 }}>{tx.createdBy?.name || 'System'}</span>
+                                            </div>
+                                            <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Description</span>
+                                                <span className="mobile-card-row-value" style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>{tx.description || '—'}</span>
+                                            </div>
+                                            <div className="mobile-card-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8125rem', borderTop: '1px solid var(--border-subtle)', paddingTop: 6 }}>
+                                                <span className="mobile-card-row-label" style={{ color: 'var(--text-muted)' }}>Amount</span>
+                                                <span className="mobile-card-row-value" style={{ fontWeight: 800, color: isCredit ? '#10b981' : '#ef4444' }}>
+                                                    {isCredit ? '+' : '-'}{formatCurrency(tx.amount)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
 
                 {/* ── Table Pagination Footer ── */}

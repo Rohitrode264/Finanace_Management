@@ -4,6 +4,7 @@ exports.studentController = exports.StudentController = void 0;
 const student_service_1 = require("../services/student.service");
 const audit_service_1 = require("../services/audit.service");
 const apiResponse_1 = require("../utils/apiResponse");
+const Enrollment_model_1 = require("../models/Enrollment.model");
 const zod_1 = require("zod");
 const createStudentSchema = zod_1.z.object({
     admissionNumber: zod_1.z.string().optional().or(zod_1.z.literal('')),
@@ -121,7 +122,47 @@ class StudentController {
             else {
                 result = await student_service_1.studentService.listAll(status, program, l, s);
             }
-            (0, apiResponse_1.sendSuccess)(res, result);
+            // Enrich each student with their current (latest ONGOING) enrollment
+            const studentIds = result.students.map((st) => st._id);
+            const enrollments = await Enrollment_model_1.Enrollment.find({
+                studentId: { $in: studentIds },
+                status: 'ONGOING',
+            })
+                .sort({ createdAt: -1 })
+                .populate({
+                path: 'academicClassId',
+                populate: { path: 'templateId', select: 'grade stream board' },
+                select: 'templateId section academicYear',
+            })
+                .lean();
+            // Build a map: studentId -> latest enrollment
+            const enrollmentMap = new Map();
+            for (const en of enrollments) {
+                const sid = en.studentId.toString();
+                if (!enrollmentMap.has(sid)) {
+                    enrollmentMap.set(sid, en);
+                }
+            }
+            const enrichedStudents = result.students.map((st) => {
+                const plain = st.toJSON ? st.toJSON() : st;
+                const en = enrollmentMap.get(plain._id.toString());
+                if (en && en.academicClassId && typeof en.academicClassId === 'object') {
+                    const ac = en.academicClassId;
+                    const tmpl = ac.templateId;
+                    plain.currentEnrollment = {
+                        academicYear: en.academicYear,
+                        className: tmpl
+                            ? `${tmpl.grade}${tmpl.stream ? ' – ' + tmpl.stream : ''}${tmpl.board ? ` (${tmpl.board})` : ''}`
+                            : 'N/A',
+                        section: ac.section || '',
+                    };
+                }
+                else {
+                    plain.currentEnrollment = null;
+                }
+                return plain;
+            });
+            (0, apiResponse_1.sendSuccess)(res, { students: enrichedStudents, total: result.total });
         }
         catch (err) {
             (0, apiResponse_1.sendError)(res, 'Failed to list students', 500);

@@ -27,6 +27,7 @@ export declare class ClassService {
         userAgent: string;
     }): Promise<void>;
     countTotal(): Promise<number>;
+    getUniqueSessions(): Promise<string[]>;
 }
 export declare const classService: ClassService;
 //# sourceMappingURL=class.service.d.ts.map

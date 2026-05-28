@@ -71,7 +71,7 @@ class StudentService {
             throw new Error('Student not found');
         const before = student.toObject();
         const updates = Object.fromEntries(Object.entries(params.data).filter(([_, v]) => v != null));
-        Object.assign(student, updates);
+        student.set(updates);
         await student.save();
         audit_service_1.auditService.logAsync({
             actorId: params.updatedBy,

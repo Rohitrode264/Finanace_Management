@@ -7,6 +7,7 @@ const permission_middleware_1 = require("../middlewares/permission.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 router.get('/templates', (0, permission_middleware_1.permissionMiddleware)('VIEW_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.listTemplates(req, res));
+router.get('/sessions', (0, permission_middleware_1.permissionMiddleware)('VIEW_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.listSessions(req, res));
 router.get('/', (0, permission_middleware_1.permissionMiddleware)('VIEW_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.getClassesByYear(req, res));
 router.get('/:id', (0, permission_middleware_1.permissionMiddleware)('VIEW_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.getClass(req, res));
 router.post('/', (0, permission_middleware_1.permissionMiddleware)('CREATE_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.createClass(req, res));
