@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Filter, CreditCard, User, ExternalLink } from 'lucide-react';
+import { ArrowLeft, Filter, CreditCard, User, ExternalLink, FileSpreadsheet } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { classesService } from '../../api/services/classes.service';
 import apiClient from '../../api/client';
 import { formatCurrency } from '../../utils/currency';
 import type { AcademicClass, ClassTemplate } from '../../types';
+import * as XLSX from 'xlsx';
 
 export function ClassStudentsPage() {
     const { classId } = useParams<{ classId: string }>();
@@ -70,6 +71,142 @@ export function ClassStudentsPage() {
         pending: enrollments.filter(e => (e.outstandingBalance ?? 0) > 0).length,
     };
 
+    const downloadExcel = () => {
+        if (!academicClass || filteredEnrollments.length === 0) return;
+
+        // Calculate totals
+        const totalFee = filteredEnrollments.reduce((sum, e) => sum + e.netFee, 0);
+        const totalOutstanding = filteredEnrollments.reduce((sum, e) => sum + (e.outstandingBalance ?? 0), 0);
+        const totalPaid = totalFee - totalOutstanding;
+        const collectionProgress = totalFee > 0 ? (totalPaid / totalFee) * 100 : 0;
+
+        const data: any[] = [];
+        
+        // Title Block
+        data.push([{ v: "NEW CAREER POINT", t: "s" }]);
+        data.push([{ v: "PROGRAM STUDENT ENROLLMENT REPORT", t: "s" }]);
+        data.push([]);
+
+        // Program Details
+        data.push(["Program / Class:", tmpl ? `${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''}${tmpl.board ? ` (${tmpl.board})` : ''}` : "Class Students"]);
+        data.push(["Section:", academicClass.section || '—']);
+        data.push(["Academic Year:", academicClass.academicYear || '—']);
+        data.push(["Generated On:", new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })]);
+        data.push([]);
+
+        // Summary Statistics
+        data.push(["SUMMARY STATISTICS"]);
+        data.push(["Total Students in Export:", filteredEnrollments.length]);
+        data.push(["Total Fees (Net):", { v: totalFee, t: "n", z: '"₹"#,##0' }]);
+        data.push(["Total Paid:", { v: totalPaid, t: "n", z: '"₹"#,##0' }]);
+        data.push(["Total Outstanding:", { v: totalOutstanding, t: "n", z: '"₹"#,##0' }]);
+        data.push(["Collection Progress:", `${collectionProgress.toFixed(1)}%`]);
+        data.push([]);
+
+        // Table Headers
+        data.push([
+            "S.No.",
+            "Student Name",
+            "Admission Number",
+            "Status",
+            "Net Fee",
+            "Paid",
+            "Outstanding",
+            "Paid Installments",
+            "Total Installments",
+            "Payment Status"
+        ]);
+
+        // Student Data Rows
+        filteredEnrollments.forEach((e, idx) => {
+            const studentName = `${e.studentId?.firstName || ''} ${e.studentId?.lastName || ''}`.trim();
+            const admissionNo = e.studentId?.admissionNumber || '—';
+            const status = e.studentId?.status || '—';
+            const netFee = e.netFee;
+            const paid = e.netFee - (e.outstandingBalance ?? 0);
+            const outstanding = e.outstandingBalance ?? 0;
+            
+            // Calculate paid installments
+            let paidInstallments = 0;
+            let tempPaid = paid;
+            const plan = [...(academicClass.installmentPlan || [])].sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+            for (const ins of plan) {
+                if (tempPaid >= ins.amount - 0.01) {
+                    paidInstallments++;
+                    tempPaid -= ins.amount;
+                } else {
+                    break;
+                }
+            }
+            const totalInstallments = plan.length;
+            
+            let paymentStatus = 'Unpaid';
+            if (outstanding <= 0) {
+                paymentStatus = 'Cleared';
+            } else if (paid > 0) {
+                paymentStatus = 'Partial';
+            }
+
+            data.push([
+                idx + 1,
+                studentName,
+                admissionNo,
+                status,
+                { v: netFee, t: "n", z: '"₹"#,##0' },
+                { v: paid, t: "n", z: '"₹"#,##0' },
+                { v: outstanding, t: "n", z: '"₹"#,##0' },
+                paidInstallments,
+                totalInstallments,
+                paymentStatus
+            ]);
+        });
+
+        // Totals Row
+        data.push([]);
+        data.push([
+            "TOTALS",
+            "",
+            "",
+            "",
+            { v: totalFee, t: "n", z: '"₹"#,##0' },
+            { v: totalPaid, t: "n", z: '"₹"#,##0' },
+            { v: totalOutstanding, t: "n", z: '"₹"#,##0' },
+            "",
+            "",
+            ""
+        ]);
+
+        const worksheet = XLSX.utils.aoa_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Students List");
+
+        // Column widths
+        worksheet["!cols"] = [
+            { wch: 8 },  // S.No
+            { wch: 28 }, // Student Name
+            { wch: 18 }, // Admission Number
+            { wch: 12 }, // Status
+            { wch: 14 }, // Net Fee
+            { wch: 14 }, // Paid
+            { wch: 14 }, // Outstanding
+            { wch: 18 }, // Paid Installments
+            { wch: 18 }, // Total Installments
+            { wch: 16 }  // Payment Status
+        ];
+
+        // Merge title rows
+        worksheet["!merges"] = [
+            { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } },
+            { s: { r: 1, c: 0 }, e: { r: 1, c: 9 } }
+        ];
+
+        const className = tmpl ? `${tmpl.grade}${tmpl.stream ? `_${tmpl.stream}` : ''}` : 'Class';
+        const section = academicClass.section ? `_${academicClass.section}` : '';
+        const fileName = `NCP_${className}${section}_Students_${new Date().toISOString().split('T')[0]}.xlsx`;
+
+        XLSX.writeFile(workbook, fileName);
+    };
+
     return (
         <div style={{ paddingBottom: 40 }}>
             <button
@@ -86,6 +223,17 @@ export function ClassStudentsPage() {
             <PageHeader
                 title={tmpl ? `Class ${tmpl.grade}${tmpl.stream ? ` – ${tmpl.stream}` : ''}${tmpl.board ? ` (${tmpl.board})` : ''}` : 'Class Students'}
                 subtitle={`${academicClass?.section || ''} | ${academicClass?.academicYear || ''} Enrollment List`}
+                actions={
+                    <button
+                        className="btn-primary"
+                        onClick={downloadExcel}
+                        disabled={!academicClass || filteredEnrollments.length === 0}
+                        style={{ display: 'flex', alignItems: 'center', gap: 8 }}
+                    >
+                        <FileSpreadsheet size={16} />
+                        Export Excel
+                    </button>
+                }
             />
 
             {/* Stats Cards */}
