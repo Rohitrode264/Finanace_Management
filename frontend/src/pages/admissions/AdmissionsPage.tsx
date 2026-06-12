@@ -11,23 +11,23 @@ import { format } from 'date-fns';
 export function AdmissionsPage() {
     const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
 
-    // Fetch daily report for the selected date — this gives us newAdmissions data
+    // Fetch daily admissions for the selected date — this gives us admissions data only
     const { data: reportRes, isLoading } = useQuery({
         queryKey: ['admissions-daily', selectedDate],
-        queryFn: () => apiClient.get(`/reports/daily?date=${selectedDate}`),
+        queryFn: () => apiClient.get(`/reports/daily-admissions?date=${selectedDate}`),
     });
 
-    const daily = reportRes?.data?.data;
-    const newAdmissions = daily?.newAdmissions;
-    const admissionCount = newAdmissions?.total ?? 0;
+    const dailyAdmissions = reportRes?.data?.data;
+    const admissionCount = dailyAdmissions?.total ?? 0;
     const admissionStudents: {
         name: string;
         admissionNumber: string;
+        enrollmentClass: string;
         deposited: number;
         totalPaid: number;
         left: number;
         collectedBy: string;
-    }[] = newAdmissions?.students ?? [];
+    }[] = dailyAdmissions?.students ?? [];
 
     const isToday = selectedDate === format(new Date(), 'yyyy-MM-dd');
 
@@ -170,6 +170,7 @@ export function AdmissionsPage() {
                                         <th style={{ width: 40 }}>#</th>
                                         <th>Student Name</th>
                                         <th>Adm. No.</th>
+                                        <th>Enrolled In</th>
                                         <th style={{ textAlign: 'right' }}>Deposited</th>
                                         <th style={{ textAlign: 'right' }}>Total Paid</th>
                                         <th style={{ textAlign: 'right' }}>Outstanding</th>
@@ -197,6 +198,9 @@ export function AdmissionsPage() {
                                             <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
                                                 {s.admissionNumber}
                                             </td>
+                                            <td style={{ fontSize: '0.8125rem', fontWeight: 600 }}>
+                                                {s.enrollmentClass || 'N/A'}
+                                            </td>
                                             <td className="financial-value" style={{ color: '#10b981' }}>
                                                 {formatCurrency(s.deposited)}
                                             </td>
@@ -214,7 +218,7 @@ export function AdmissionsPage() {
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colSpan={3} style={{ fontWeight: 800 }}>
+                                        <td colSpan={4} style={{ fontWeight: 800 }}>
                                             Total ({admissionCount} students)
                                         </td>
                                         <td className="financial-value" style={{ color: '#10b981' }}>
@@ -231,7 +235,7 @@ export function AdmissionsPage() {
                                 </tfoot>
                             </table>
                         </div>
-
+ 
                         {/* Mobile Cards */}
                         <div className="mobile-card">
                             {admissionStudents.map((s, i) => (
@@ -252,6 +256,12 @@ export function AdmissionsPage() {
                                                 <div className="mobile-card-subtitle">{s.admissionNumber}</div>
                                             </div>
                                         </div>
+                                    </div>
+                                    <div className="mobile-card-row">
+                                        <span className="mobile-card-row-label">Enrolled In</span>
+                                        <span className="mobile-card-row-value" style={{ fontWeight: 700 }}>
+                                            {s.enrollmentClass || 'N/A'}
+                                        </span>
                                     </div>
                                     <div className="mobile-card-row">
                                         <span className="mobile-card-row-label">Deposited</span>
