@@ -7,6 +7,7 @@ export declare class ReportController {
     sendNow(req: Request, res: Response): Promise<void>;
     getTransactions(req: Request, res: Response): Promise<void>;
     getEagleEye(req: Request, res: Response): Promise<void>;
+    getDailyAdmissions(req: Request, res: Response): Promise<void>;
 }
 export declare const reportController: ReportController;
 //# sourceMappingURL=report.controller.d.ts.map

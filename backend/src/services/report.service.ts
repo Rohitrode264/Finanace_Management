@@ -593,6 +593,90 @@ export class ReportService {
             }
         };
     }
+
+    /**
+     * Get list of daily admissions only (without overall finances or other student activity)
+     */
+    async getDailyAdmissions(date: Date, endDate?: Date) {
+        const from = new Date(date);
+        from.setHours(0, 0, 0, 0);
+        const to = endDate ? new Date(endDate) : new Date(date);
+        to.setHours(23, 59, 59, 999);
+
+        const { Student } = await import('../models/Student.model');
+        const { Enrollment } = await import('../models/Enrollment.model');
+        const { LedgerEntry } = await import('../models/LedgerEntry.model');
+
+        // Find all students created in this date range
+        const students = await Student.find({
+            createdAt: { $gte: from, $lte: to }
+        }).lean();
+
+        const studentData = await Promise.all(students.map(async (student) => {
+            // Find enrollment for this student
+            const enrollment = await Enrollment.findOne({ studentId: student._id })
+                .populate({ path: 'academicClassId', populate: { path: 'templateId', select: 'grade stream board' } })
+                .lean();
+            
+            if (!enrollment) return null;
+
+            // Total paid for THIS enrollment ever
+            const allPayments = await LedgerEntry.aggregate([
+                { $match: { enrollmentId: enrollment._id, type: 'CREDIT', referenceType: 'PAYMENT' } },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]);
+            const totalPaid = allPayments[0]?.total || 0;
+            const remaining = Math.max(0, enrollment.netFee - totalPaid);
+
+            // Amount paid TODAY/range
+            const paidTodayRes = await LedgerEntry.aggregate([
+                {
+                    $match: {
+                        enrollmentId: enrollment._id,
+                        type: 'CREDIT',
+                        referenceType: 'PAYMENT',
+                        createdAt: { $gte: from, $lte: to }
+                    }
+                },
+                { $group: { _id: null, total: { $sum: '$amount' } } }
+            ]);
+
+            const { Payment } = await import('../models/Payment.model');
+            const paymentsToday = await Payment.find({
+                enrollmentId: enrollment._id,
+                isCancelled: false,
+                createdAt: { $gte: from, $lte: to }
+            }).populate('receivedBy');
+
+            const collectedByNames = [...new Set(paymentsToday.map(p => (p.receivedBy as any)?.firstName || (p.receivedBy as any)?.name || 'Admin'))].join(', ');
+            const paymentModes = [...new Set(paymentsToday.map(p => p.paymentMode))].join(', ');
+
+            const acClass = enrollment.academicClassId as any;
+            const template = acClass?.templateId;
+            const enrollmentClass = template
+                ? `${template.grade}${template.stream ? ' – ' + template.stream : ''}${template.board ? ` (${template.board})` : ''}`
+                : 'N/A';
+
+            return {
+                name: `${student.firstName} ${student.lastName}`,
+                admissionNumber: student.admissionNumber,
+                enrollmentClass,
+                deposited: paidTodayRes[0]?.total || 0,
+                totalPaid: totalPaid,
+                left: remaining,
+                collectedBy: collectedByNames || 'N/A',
+                paymentMode: paymentModes || 'N/A'
+            };
+        }));
+
+        const filteredStudents = studentData.filter(s => s !== null) as any[];
+
+        return {
+            date: endDate ? `${from.toISOString().split('T')[0]} to ${to.toISOString().split('T')[0]}` : (from.toISOString().split('T')[0] ?? date.toDateString()),
+            total: filteredStudents.length,
+            students: filteredStudents
+        };
+    }
 }
 
 export const reportService = new ReportService();

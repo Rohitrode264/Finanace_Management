@@ -27,7 +27,7 @@ async function forceAdminPerms() {
         const permissionSpecs = PERMISSION_ACTIONS.flatMap(action => {
             let resource = 'SYSTEM';
             if (action.includes('PAYMENT')) resource = 'PAYMENT';
-            else if (action.includes('STUDENT')) resource = 'STUDENT';
+            else if (action.includes('STUDENT') || action.includes('ADMISSION')) resource = 'STUDENT';
             else if (action.includes('ENROLLMENT')) resource = 'ENROLLMENT';
             else if (action.includes('CLASS')) resource = 'CLASS';
             else if (action.includes('RECEIPT')) resource = 'RECEIPT';

@@ -7,6 +7,7 @@ const permission_middleware_1 = require("../middlewares/permission.middleware");
 const router = (0, express_1.Router)();
 router.use(auth_middleware_1.authMiddleware);
 router.get('/daily', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getDailyReport(req, res));
+router.get('/daily-admissions', (0, permission_middleware_1.permissionMiddleware)('VIEW_DAILY_ADMISSION', 'STUDENT'), (req, res) => report_controller_1.reportController.getDailyAdmissions(req, res));
 router.get('/enrollment/:enrollmentId/ledger', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getEnrollmentLedgerReport(req, res));
 router.get('/dashboard-stats', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getDashboardStats(req, res));
 router.get('/payment-dates', (0, permission_middleware_1.permissionMiddleware)('VIEW_REPORT', 'REPORT'), (req, res) => report_controller_1.reportController.getPaymentDates(req, res));

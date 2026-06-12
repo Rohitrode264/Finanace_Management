@@ -27,6 +27,7 @@ export const PERMISSION_ACTIONS = [
     'CREATE_USER',
     'VIEW_AUDIT_LOG',
     'UPDATE_SETTING',
+    'VIEW_DAILY_ADMISSION',
 ] as const;
 
 export const PERMISSION_RESOURCES = [

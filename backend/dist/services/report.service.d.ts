@@ -154,6 +154,14 @@ export declare class ReportService {
             totalCount: number;
         };
     }>;
+    /**
+     * Get list of daily admissions only (without overall finances or other student activity)
+     */
+    getDailyAdmissions(date: Date, endDate?: Date): Promise<{
+        date: string;
+        total: number;
+        students: any[];
+    }>;
 }
 export declare const reportService: ReportService;
 //# sourceMappingURL=report.service.d.ts.map

@@ -104,6 +104,31 @@ export class ReportController {
             sendError(res, 'Failed to generate Eagle-Eye report', 500);
         }
     }
+
+    async getDailyAdmissions(req: Request, res: Response): Promise<void> {
+        const { date, endDate } = req.query as { date?: string, endDate?: string };
+        const reportDate = date ? new Date(date) : new Date();
+        const reportEndDate = endDate ? new Date(endDate) : undefined;
+
+        if (isNaN(reportDate.getTime()) || (reportEndDate && isNaN(reportEndDate.getTime()))) {
+            sendError(res, 'Invalid date format. Use YYYY-MM-DD', 400);
+            return;
+        }
+
+        try {
+            const summary = await reportService.getDailyAdmissions(reportDate, reportEndDate);
+            auditService.logAsync({
+                actorId: req.user!.userId,
+                action: 'REPORT_GENERATED',
+                entityType: 'REPORT',
+                entityId: summary.date,
+                before: null,
+                after: summary as unknown as Record<string, unknown>,
+                ...auditService.extractRequestMeta(req),
+            });
+            sendSuccess(res, summary);
+        } catch { sendError(res, 'Failed to generate daily admissions report', 500); }
+    }
 }
 
 export const reportController = new ReportController();

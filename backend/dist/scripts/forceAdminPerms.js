@@ -27,7 +27,7 @@ async function forceAdminPerms() {
             let resource = 'SYSTEM';
             if (action.includes('PAYMENT'))
                 resource = 'PAYMENT';
-            else if (action.includes('STUDENT'))
+            else if (action.includes('STUDENT') || action.includes('ADMISSION'))
                 resource = 'STUDENT';
             else if (action.includes('ENROLLMENT'))
                 resource = 'ENROLLMENT';
