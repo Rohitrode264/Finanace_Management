@@ -196,6 +196,21 @@ export class StudentController {
         }
     }
 
+    async fullyDeleteStudent(req: Request, res: Response): Promise<void> {
+        try {
+            const meta = auditService.extractRequestMeta(req);
+            await studentService.fullyDeleteStudentEverything({
+                studentId: req.params['id']!,
+                deletedBy: req.user!.userId,
+                ...meta,
+            });
+            sendSuccess(res, null, 200, 'Student fully deleted successfully');
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to fully delete student';
+            sendError(res, message, 400);
+        }
+    }
+
     async getSchools(req: Request, res: Response): Promise<void> {
         try {
             const schools = await studentService.getUniqueSchools();

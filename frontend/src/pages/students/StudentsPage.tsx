@@ -6,7 +6,7 @@ import {
     Plus, ChevronLeft, ChevronRight, User, Tag,
     Phone, MapPin, GraduationCap, BookOpen,
     Calendar, Info, Printer, Edit,
-    UserPlus
+    UserPlus, Trash2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { createPortal } from 'react-dom';
@@ -59,6 +59,9 @@ export function StudentsPage() {
 
     const canCreate = usePermission('CREATE_STUDENT');
     const canUpdate = usePermission('UPDATE_STUDENT');
+    const canDelete = usePermission('DELETE_STUDENT');
+
+    const [confirmDelete, setConfirmDelete] = useState<Student | null>(null);
 
     const { data: studentsRes, isLoading } = useQuery({
         queryKey: ['students', skip, dSearch, program],
@@ -87,6 +90,17 @@ export function StudentsPage() {
             setConfirmChange(null);
         },
         onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Status update failed'),
+    });
+
+    const deleteMutation = useMutation({
+        mutationFn: (studentId: string) => apiClient.delete(`/students/${studentId}/everything`),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['students'] });
+            toast.success('Student fully deleted');
+            setConfirmDelete(null);
+            setViewProfileDrawer(false);
+        },
+        onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Failed to delete student'),
     });
 
     return (
@@ -334,6 +348,17 @@ export function StudentsPage() {
                 loading={statusMutation.isPending}
             />
 
+            {/* Confirm Delete */}
+            <ConfirmModal
+                open={!!confirmDelete}
+                onClose={() => setConfirmDelete(null)}
+                onConfirm={() => confirmDelete && deleteMutation.mutate(confirmDelete._id)}
+                title="Fully Delete Student"
+                message={`Are you absolutely sure you want to permanently delete ${confirmDelete?.firstName} ${confirmDelete?.lastName}? This will also delete all their enrollments, payments, receipts, and ledger entries. This action CANNOT be undone.`}
+                variant="danger"
+                loading={deleteMutation.isPending}
+            />
+
             {/* Student Profile Detail Drawer */}
             {createPortal(
                 <AnimatePresence>
@@ -391,6 +416,11 @@ export function StudentsPage() {
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                        {canDelete && (
+                                            <button className="btn-secondary btn-sm" onClick={() => setConfirmDelete(selectedStudentForView)} title="Delete Student" style={{ color: 'var(--danger)', borderColor: 'var(--danger)' }}>
+                                                <Trash2 size={16} />
+                                            </button>
+                                        )}
                                         <button className="btn-secondary btn-sm" onClick={() => window.open(`/students/${selectedStudentForView._id}/print`, '_blank')} title="Print Form">
                                             <Printer size={16} />
                                         </button>

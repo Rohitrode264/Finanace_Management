@@ -1,7 +1,8 @@
 import { Student, IStudent } from '../models/Student.model';
+import { Enrollment } from '../models/Enrollment.model';
+import { Payment } from '../models/Payment.model';
 import { auditService } from './audit.service';
-import { Types } from 'mongoose';
-
+import mongoose, { Types } from 'mongoose';
 export class StudentService {
     async createStudent(params: {
         admissionNumber?: string;
@@ -198,6 +199,48 @@ export class StudentService {
         ]);
 
         return { students, total };
+    }
+
+    async fullyDeleteStudentEverything(params: {
+        studentId: string;
+        deletedBy: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<void> {
+        const student = await Student.findById(params.studentId);
+        if (!student) throw new Error('Student not found');
+
+        const enrollments = await Enrollment.find({ studentId: params.studentId });
+        const enrollmentIds = enrollments.map((e: any) => e._id);
+
+        const payments = await Payment.find({ enrollmentId: { $in: enrollmentIds } });
+        const paymentIds = payments.map((p: any) => p._id);
+
+        const db = mongoose.connection.db;
+        if (!db) throw new Error('Database connection not established');
+
+        // Delete receipts
+        await db.collection('receipts').deleteMany({ paymentId: { $in: paymentIds } });
+
+        // Delete payments
+        await db.collection('payments').deleteMany({ enrollmentId: { $in: enrollmentIds } });
+
+        // Delete ledger entries
+        await db.collection('ledgerentries').deleteMany({ enrollmentId: { $in: enrollmentIds } });
+
+        // Delete enrollments
+        await Enrollment.deleteMany({ studentId: params.studentId });
+
+        // Delete student
+        await Student.findByIdAndDelete(params.studentId);
+
+        // Delete audit logs matching student _id
+        await db.collection('auditlogs').deleteMany({
+            $or: [
+                { entityId: new Types.ObjectId(params.studentId) },
+                { entityId: params.studentId }
+            ]
+        });
     }
 
     async getUniqueSchools(): Promise<string[]> {
