@@ -61,6 +61,10 @@ const StudentSchema = new mongoose_1.Schema({
         required: true,
         trim: true,
     },
+    whatsappNumber: {
+        type: String,
+        trim: true,
+    },
     dob: {
         type: String,
         trim: true,
@@ -95,6 +99,10 @@ const StudentSchema = new mongoose_1.Schema({
         type: String,
         trim: true,
         default: '',
+    },
+    cetBucket: {
+        type: String,
+        enum: ['PCM', 'PCB'],
     },
     email: {
         type: String,

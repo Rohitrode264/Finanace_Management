@@ -173,6 +173,31 @@ class AuthController {
             (0, apiResponse_1.sendError)(res, err instanceof Error ? err.message : 'Update failed', 400);
         }
     }
+    async verifyCredential(req, res) {
+        try {
+            const { credential } = req.body;
+            if (!credential) {
+                (0, apiResponse_1.sendError)(res, 'Password is required', 400);
+                return;
+            }
+            // Check if it matches logged-in user's password
+            if (req.user?.userId) {
+                const { User } = await Promise.resolve().then(() => __importStar(require('../models/User.model')));
+                const user = await User.findById(req.user.userId);
+                if (user) {
+                    const isMatch = await auth_service_1.authService.verifyPassword(credential, user.passwordHash);
+                    if (isMatch) {
+                        (0, apiResponse_1.sendSuccess)(res, { verified: true }, 200, 'Password verified');
+                        return;
+                    }
+                }
+            }
+            (0, apiResponse_1.sendError)(res, 'Invalid Admin login password', 401);
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, 'Verification failed', 500);
+        }
+    }
 }
 exports.AuthController = AuthController;
 exports.authController = new AuthController();

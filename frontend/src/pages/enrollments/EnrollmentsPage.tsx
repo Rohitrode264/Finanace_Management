@@ -129,6 +129,13 @@ export function EnrollmentsPage() {
     const transferClasses: AcademicClass[] = ((transferClassesRes?.data?.data as AcademicClass[] | undefined) ?? [])
         .filter(c => c._id !== (currentEnrollment?.academicClassId as any)?._id && c._id !== (currentEnrollment?.academicClassId as any));
 
+    const { data: studentEnrollmentsRes } = useQuery({
+        queryKey: ['student-enrollments', (currentEnrollment?.studentId as any)?._id || currentEnrollment?.studentId],
+        queryFn: () => apiClient.get(`/enrollments/student/${(currentEnrollment?.studentId as any)?._id || currentEnrollment?.studentId}`),
+        enabled: !!currentEnrollment,
+    });
+    const studentEnrollments: (Enrollment & { outstandingBalance?: number })[] = studentEnrollmentsRes?.data?.data || [];
+
     const lookupMutation = useMutation({
         mutationFn: (id: string) => enrollmentService.getById(id),
         onSuccess: (res) => {
@@ -411,7 +418,10 @@ export function EnrollmentsPage() {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 }}>
                             <div>
                                 <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Enrollment Details</h3>
-                                <code style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{currentEnrollment._id}</code>
+                                <div style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', marginTop: 4 }}>
+                                    {templateLabel(currentEnrollment.academicClassId as any)}
+                                </div>
+                                <code style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ID: {currentEnrollment._id}</code>
                             </div>
                             <span style={{
                                 padding: '4px 12px', borderRadius: 99, fontSize: '0.8125rem', fontWeight: 700,
@@ -474,6 +484,35 @@ export function EnrollmentsPage() {
                             Academic Year: <strong>{currentEnrollment.academicYear}</strong> ·
                             Enrolled: <strong>{safeFormatDate(currentEnrollment.createdAt)}</strong>
                         </div>
+
+                        {/* Past/Other Enrollments */}
+                        {studentEnrollments.length > 0 && (
+                            <div style={{ marginTop: 24, marginBottom: 24 }}>
+                                <h4 style={{ fontSize: '0.875rem', fontWeight: 700, marginBottom: 12 }}>Enrollment History</h4>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                                    {studentEnrollments.map(en => (
+                                        <div key={en._id} style={{
+                                            padding: 12, borderRadius: 8, border: '1px solid var(--border)',
+                                            background: en._id === currentEnrollment._id ? 'var(--bg-muted)' : 'var(--bg-surface)',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer'
+                                        }} onClick={() => setCurrentEnrollment(en)}>
+                                            <div>
+                                                <div style={{ fontSize: '0.8125rem', fontWeight: 600 }}>{templateLabel(en.academicClassId as any)}</div>
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{en.academicYear}</div>
+                                            </div>
+                                            <div style={{ textAlign: 'right' }}>
+                                                <span style={{
+                                                    padding: '2px 8px', borderRadius: 99, fontSize: '0.65rem', fontWeight: 700,
+                                                    ...STATUS_STYLE[en.status],
+                                                }}>
+                                                    {en.status}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
                         {canConcession && currentEnrollment.status === 'ONGOING' && currentEnrollment.concessionType === 'NONE' && (
                             <button className="btn-secondary" onClick={() => setShowConcessionForm(true)}>

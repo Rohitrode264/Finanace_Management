@@ -29,6 +29,7 @@ export const PERMISSION_ACTIONS = [
     'VIEW_AUDIT_LOG',
     'UPDATE_SETTING',
     'VIEW_DAILY_ADMISSION',
+    'MANAGE_CET_SETTINGS',
 ] as const;
 
 export const PERMISSION_RESOURCES = [
@@ -44,6 +45,7 @@ export const PERMISSION_RESOURCES = [
     'CONCESSION',
     'USER',
     'SETTING',
+    'CET_SETTINGS',
 ] as const;
 
 export type PermissionAction = (typeof PERMISSION_ACTIONS)[number];

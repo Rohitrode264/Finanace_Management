@@ -8,6 +8,7 @@ export interface IStudent extends Document {
     firstName: string;
     lastName: string;
     phone: string;
+    whatsappNumber?: string;
     dob?: string;
     alternatePhone?: string;
     motherPhone?: string;
@@ -16,6 +17,7 @@ export interface IStudent extends Document {
     motherName?: string;
     schoolName?: string;
     program?: string;
+    cetBucket?: 'PCM' | 'PCB';
     bloodGroup?: string;
     address?: {
         street?: string;
@@ -62,6 +64,10 @@ const StudentSchema = new Schema<IStudent>(
             required: true,
             trim: true,
         },
+        whatsappNumber: {
+            type: String,
+            trim: true,
+        },
         dob: {
             type: String,
             trim: true,
@@ -96,6 +102,10 @@ const StudentSchema = new Schema<IStudent>(
             type: String,
             trim: true,
             default: '',
+        },
+        cetBucket: {
+            type: String,
+            enum: ['PCM', 'PCB'],
         },
         email: {
             type: String,

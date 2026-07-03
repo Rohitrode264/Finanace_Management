@@ -12,12 +12,20 @@ import { z } from 'zod';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { studentsService } from '../../api/services/students.service';
-import { categoryService } from '../../api/services/category.service';
 import { enrollmentService } from '../../api/services/enrollment.service';
 import { classesService } from '../../api/services/classes.service';
 import type { AcademicClass, ClassTemplate } from '../../types';
 import { formatCurrency } from '../../utils/currency';
 import toast from 'react-hot-toast';
+
+// Detect CET class by checking if the rendered class label contains 'CET'
+// e.g. "Class 11 & 12 CET" → true
+const isCETClass = (cls: AcademicClass): boolean => {
+    const t = typeof cls.templateId === 'object' ? cls.templateId as ClassTemplate : null;
+    if (!t) return false;
+    const label = `Class ${t.grade}${t.stream ? ` ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''}`;
+    return label.toUpperCase().includes('CET');
+};
 
 const CURRENT_YEAR = `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`;
 
@@ -31,7 +39,6 @@ const studentSchema = z.object({
     email: z.string().email('Invalid email format').optional().or(z.literal('')),
     fatherName: z.string().min(1, "Father's name required").max(100),
     motherName: z.string().max(100).optional().or(z.literal('')),
-    program: z.string().optional(),
     schoolName: z.string().max(200).optional().or(z.literal('')),
     bloodGroup: z.string().optional(),
     address: z.object({
@@ -46,6 +53,8 @@ const studentSchema = z.object({
         yearPassout: z.string().optional(),
         extraNote: z.string().optional(),
     }).optional(),
+    whatsappNumber: z.string().optional().or(z.literal('')),
+    cetBucket: z.enum(['PCM', 'PCB']).optional().or(z.literal('')),
 });
 
 type StudentForm = z.infer<typeof studentSchema>;
@@ -66,9 +75,9 @@ export function NewAdmissionPage() {
     const [enrollYear, setEnrollYear] = useState(CURRENT_YEAR);
     const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
 
-    const { register, handleSubmit, formState: { errors }, getValues } = useForm<StudentForm>({
+    const { register, handleSubmit, formState: { errors }, getValues, trigger, setValue } = useForm<StudentForm>({
         resolver: zodResolver(studentSchema),
-        defaultValues: { email: '', bloodGroup: '', phone: '', motherPhone: '', address: { street: '', city: '', state: '', zipCode: '' } }
+        defaultValues: { email: '', bloodGroup: '', phone: '', motherPhone: '', whatsappNumber: '', cetBucket: undefined, address: { street: '', city: '', state: '', zipCode: '' } }
     });
 
     const [createdStudentId, setCreatedStudentId] = useState<string | null>(null);
@@ -89,6 +98,18 @@ export function NewAdmissionPage() {
     });
     const classes: AcademicClass[] = (classesRes?.data?.data as AcademicClass[] | undefined) ?? [];
 
+    // Derive CET status from the selected class's template stream
+    const selectedClass = classes.find(c => c._id === selectedClassId);
+    const isCET = selectedClass ? isCETClass(selectedClass) : false;
+
+    // Clear CET fields when a non-CET class is selected
+    useEffect(() => {
+        if (!isCET) {
+            setValue('whatsappNumber', '');
+            setValue('cetBucket', undefined);
+        }
+    }, [isCET, setValue]);
+
     const { data: sessionsRes } = useQuery({
         queryKey: ['unique-sessions'],
         queryFn: () => classesService.listSessions(),
@@ -103,11 +124,6 @@ export function NewAdmissionPage() {
         }
     }, [sessions]);
 
-    const { data: catRes } = useQuery({
-        queryKey: ['categories'],
-        queryFn: () => categoryService.list(),
-    });
-    const categories = catRes?.data?.data || [];
 
     const { data: schoolsRes } = useQuery({
         queryKey: ['unique-schools'],
@@ -138,6 +154,8 @@ export function NewAdmissionPage() {
                 motherName: studentData.motherName ? formatName(studentData.motherName) : '',
                 phone: studentData.phone.trim(),
                 motherPhone: studentData.motherPhone ? studentData.motherPhone.trim() : '',
+                whatsappNumber: studentData.whatsappNumber ? studentData.whatsappNumber.trim() : '',
+                cetBucket: studentData.cetBucket,
             };
 
             const studentRes = await studentsService.create(formattedData as any);
@@ -174,8 +192,17 @@ export function NewAdmissionPage() {
         onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Admissions process failed midway'),
     });
 
-    const handleWizardNext = () => {
+    const handleWizardNext = async () => {
         if (wizardStep === 1) {
+            if (isCET) {
+                await trigger(['whatsappNumber', 'cetBucket']);
+                const whatsapp = getValues('whatsappNumber');
+                const bucket = getValues('cetBucket');
+                if (!whatsapp || !bucket) {
+                    toast.error('WhatsApp Number and CET Bucket are required for CET students.');
+                    return;
+                }
+            }
             handleSubmit(() => setWizardStep(2))();
         } else if (wizardStep === 2) {
             setWizardStep(3);
@@ -316,14 +343,6 @@ export function NewAdmissionPage() {
                                             <input {...register('address.state')} list="states-list" className="form-input" placeholder="e.g. Maharashtra" />
                                         </div>
 
-                                        <div style={{ gridColumn: '1 / -1' }}>
-                                            <label className="form-label">Program Category *</label>
-                                            <select {...register('program')} className={`form-select ${errors.program ? 'error' : ''}`}>
-                                                <option value="">Select a program...</option>
-                                                {categories.map((c: any) => <option key={c._id} value={c.name}>{c.name}</option>)}
-                                                <option value="Other">Other</option>
-                                            </select>
-                                        </div>
                                     </div>
 
                                     <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
@@ -427,11 +446,91 @@ export function NewAdmissionPage() {
                                     )}
                                 </div>
 
+                                {/* CET-specific fields: appear automatically when a CET class is selected */}
+                                {isCET && (
+                                    <div style={{
+                                        marginTop: 24,
+                                        borderRadius: 16,
+                                        border: '1.5px solid var(--accent)',
+                                        overflow: 'hidden',
+                                    }}>
+                                        {/* Header */}
+                                        <div style={{
+                                            display: 'flex', alignItems: 'flex-start', gap: 14,
+                                            padding: '16px 20px',
+                                            background: 'linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(139,92,246,0.08) 100%)',
+                                            borderBottom: '1px solid rgba(99,102,241,0.2)',
+                                        }}>
+                                            <div style={{
+                                                width: 36, height: 36, borderRadius: 10, flexShrink: 0,
+                                                background: 'var(--accent)', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center',
+                                            }}>
+                                                <GraduationCap size={18} color="#fff" />
+                                            </div>
+                                            <div>
+                                                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: 3 }}>
+                                                    Learning Portal Access
+                                                </div>
+                                                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
+                                                    These details are required to activate this student's account on the <strong>NCP Learning Portal</strong>. The WhatsApp number is used for OTP-based login, and the subject bucket determines their course access.
+                                                </div>
+                                            </div>
+                                        </div>
+                                        {/* Fields */}
+                                        <div className="form-grid" style={{ padding: '20px' }}>
+                                            <div>
+                                                <label className="form-label">WhatsApp Number *</label>
+                                                <input
+                                                    {...register('whatsappNumber')}
+                                                    className={`form-input ${errors.whatsappNumber ? 'error' : ''}`}
+                                                    placeholder="10-digit number (used for OTP login)"
+                                                />
+                                                {errors.whatsappNumber && (
+                                                    <span style={{ color: 'var(--danger)', fontSize: '0.75rem', marginTop: 4, display: 'block' }}>
+                                                        {errors.whatsappNumber.message}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <div>
+                                                <label className="form-label">Subject Bucket *</label>
+                                                <select
+                                                    {...register('cetBucket')}
+                                                    className={`form-select ${errors.cetBucket ? 'error' : ''}`}
+                                                >
+                                                    <option value="">Select subject group</option>
+                                                    <option value="PCM">PCM — Physics, Chemistry & Maths</option>
+                                                    <option value="PCB">PCB — Physics, Chemistry & Biology</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div style={{ display: 'flex', gap: 12, justifyContent: 'space-between', marginTop: 40, paddingTop: 24, borderTop: '1px solid var(--border)', flexWrap: 'wrap' }}>
                                     <button type="button" className="btn-secondary" onClick={() => setWizardStep(1)} style={{ flex: '1 1 auto', justifyContent: 'center' }}><ChevronLeft size={16} /> Back</button>
                                     <div style={{ display: 'flex', gap: 12, flex: '1 1 auto', flexWrap: 'wrap' }}>
                                         <button type="button" className="btn-ghost" onClick={() => { setSelectedClassId(''); setWizardStep(3); }} style={{ flex: '1 1 auto', justifyContent: 'center' }}>Skip Course</button>
-                                        <button type="button" className="btn-primary" onClick={() => setWizardStep(3)} style={{ flex: '1 1 auto', justifyContent: 'center' }} disabled={!selectedClassId && !enrollYear}>Next: Concession <ChevronRight size={16} /></button>
+                                        <button
+                                            type="button"
+                                            className="btn-primary"
+                                            onClick={async () => {
+                                                if (isCET) {
+                                                    await trigger(['whatsappNumber', 'cetBucket']);
+                                                    const whatsapp = getValues('whatsappNumber');
+                                                    const bucket = getValues('cetBucket');
+                                                    if (!whatsapp || !bucket) {
+                                                        toast.error('WhatsApp Number and CET Bucket are required for CET students.');
+                                                        return;
+                                                    }
+                                                }
+                                                setWizardStep(3);
+                                            }}
+                                            style={{ flex: '1 1 auto', justifyContent: 'center' }}
+                                            disabled={!selectedClassId && !enrollYear}
+                                        >
+                                            Next: Concession <ChevronRight size={16} />
+                                        </button>
                                     </div>
                                 </div>
                             </motion.div>

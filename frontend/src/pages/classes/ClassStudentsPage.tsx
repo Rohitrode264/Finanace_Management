@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, Filter, CreditCard, User, ExternalLink, FileSpreadsheet } from 'lucide-react';
+import { ArrowLeft, Filter, CreditCard, User, ExternalLink, FileSpreadsheet, Pencil } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { SearchInput } from '../../components/ui/SearchInput';
 import { classesService } from '../../api/services/classes.service';
@@ -328,18 +328,19 @@ export function ClassStudentsPage() {
                                 <th style={{ textAlign: 'right' }}>Outstanding</th>
                                 <th>Installments</th>
                                 <th style={{ textAlign: 'center' }}>Ledger</th>
+                                <th style={{ textAlign: 'center' }}>Edit</th>
                             </tr>
                         </thead>
                         <tbody>
                             {eLoading || cLoading ? (
                                 Array.from({ length: 5 }).map((_, i) => (
-                                    <tr key={i}>{Array.from({ length: 8 }).map((_, j) => (
+                                    <tr key={i}>{Array.from({ length: 9 }).map((_, j) => (
                                         <td key={j}><div className="skeleton" style={{ height: 16, width: '80%' }} /></td>
                                     ))}</tr>
                                 ))
                             ) : filteredEnrollments.length === 0 ? (
                                 <tr>
-                                    <td colSpan={8} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
+                                    <td colSpan={9} style={{ textAlign: 'center', padding: 48, color: 'var(--text-muted)' }}>
                                         No students found matching your criteria.
                                     </td>
                                 </tr>
@@ -402,6 +403,16 @@ export function ClassStudentsPage() {
                                                     style={{ padding: '6px 8px', borderRadius: 6 }}
                                                 >
                                                     <ExternalLink size={14} />
+                                                </button>
+                                            </td>
+                                            <td style={{ textAlign: 'center' }}>
+                                                <button
+                                                    onClick={() => navigate(`/students/${e.studentId?._id}/edit`)}
+                                                    className="btn-secondary"
+                                                    style={{ padding: '6px 8px', borderRadius: 6 }}
+                                                    title="Edit student details"
+                                                >
+                                                    <Pencil size={14} />
                                                 </button>
                                             </td>
                                         </tr>

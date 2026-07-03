@@ -16,6 +16,8 @@ export class StudentService {
         motherName?: string;
         schoolName?: string;
         program?: string;
+        whatsappNumber?: string;
+        cetBucket?: 'PCM' | 'PCB';
         email?: string;
         bloodGroup?: string;
         address?: {
@@ -56,6 +58,8 @@ export class StudentService {
             motherName: params.motherName?.trim(),
             schoolName: params.schoolName?.trim(),
             program: params.program?.trim(),
+            whatsappNumber: params.whatsappNumber?.trim(),
+            cetBucket: params.cetBucket,
             email: params.email?.trim(),
             bloodGroup: params.bloodGroup?.trim(),
             address: params.address,
@@ -168,13 +172,15 @@ export class StudentService {
     async search(query: string, limit = 20, skip = 0, program?: string): Promise<{ students: IStudent[]; total: number }> {
         if (!query || query.trim().length === 0) return { students: [], total: 0 };
 
-        const searchRegex = new RegExp(query.trim(), 'i');
+        const terms = query.trim().split(/\s+/);
         const searchFilter: any = {
-            $or: [
-                { firstName: searchRegex },
-                { lastName: searchRegex },
-                { admissionNumber: searchRegex }
-            ]
+            $and: terms.map(term => ({
+                $or: [
+                    { firstName: new RegExp(term, 'i') },
+                    { lastName: new RegExp(term, 'i') },
+                    { admissionNumber: new RegExp(term, 'i') }
+                ]
+            }))
         };
 
         const filter: any = { ...searchFilter };

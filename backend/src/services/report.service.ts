@@ -384,6 +384,10 @@ export class ReportService {
 
             const paid = paidMap.get(enrollment._id.toString()) ?? 0;
             const outstanding = Math.max(0, enrollment.netFee - paid);
+            
+            // Exclude students who are done paying whole fees from total, collected, and concession counts
+            if (outstanding <= 0) continue;
+
             const row: EagleEyeStudentRow = {
                 name: `${student.firstName} ${student.lastName}`,
                 admissionNumber: student.admissionNumber,

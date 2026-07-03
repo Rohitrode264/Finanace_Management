@@ -6,6 +6,7 @@ export interface IStudent extends Document {
     firstName: string;
     lastName: string;
     phone: string;
+    whatsappNumber?: string;
     dob?: string;
     alternatePhone?: string;
     motherPhone?: string;
@@ -14,6 +15,7 @@ export interface IStudent extends Document {
     motherName?: string;
     schoolName?: string;
     program?: string;
+    cetBucket?: 'PCM' | 'PCB';
     bloodGroup?: string;
     address?: {
         street?: string;

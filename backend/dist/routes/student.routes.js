@@ -16,5 +16,6 @@ router.get('/meta/cities', (0, permission_middleware_1.permissionMiddleware)('VI
 router.get('/meta/states', (0, permission_middleware_1.permissionMiddleware)('VIEW_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.getStates(req, res));
 router.put('/:id', (0, permission_middleware_1.permissionMiddleware)('UPDATE_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.updateStudent(req, res));
 router.patch('/:id/status', (0, permission_middleware_1.permissionMiddleware)('UPDATE_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.updateStatus(req, res));
+router.delete('/:id/everything', (0, permission_middleware_1.permissionMiddleware)('DELETE_STUDENT', 'STUDENT'), (req, res) => student_controller_1.studentController.fullyDeleteStudent(req, res));
 exports.default = router;
 //# sourceMappingURL=student.routes.js.map

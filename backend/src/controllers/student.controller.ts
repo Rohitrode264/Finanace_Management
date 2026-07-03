@@ -10,6 +10,7 @@ const createStudentSchema = z.object({
     firstName: z.string().min(1).max(100),
     lastName: z.string().min(1).max(100),
     phone: z.string().min(10).max(15),
+    whatsappNumber: z.string().max(15).optional().or(z.literal('')),
     dob: z.string().optional().or(z.literal('')),
     alternatePhone: z.string().max(15).optional().or(z.literal('')),
     motherPhone: z.string().max(15).optional().or(z.literal('')),
@@ -18,6 +19,7 @@ const createStudentSchema = z.object({
     motherName: z.string().max(100).optional().or(z.literal('')),
     schoolName: z.string().max(200).optional().or(z.literal('')),
     program: z.string().max(100).optional().or(z.literal('')),
+    cetBucket: z.enum(['PCM', 'PCB']).optional().or(z.literal('')),
     bloodGroup: z.string().optional().or(z.literal('')),
     address: z.object({
         street: z.string().optional(),
@@ -51,6 +53,8 @@ export class StudentController {
             const meta = auditService.extractRequestMeta(req);
             const student = await studentService.createStudent({
                 ...parsed.data,
+                cetBucket: parsed.data.cetBucket === '' ? undefined : parsed.data.cetBucket,
+                whatsappNumber: parsed.data.whatsappNumber === '' ? undefined : parsed.data.whatsappNumber,
                 createdBy: req.user!.userId,
                 ...meta,
             });
@@ -72,7 +76,11 @@ export class StudentController {
             const meta = auditService.extractRequestMeta(req);
             const student = await studentService.updateStudent({
                 studentId: req.params['id']!,
-                data: parsed.data,
+                data: {
+                    ...parsed.data,
+                    cetBucket: parsed.data.cetBucket === '' ? undefined : parsed.data.cetBucket,
+                    whatsappNumber: parsed.data.whatsappNumber === '' ? undefined : parsed.data.whatsappNumber,
+                },
                 updatedBy: req.user!.userId,
                 ...meta,
             });
@@ -87,7 +95,37 @@ export class StudentController {
         try {
             const student = await studentService.findById(req.params['id']!);
             if (!student) { sendError(res, 'Student not found', 404); return; }
-            sendSuccess(res, student.toJSON ? student.toJSON() : student);
+
+            const plain = student.toJSON ? student.toJSON() : student as any;
+
+            // Enrich with currentEnrollment (same logic as listStudents)
+            const enrollment = await Enrollment.findOne({
+                studentId: student._id,
+                status: 'ONGOING',
+            })
+                .sort({ createdAt: -1 })
+                .populate({
+                    path: 'academicClassId',
+                    populate: { path: 'templateId', select: 'grade stream board' },
+                    select: 'templateId section academicYear',
+                })
+                .lean();
+
+            if (enrollment && enrollment.academicClassId && typeof enrollment.academicClassId === 'object') {
+                const ac = enrollment.academicClassId as any;
+                const tmpl = ac.templateId;
+                plain.currentEnrollment = {
+                    academicYear: enrollment.academicYear,
+                    className: tmpl
+                        ? `Class ${tmpl.grade}${tmpl.stream ? ' ' + tmpl.stream : ''}${tmpl.board ? ` (${tmpl.board})` : ''}`
+                        : 'N/A',
+                    section: ac.section || '',
+                };
+            } else {
+                plain.currentEnrollment = null;
+            }
+
+            sendSuccess(res, plain);
         } catch { sendError(res, 'Failed to fetch student', 500); }
     }
 

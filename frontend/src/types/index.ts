@@ -84,6 +84,8 @@ export interface Student {
     schoolName?: string;
     email?: string;
     program?: string;
+    whatsappNumber?: string;
+    cetBucket?: 'PCM' | 'PCB';
     bloodGroup?: string;
     address?: {
         street?: string;

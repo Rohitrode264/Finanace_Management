@@ -43,6 +43,7 @@ exports.PERMISSION_ACTIONS = [
     'VIEW_PAYMENT',
     'CREATE_STUDENT',
     'UPDATE_STUDENT',
+    'DELETE_STUDENT',
     'VIEW_STUDENT',
     'CREATE_ENROLLMENT',
     'VIEW_ENROLLMENT',
@@ -63,6 +64,7 @@ exports.PERMISSION_ACTIONS = [
     'VIEW_AUDIT_LOG',
     'UPDATE_SETTING',
     'VIEW_DAILY_ADMISSION',
+    'MANAGE_CET_SETTINGS',
 ];
 exports.PERMISSION_RESOURCES = [
     'PAYMENT',
@@ -77,6 +79,7 @@ exports.PERMISSION_RESOURCES = [
     'CONCESSION',
     'USER',
     'SETTING',
+    'CET_SETTINGS',
 ];
 const PermissionSchema = new mongoose_1.Schema({
     action: {

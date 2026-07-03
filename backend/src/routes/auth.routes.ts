@@ -14,5 +14,6 @@ router.patch('/register-fingerprint', authMiddleware, (req, res) => authControll
 router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
 router.post('/reset-password', (req, res) => authController.resetPassword(req, res));
 router.patch('/change-password', authMiddleware, (req, res) => authController.changePassword(req, res));
+router.post('/verify-credential', authMiddleware, (req, res) => authController.verifyCredential(req, res));
 
 export default router;

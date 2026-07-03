@@ -6,6 +6,7 @@ export declare class AuthController {
     forgotPassword(req: Request, res: Response): Promise<void>;
     resetPassword(req: Request, res: Response): Promise<void>;
     changePassword(req: Request, res: Response): Promise<void>;
+    verifyCredential(req: Request, res: Response): Promise<void>;
 }
 export declare const authController: AuthController;
 //# sourceMappingURL=auth.controller.d.ts.map

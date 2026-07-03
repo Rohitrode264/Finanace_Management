@@ -9,6 +9,9 @@ const updateSettingSchema = zod_1.z.object({
     key: zod_1.z.string(),
     value: zod_1.z.any(),
 });
+const cetProgramsSchema = zod_1.z.object({
+    programs: zod_1.z.array(zod_1.z.string()),
+});
 class SettingsController {
     async getSetting(req, res) {
         try {
@@ -43,6 +46,40 @@ class SettingsController {
         }
         catch (err) {
             (0, apiResponse_1.sendError)(res, 'Failed to update setting', 500);
+        }
+    }
+    async getCETPrograms(req, res) {
+        try {
+            const setting = await SystemSetting_model_1.SystemSetting.findOne({ key: 'CET_PROGRAMS' });
+            (0, apiResponse_1.sendSuccess)(res, { programs: setting?.value ?? [] });
+        }
+        catch {
+            (0, apiResponse_1.sendError)(res, 'Failed to fetch CET programs', 500);
+        }
+    }
+    async updateCETPrograms(req, res) {
+        const parsed = cetProgramsSchema.safeParse(req.body);
+        if (!parsed.success) {
+            (0, apiResponse_1.sendError)(res, 'Validation failed', 422, 'VALIDATION_ERROR', parsed.error.format());
+            return;
+        }
+        try {
+            const { programs } = parsed.data;
+            const before = await SystemSetting_model_1.SystemSetting.findOne({ key: 'CET_PROGRAMS' });
+            const setting = await SystemSetting_model_1.SystemSetting.findOneAndUpdate({ key: 'CET_PROGRAMS' }, { value: programs, updatedBy: req.user.userId }, { upsert: true, new: true });
+            audit_service_1.auditService.logAsync({
+                actorId: req.user.userId,
+                action: 'SETTING_UPDATED',
+                entityType: 'SETTING',
+                entityId: 'CET_PROGRAMS',
+                before: before?.value ? { value: before.value } : null,
+                after: { value: programs },
+                ipAddress: audit_service_1.auditService.extractRequestMeta(req).ipAddress,
+            });
+            (0, apiResponse_1.sendSuccess)(res, { programs: setting.value }, 200, 'CET programs updated');
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, 'Failed to update CET programs', 500);
         }
     }
 }

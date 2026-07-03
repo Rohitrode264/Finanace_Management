@@ -12,6 +12,8 @@ export declare class StudentService {
         motherName?: string;
         schoolName?: string;
         program?: string;
+        whatsappNumber?: string;
+        cetBucket?: 'PCM' | 'PCB';
         email?: string;
         bloodGroup?: string;
         address?: {
@@ -55,6 +57,12 @@ export declare class StudentService {
         students: IStudent[];
         total: number;
     }>;
+    fullyDeleteStudentEverything(params: {
+        studentId: string;
+        deletedBy: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<void>;
     getUniqueSchools(): Promise<string[]>;
     getUniqueCities(): Promise<string[]>;
     getUniqueStates(): Promise<string[]>;

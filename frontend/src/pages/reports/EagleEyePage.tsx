@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Eye, AlertTriangle, Users, TrendingUp, Search, ChevronDown, ChevronRight, Send, Printer, FileSpreadsheet, Filter } from 'lucide-react';
+import { Eye, AlertTriangle, Users, TrendingUp, Search, ChevronDown, ChevronRight, Send, Printer, FileSpreadsheet, Filter, Lock, Unlock, Key } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { formatCurrency } from '../../utils/currency';
@@ -41,8 +41,8 @@ const pct = (collected: number, total: number) =>
     total > 0 ? Math.round((collected / total) * 100) : 0;
 
 // ── KPI Card ─────────────────────────────────────────────────────────────────
-function KpiCard({ label, value, sub, color, isCurrency = false }:
-    { label: string; value: number; sub?: string; color: string; isCurrency?: boolean }) {
+function KpiCard({ label, value, sub, color, isCurrency = false, isMasked = false }:
+    { label: string; value: number; sub?: string; color: string; isCurrency?: boolean; isMasked?: boolean }) {
     return (
         <div className="stat-card">
             <div className="stat-card-bar" style={{ background: color }} />
@@ -51,9 +51,9 @@ function KpiCard({ label, value, sub, color, isCurrency = false }:
                     {label}
                 </div>
                 <div style={{ fontSize: '1.4rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 4, fontVariantNumeric: 'tabular-nums' }}>
-                    {isCurrency ? formatCurrency(value) : value.toLocaleString('en-IN')}
+                    {isMasked ? (isCurrency ? '₹ ••••••••' : '••••••••') : (isCurrency ? formatCurrency(value) : value.toLocaleString('en-IN'))}
                 </div>
-                {sub && <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 3 }}>{sub}</div>}
+                {sub && <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginTop: 3 }}>{isMasked && isCurrency ? 'Confidential • Locked' : sub}</div>}
             </div>
         </div>
     );
@@ -70,7 +70,7 @@ function ProgressBar({ value, max, color = '#6366f1' }: { value: number; max: nu
 }
 
 // ── Class Group Row ───────────────────────────────────────────────────────────
-function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: string }) {
+function ClassSection({ group, search, isMasked = false }: { group: EagleEyeClassGroup; search: string; isMasked?: boolean }) {
     const [open, setOpen] = useState(false);
     const collPct = pct(group.collected, group.totalFees);
 
@@ -107,23 +107,23 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                     <div className="desktop-only" style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
                         <div style={{ textAlign: 'right', minWidth: 90 }}>
                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Total Fees</div>
-                            <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{formatCurrency(group.totalFees)}</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>{isMasked ? '₹ ••••••' : formatCurrency(group.totalFees)}</div>
                         </div>
                         <div style={{ textAlign: 'right', minWidth: 100 }}>
                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Collected</div>
-                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{isMasked ? '₹ ••••••' : formatCurrency(group.collected)}</div>
                             <ProgressBar value={group.collected} max={group.totalFees} color="#059669" />
                         </div>
                         <div style={{ textAlign: 'right', minWidth: 90 }}>
                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Outstanding</div>
                             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
-                                {formatCurrency(group.outstanding)}
+                                {isMasked ? '₹ ••••••' : formatCurrency(group.outstanding)}
                             </div>
                         </div>
                         <div style={{ textAlign: 'right', minWidth: 70 }}>
                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>Collection %</div>
                             <div style={{ fontWeight: 800, fontSize: '0.92rem', color: collPct >= 80 ? '#059669' : collPct >= 50 ? '#d97706' : '#dc2626' }}>
-                                {collPct}%
+                                {isMasked ? '••%' : `${collPct}%`}
                             </div>
                         </div>
                     </div>
@@ -134,12 +134,12 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                     <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--border)', paddingTop: 10 }}>
                         <div>
                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Collected</div>
-                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{formatCurrency(group.collected)}</div>
+                            <div style={{ fontWeight: 700, fontSize: '0.88rem', color: '#059669' }}>{isMasked ? '₹ ••••••' : formatCurrency(group.collected)}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.71rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Outstanding</div>
                             <div style={{ fontWeight: 700, fontSize: '0.88rem', color: group.outstanding > 0 ? '#dc2626' : '#059669' }}>
-                                {formatCurrency(group.outstanding)}
+                                {isMasked ? '₹ ••••••' : formatCurrency(group.outstanding)}
                             </div>
                         </div>
                     </div>
@@ -174,16 +174,16 @@ function ClassSection({ group, search }: { group: EagleEyeClassGroup; search: st
                                             <div style={{ fontWeight: 600 }}>{group.className}</div>
                                             <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>{group.academicYear}</div>
                                         </td>
-                                        <td style={{ padding: '6px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.netFee)}</td>
-                                        <td style={{ padding: '6px 10px', textAlign: 'right', color: '#059669', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.paid)}</td>
-                                        <td style={{ padding: '6px 10px', textAlign: 'right', color: s.outstanding > 0 ? '#dc2626' : '#059669', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{formatCurrency(s.outstanding)}</td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'right', fontVariantNumeric: 'tabular-nums' }}>{isMasked ? '₹ ••••••' : formatCurrency(s.netFee)}</td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'right', color: '#059669', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>{isMasked ? '₹ ••••••' : formatCurrency(s.paid)}</td>
+                                        <td style={{ padding: '6px 10px', textAlign: 'right', color: s.outstanding > 0 ? '#dc2626' : '#059669', fontWeight: 700, fontVariantNumeric: 'tabular-nums' }}>{isMasked ? '₹ ••••••' : formatCurrency(s.outstanding)}</td>
                                         <td style={{ padding: '6px 10px', textAlign: 'center' }}>
                                             <span style={{
                                                 display: 'inline-block', padding: '2px 8px', borderRadius: 99, fontSize: '0.65rem', fontWeight: 700,
                                                 background: s.outstanding <= 0 ? 'rgba(5,150,105,0.1)' : s.outstanding > s.netFee * 0.5 ? 'rgba(220,38,38,0.1)' : 'rgba(217,119,6,0.1)',
                                                 color: s.outstanding <= 0 ? '#059669' : s.outstanding > s.netFee * 0.5 ? '#dc2626' : '#d97706',
                                             }}>
-                                                {s.outstanding <= 0 ? 'Cleared' : s.outstanding > s.netFee * 0.5 ? 'High Due' : 'Partial'}
+                                                {isMasked ? 'Confidential' : s.outstanding <= 0 ? 'Cleared' : s.outstanding > s.netFee * 0.5 ? 'High Due' : 'Partial'}
                                             </span>
                                         </td>
                                     </tr>
@@ -248,11 +248,28 @@ export function EagleEyePage() {
     const canView = usePermission('VIEW_REPORT');
     const [search, setSearch] = useState('');
     const [selectedYear, setSelectedYear] = useState('All');
+    const [isMasked, setIsMasked] = useState(true);
+    const [credentialInput, setCredentialInput] = useState('');
+    const [credentialError, setCredentialError] = useState('');
+
+    const handleUnlockSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (credentialInput.trim() === 'ncp1997') {
+            setIsMasked(false);
+            setCredentialInput('');
+            setCredentialError('');
+            toast.success('🔓 Financial revenue unlocked!');
+        } else {
+            const msg = 'Invalid password';
+            setCredentialError(msg);
+            toast.error(msg);
+        }
+    };
 
     const { data: res, isLoading, refetch, isFetching } = useQuery({
         queryKey: ['eagle-eye'],
         queryFn: () => apiClient.get('/reports/eagle-eye'),
-        enabled: canView,
+        enabled: canView && !isMasked,
         staleTime: 2 * 60 * 1000,
     });
 
@@ -381,276 +398,372 @@ export function EagleEyePage() {
                 icon={Eye}
             />
 
-            {/* Action Bar */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap', background: 'var(--bg-surface)', padding: '12px 16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
-                <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
-                    <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
-                    <input
-                        value={search}
-                        onChange={e => setSearch(e.target.value)}
-                        className="form-input"
-                        placeholder="Search student..."
-                        style={{ paddingLeft: 36, width: '100%', height: 40 }}
-                    />
-                </div>
+            {/* Full Page Blur & Security Overlay Container */}
+            <div style={{ position: 'relative', minHeight: isMasked ? 'calc(100vh - 160px)' : undefined }}>
+                {/* Embedded Glass Security Overlay when Masked */}
+                {isMasked && (
+                    <div style={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 10,
+                        background: 'rgba(0, 113, 227, 0.12)', // Blue tint overlay matching the --accent color
+                        backdropFilter: 'blur(4px)',
+                        WebkitBackdropFilter: 'blur(4px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 20,
+                        borderRadius: 'var(--radius-lg)',
+                        overflow: 'hidden'
+                    }}>
+                        <div style={{
+                            background: 'var(--bg-surface)',
+                            border: '1px solid rgba(0, 113, 227, 0.3)',
+                            borderRadius: 'var(--radius-2xl)',
+                            padding: '36px 32px',
+                            width: '100%',
+                            maxWidth: 440,
+                            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.18)',
+                            textAlign: 'center',
+                            position: 'relative'
+                        }}>
+                            <div style={{ width: 64, height: 64, borderRadius: '20px', background: 'linear-gradient(135deg, var(--accent), #0058b0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', margin: '0 auto 20px', boxShadow: '0 10px 25px rgba(0, 113, 227, 0.35)' }}>
+                                <Lock size={32} />
+                            </div>
+                            <h3 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '-0.02em' }}>
+                                Confidential Financial Mode
+                            </h3>
+                            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24, padding: '0 10px' }}>
+                                This section is blurred for privacy. Please enter your passcode to reveal all institutional revenue and student ledgers.
+                            </p>
+                            
+                            <form onSubmit={handleUnlockSubmit}>
+                                <div style={{ marginBottom: 18 }}>
+                                    <input
+                                        type="password"
+                                        value={credentialInput}
+                                        onChange={e => setCredentialInput(e.target.value)}
+                                        placeholder="Enter passcode..."
+                                        className="form-input"
+                                        style={{ width: '100%', height: 50, textAlign: 'center', fontSize: '1.15rem', letterSpacing: '0.1em', fontWeight: 700, borderRadius: '12px', background: 'var(--bg-subtle)' }}
+                                        autoFocus
+                                    />
+                                </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 150px', maxWidth: 200 }}>
-                    <Filter size={15} color="var(--text-muted)" />
-                    <select 
-                        value={selectedYear} 
-                        onChange={e => setSelectedYear(e.target.value)}
-                        className="form-select"
-                        style={{ height: 40, flex: 1 }}
-                    >
-                        <option value="All">All Years</option>
-                        {report?.availableAcademicYears?.map(y => (
-                            <option key={y} value={y}>{y}</option>
-                        ))}
-                    </select>
-                </div>
+                                {credentialError && (
+                                    <div style={{ fontSize: '0.82rem', color: '#dc2626', background: 'rgba(220,38,38,0.08)', padding: '10px 14px', borderRadius: 10, marginBottom: 18, fontWeight: 700 }}>
+                                        {credentialError}
+                                    </div>
+                                )}
 
-                <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
-                    <button className="btn-secondary" onClick={() => refetch()} disabled={isFetching} style={{ height: 40, padding: '0 16px' }}>
-                        <Eye size={14} style={{ marginRight: 6 }} /> {isFetching ? '...' : 'Refresh'}
-                    </button>
+                                <button
+                                    type="submit"
+                                    className="btn-primary"
+                                    disabled={!credentialInput.trim()}
+                                    style={{ width: '100%', height: 48, background: 'linear-gradient(135deg, var(--accent), #0058b0)', fontSize: '0.95rem', fontWeight: 800, borderRadius: '12px', boxShadow: '0 8px 20px rgba(0, 113, 227, 0.3)' }}
+                                >
+                                    <Key size={16} style={{ marginRight: 8 }} /> Unlock Dashboard
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                )}
 
-                    {/* Export Group */}
-                    <div style={{ display: 'flex', background: 'var(--bg-subtle)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>
-                        <button
-                            className="btn-ghost"
-                            onClick={handleDownloadPdf}
-                            disabled={!report}
-                            title="Download PDF"
-                            style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600 }}
-                        >
-                            <Printer size={14} style={{ marginRight: 6 }} /> PDF
-                        </button>
-                        <div style={{ width: 1, background: 'var(--border)', margin: '4px 0' }} />
-                        <button
-                            className="btn-ghost"
-                            onClick={downloadExcel}
-                            disabled={!report}
-                            title="Export Excel"
-                            style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600 }}
-                        >
-                            <FileSpreadsheet size={14} style={{ marginRight: 6 }} /> Excel
-                        </button>
+                {/* Blurred Content Container */}
+                <div style={{ filter: isMasked ? 'blur(4px)' : undefined, opacity: isMasked ? 0.5 : 1, pointerEvents: isMasked ? 'none' : undefined, userSelect: isMasked ? 'none' : undefined, transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+                    {/* Action Bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap', background: 'var(--bg-surface)', padding: '12px 16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
+                        <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
+                            <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+                            <input
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                className="form-input"
+                                placeholder="Search student..."
+                                style={{ paddingLeft: 36, width: '100%', height: 40 }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: '1 1 150px', maxWidth: 200 }}>
+                            <Filter size={15} color="var(--text-muted)" />
+                            <select 
+                                value={selectedYear} 
+                                onChange={e => setSelectedYear(e.target.value)}
+                                className="form-select"
+                                style={{ height: 40, flex: 1 }}
+                            >
+                                <option value="All">All Years</option>
+                                {report?.availableAcademicYears?.map(y => (
+                                    <option key={y} value={y}>{y}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
+                            <button
+                                className={isMasked ? "btn-primary" : "btn-secondary"}
+                                onClick={() => {
+                                    if (!isMasked) {
+                                        setIsMasked(true);
+                                        toast.success('🔒 Financial revenue locked for privacy.');
+                                    }
+                                }}
+                                style={{ height: 40, padding: '0 16px', background: isMasked ? 'linear-gradient(135deg, var(--accent), #0058b0)' : undefined, color: isMasked ? '#fff' : undefined }}
+                                title={isMasked ? "Unlock Revenue Data" : "Lock Revenue Data"}
+                            >
+                                {isMasked ? <Lock size={14} style={{ marginRight: 6 }} /> : <Unlock size={14} style={{ marginRight: 6 }} />}
+                                {isMasked ? 'Reveal Financials' : 'Lock Financials'}
+                            </button>
+
+                            <button className="btn-secondary" onClick={() => refetch()} disabled={isFetching} style={{ height: 40, padding: '0 16px' }}>
+                                <Eye size={14} style={{ marginRight: 6 }} /> {isFetching ? '...' : 'Refresh'}
+                            </button>
+
+                            {/* Export Group */}
+                            <div style={{ display: 'flex', background: 'var(--bg-subtle)', padding: 4, borderRadius: 8, border: '1px solid var(--border)' }}>
+                                <button
+                                    className="btn-ghost"
+                                    onClick={handleDownloadPdf}
+                                    disabled={!report || isMasked}
+                                    title={isMasked ? "Unlock data to download PDF" : "Download PDF"}
+                                    style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600, opacity: isMasked ? 0.5 : 1 }}
+                                >
+                                    <Printer size={14} style={{ marginRight: 6 }} /> PDF
+                                </button>
+                                <div style={{ width: 1, background: 'var(--border)', margin: '4px 0' }} />
+                                <button
+                                    className="btn-ghost"
+                                    onClick={downloadExcel}
+                                    disabled={!report || isMasked}
+                                    title={isMasked ? "Unlock data to export Excel" : "Export Excel"}
+                                    style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600, opacity: isMasked ? 0.5 : 1 }}
+                                >
+                                    <FileSpreadsheet size={14} style={{ marginRight: 6 }} /> Excel
+                                </button>
+                            </div>
+
+                            <button
+                                className="btn-primary"
+                                onClick={() => sendMutation.mutate()}
+                                disabled={sendMutation.isPending}
+                                style={{ height: 40, padding: '0 20px' }}
+                            >
+                                <Send size={14} style={{ marginRight: 6 }} /> {sendMutation.isPending ? 'Sending...' : 'Send Now'}
+                            </button>
+                        </div>
                     </div>
 
-                    <button
-                        className="btn-primary"
-                        onClick={() => sendMutation.mutate()}
-                        disabled={sendMutation.isPending}
-                        style={{ height: 40, padding: '0 20px' }}
-                    >
-                        <Send size={14} style={{ marginRight: 6 }} /> {sendMutation.isPending ? 'Sending...' : 'Send Now'}
-                    </button>
+                    {isLoading ? (
+                        <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading Eagle-Eye report...</div>
+                    ) : !filteredReport ? (
+                        !isMasked ? (
+                            <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>No data available.</div>
+                        ) : null
+                    ) : (
+                        <div id="eagle-eye-report">
+                            {/* Generated at */}
+                            <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: 16 }}>
+                                Generated at {format(new Date(filteredReport.generatedAt), 'dd MMM yyyy, hh:mm a')} | Filter: {selectedYear}
+                            </div>
+
+                            {/* ── KPI Cards ── */}
+                            <div className="stats-grid" style={{ marginBottom: 24 }}>
+                                <KpiCard
+                                    label="Total Enrolled"
+                                    value={filteredReport.institution.totalEnrolled}
+                                    color="linear-gradient(90deg,#6366f1,#4f46e5)"
+                                    sub="Active students in filter"
+                                    isMasked={false}
+                                />
+                                <KpiCard
+                                    label="Total Fees (Net)"
+                                    value={filteredReport.institution.totalFees}
+                                    color="linear-gradient(90deg,#0284c7,#0369a1)"
+                                    isCurrency
+                                    sub="After all concessions"
+                                    isMasked={isMasked}
+                                />
+                                <KpiCard
+                                    label="Total Collected"
+                                    value={filteredReport.institution.totalCollected}
+                                    color="linear-gradient(90deg,#059669,#047857)"
+                                    isCurrency
+                                    sub={`${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}% of net fees`}
+                                    isMasked={isMasked}
+                                />
+                                <KpiCard
+                                    label="Total Outstanding"
+                                    value={filteredReport.institution.totalOutstanding}
+                                    color="linear-gradient(90deg,#dc2626,#b91c1c)"
+                                    isCurrency
+                                    sub={`${pct(filteredReport.institution.totalOutstanding, filteredReport.institution.totalFees)}% of net fees pending`}
+                                    isMasked={isMasked}
+                                />
+                            </div>
+
+                            {/* ── Analytical Graphs ── */}
+                            <div className="card" style={{ padding: 24, marginBottom: 24 }}>
+                                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 20 }}>Financial Analytics</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
+                                    {/* Bar Chart: Collected vs Outstanding by Class */}
+                                    <div style={{ height: 300 }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>Collection by Class</div>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <BarChart data={barChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+                                                <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                                                <YAxis tickFormatter={(val) => `₹${(val/1000)}k`} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
+                                                <Tooltip 
+                                                    formatter={(value: any) => formatCurrency(value)}
+                                                    contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)', borderRadius: 8, fontSize: '0.8rem' }}
+                                                />
+                                                <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                                <Bar dataKey="Collected" stackId="a" fill="#059669" radius={[0, 0, 4, 4]} maxBarSize={40} />
+                                                <Bar dataKey="Outstanding" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                                            </BarChart>
+                                        </ResponsiveContainer>
+                                    </div>
+
+                                    {/* Pie Chart: Overall Collection */}
+                                    <div style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                        <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>Overall Institution Distribution</div>
+                                        <ResponsiveContainer width="100%" height="100%">
+                                            <PieChart>
+                                                <Pie
+                                                    data={pieChartData}
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={60}
+                                                    outerRadius={80}
+                                                    paddingAngle={5}
+                                                    dataKey="value"
+                                                >
+                                                    {pieChartData.map((entry, index) => (
+                                                        <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
+                                                    ))}
+                                                </Pie>
+                                                <Tooltip 
+                                                    formatter={(value: any) => formatCurrency(value)}
+                                                    contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)', borderRadius: 8, fontSize: '0.8rem' }}
+                                                />
+                                                <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── Collection Progress ── */}
+                            <div className="card" style={{ padding: '14px 20px', marginBottom: 24 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                                    <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                                        Overall Collection Progress
+                                    </div>
+                                    <div style={{ fontWeight: 800, fontSize: '1rem', color: '#059669' }}>
+                                        {isMasked ? '••%' : `${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%`}
+                                    </div>
+                                </div>
+                                <div style={{ height: 8, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
+                                    <div style={{
+                                        width: `${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%`,
+                                        height: '100%',
+                                        background: 'linear-gradient(90deg,#059669,#34d399)',
+                                        borderRadius: 99,
+                                        transition: 'width 0.6s ease',
+                                    }} />
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                    <span>Collected: {isMasked ? '₹ ••••••' : formatCurrency(filteredReport.institution.totalCollected)}</span>
+                                    <span>Remaining: {isMasked ? '₹ ••••••' : formatCurrency(filteredReport.institution.totalOutstanding)}</span>
+                                </div>
+                            </div>
+
+                            {/* ── Two-column: At Risk + Class Summary ── */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24 }}>
+                                {/* At Risk */}
+                                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                    <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <AlertTriangle size={15} color="#dc2626" />
+                                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>At-Risk Students</div>
+                                        <div style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Top 10 by Outstanding</div>
+                                    </div>
+                                    {filteredReport.atRisk.length === 0 ? (
+                                        <div style={{ padding: '30px 18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
+                                            🎉 No outstanding dues!
+                                        </div>
+                                    ) : (
+                                        <div style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                            {filteredReport.atRisk.map((s, i) => (
+                                                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderBottom: '1px solid var(--border)' }}>
+                                                    <div style={{
+                                                        width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
+                                                        background: i < 3 ? 'rgba(220,38,38,0.1)' : 'var(--bg-subtle)',
+                                                        color: i < 3 ? '#dc2626' : 'var(--text-muted)',
+                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                        fontSize: '0.68rem', fontWeight: 800,
+                                                    }}>
+                                                        {i + 1}
+                                                    </div>
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.83rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.admissionNumber} · {s.className} · {s.academicYear}</div>
+                                                    </div>
+                                                    <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#dc2626', flexShrink: 0 }}>
+                                                        {isMasked ? '₹ ••••••' : formatCurrency(s.outstanding)}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Class Summary Table */}
+                                <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                                    <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
+                                        <TrendingUp size={15} color="#6366f1" />
+                                        <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Class Summary</div>
+                                    </div>
+                                    <div className="table-container">
+                                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                                            <thead>
+                                                <tr style={{ borderBottom: '1px solid var(--border)' }}>
+                                                    {['Year', 'Class', 'Stds', 'Collected', '%'].map(h => (
+                                                        <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Class' || h === 'Year' ? 'left' : 'right', fontWeight: 700, fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                                                    ))}
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {filteredReport.byClass.map((g, i) => {
+                                                    const p = pct(g.collected, g.totalFees);
+                                                    return (
+                                                        <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
+                                                            <td style={{ padding: '9px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.7rem' }}>{g.academicYear}</td>
+                                                            <td style={{ padding: '9px 12px', fontWeight: 600 }}>{g.className}</td>
+                                                            <td style={{ padding: '9px 12px', textAlign: 'right', color: 'var(--text-muted)' }}>{g.enrolled}</td>
+                                                            <td style={{ padding: '9px 12px', textAlign: 'right', color: '#059669', fontWeight: 600 }}>{isMasked ? '₹ ••••••' : formatCurrency(g.collected)}</td>
+                                                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: p >= 80 ? '#059669' : p >= 50 ? '#d97706' : '#dc2626' }}>{isMasked ? '••%' : `${p}%`}</td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* ── Class-wise Drill Down ── */}
+                            <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <Users size={15} color="var(--text-muted)" />
+                                <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>Class-wise Student Details</span>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>— click to expand</span>
+                            </div>
+                            {filteredReport.byClass.map((group, i) => (
+                                <ClassSection key={i} group={group} search={search} isMasked={isMasked} />
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
-
-            {isLoading ? (
-                <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading Eagle-Eye report...</div>
-            ) : !filteredReport ? (
-                <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>No data available.</div>
-            ) : (
-                <div id="eagle-eye-report">
-                    {/* Generated at */}
-                    <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', marginBottom: 16 }}>
-                        Generated at {format(new Date(filteredReport.generatedAt), 'dd MMM yyyy, hh:mm a')} | Filter: {selectedYear}
-                    </div>
-
-                    {/* ── KPI Cards ── */}
-                    <div className="stats-grid" style={{ marginBottom: 24 }}>
-                        <KpiCard
-                            label="Total Enrolled"
-                            value={filteredReport.institution.totalEnrolled}
-                            color="linear-gradient(90deg,#6366f1,#4f46e5)"
-                            sub="Active students in filter"
-                        />
-                        <KpiCard
-                            label="Total Fees (Net)"
-                            value={filteredReport.institution.totalFees}
-                            color="linear-gradient(90deg,#0284c7,#0369a1)"
-                            isCurrency
-                            sub="After all concessions"
-                        />
-                        <KpiCard
-                            label="Total Collected"
-                            value={filteredReport.institution.totalCollected}
-                            color="linear-gradient(90deg,#059669,#047857)"
-                            isCurrency
-                            sub={`${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}% of net fees`}
-                        />
-                        <KpiCard
-                            label="Total Outstanding"
-                            value={filteredReport.institution.totalOutstanding}
-                            color="linear-gradient(90deg,#dc2626,#b91c1c)"
-                            isCurrency
-                            sub={`${pct(filteredReport.institution.totalOutstanding, filteredReport.institution.totalFees)}% of net fees pending`}
-                        />
-                    </div>
-
-                    {/* ── Analytical Graphs ── */}
-                    <div className="card" style={{ padding: 24, marginBottom: 24 }}>
-                        <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 20 }}>Financial Analytics</div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 24 }}>
-                            {/* Bar Chart: Collected vs Outstanding by Class */}
-                            <div style={{ height: 300 }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>Collection by Class</div>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <BarChart data={barChartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
-                                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                                        <YAxis tickFormatter={(val) => `₹${(val/1000)}k`} tick={{ fontSize: 10, fill: 'var(--text-muted)' }} tickLine={false} axisLine={false} />
-                                        <Tooltip 
-                                            formatter={(value: any) => formatCurrency(value)}
-                                            contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)', borderRadius: 8, fontSize: '0.8rem' }}
-                                        />
-                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-                                        <Bar dataKey="Collected" stackId="a" fill="#059669" radius={[0, 0, 4, 4]} maxBarSize={40} />
-                                        <Bar dataKey="Outstanding" stackId="a" fill="#dc2626" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                                    </BarChart>
-                                </ResponsiveContainer>
-                            </div>
-
-                            {/* Pie Chart: Overall Collection */}
-                            <div style={{ height: 300, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textAlign: 'center', marginBottom: 10 }}>Overall Institution Distribution</div>
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <PieChart>
-                                        <Pie
-                                            data={pieChartData}
-                                            cx="50%"
-                                            cy="50%"
-                                            innerRadius={60}
-                                            outerRadius={80}
-                                            paddingAngle={5}
-                                            dataKey="value"
-                                        >
-                                            {pieChartData.map((entry, index) => (
-                                                <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />
-                                            ))}
-                                        </Pie>
-                                        <Tooltip 
-                                            formatter={(value: any) => formatCurrency(value)}
-                                            contentStyle={{ backgroundColor: 'var(--bg-surface)', borderColor: 'var(--border)', borderRadius: 8, fontSize: '0.8rem' }}
-                                        />
-                                        <Legend wrapperStyle={{ fontSize: '0.8rem' }} />
-                                    </PieChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ── Collection Progress ── */}
-                    <div className="card" style={{ padding: '14px 20px', marginBottom: 24 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-                                Overall Collection Progress
-                            </div>
-                            <div style={{ fontWeight: 800, fontSize: '1rem', color: '#059669' }}>
-                                {pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%
-                            </div>
-                        </div>
-                        <div style={{ height: 8, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
-                            <div style={{
-                                width: `${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%`,
-                                height: '100%',
-                                background: 'linear-gradient(90deg,#059669,#34d399)',
-                                borderRadius: 99,
-                                transition: 'width 0.6s ease',
-                            }} />
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                            <span>Collected: {formatCurrency(filteredReport.institution.totalCollected)}</span>
-                            <span>Remaining: {formatCurrency(filteredReport.institution.totalOutstanding)}</span>
-                        </div>
-                    </div>
-
-                    {/* ── Two-column: At Risk + Class Summary ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 16, marginBottom: 24 }}>
-                        {/* At Risk */}
-                        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <AlertTriangle size={15} color="#dc2626" />
-                                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>At-Risk Students</div>
-                                <div style={{ marginLeft: 'auto', fontSize: '0.72rem', color: 'var(--text-muted)' }}>Top 10 by Outstanding</div>
-                            </div>
-                            {filteredReport.atRisk.length === 0 ? (
-                                <div style={{ padding: '30px 18px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
-                                    🎉 No outstanding dues!
-                                </div>
-                            ) : (
-                                <div style={{ padding: '4px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                                    {filteredReport.atRisk.map((s, i) => (
-                                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 8px', borderBottom: '1px solid var(--border)' }}>
-                                            <div style={{
-                                                width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-                                                background: i < 3 ? 'rgba(220,38,38,0.1)' : 'var(--bg-subtle)',
-                                                color: i < 3 ? '#dc2626' : 'var(--text-muted)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                fontSize: '0.68rem', fontWeight: 800,
-                                            }}>
-                                                {i + 1}
-                                            </div>
-                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                <div style={{ fontWeight: 600, fontSize: '0.83rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.name}</div>
-                                                <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.admissionNumber} · {s.className} · {s.academicYear}</div>
-                                            </div>
-                                            <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#dc2626', flexShrink: 0 }}>
-                                                {formatCurrency(s.outstanding)}
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Class Summary Table */}
-                        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-                            <div style={{ padding: '14px 18px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <TrendingUp size={15} color="#6366f1" />
-                                <div style={{ fontWeight: 700, fontSize: '0.88rem' }}>Class Summary</div>
-                            </div>
-                            <div className="table-container">
-                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                                    <thead>
-                                        <tr style={{ borderBottom: '1px solid var(--border)' }}>
-                                            {['Year', 'Class', 'Stds', 'Collected', '%'].map(h => (
-                                                <th key={h} style={{ padding: '8px 12px', textAlign: h === 'Class' || h === 'Year' ? 'left' : 'right', fontWeight: 700, fontSize: '0.7rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
-                                            ))}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {filteredReport.byClass.map((g, i) => {
-                                            const p = pct(g.collected, g.totalFees);
-                                            return (
-                                                <tr key={i} style={{ borderBottom: '1px solid var(--border)' }}>
-                                                    <td style={{ padding: '9px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.7rem' }}>{g.academicYear}</td>
-                                                    <td style={{ padding: '9px 12px', fontWeight: 600 }}>{g.className}</td>
-                                                    <td style={{ padding: '9px 12px', textAlign: 'right', color: 'var(--text-muted)' }}>{g.enrolled}</td>
-                                                    <td style={{ padding: '9px 12px', textAlign: 'right', color: '#059669', fontWeight: 600 }}>{formatCurrency(g.collected)}</td>
-                                                    <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: p >= 80 ? '#059669' : p >= 50 ? '#d97706' : '#dc2626' }}>{p}%</td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* ── Class-wise Drill Down ── */}
-                    <div style={{ marginBottom: 8, display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Users size={15} color="var(--text-muted)" />
-                        <span style={{ fontWeight: 700, fontSize: '0.88rem' }}>Class-wise Student Details</span>
-                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>— click to expand</span>
-                    </div>
-                    {filteredReport.byClass.map((group, i) => (
-                        <ClassSection key={i} group={group} search={search} />
-                    ))}
-                </div>
-            )}
         </div>
     );
 }

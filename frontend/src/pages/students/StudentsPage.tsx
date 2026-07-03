@@ -42,6 +42,13 @@ const STATUS_COLORS: Record<StudentStatus, { bg: string; color: string }> = {
     PASSED_OUT: { bg: 'var(--bg-muted)', color: 'var(--text-secondary)' },
 };
 
+const templateLabel = (cls: any) => {
+    if (!cls || typeof cls === 'string') return `Class ID: ${cls}`;
+    const t = typeof cls.templateId === 'object' ? cls.templateId : null;
+    if (t) return `Class ${t.grade}${t.stream ? ` – ${t.stream}` : ''}${t.board ? ` (${t.board})` : ''} — Section ${cls.section}`;
+    return `Class ID: ${cls._id} — Section ${cls.section}`;
+};
+
 export function StudentsPage() {
     const qc = useQueryClient();
     const navigate = useNavigate();
@@ -469,7 +476,7 @@ export function StudentsPage() {
                                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 }}>
                                                                 <div>
                                                                     <div style={{ fontWeight: 700, fontSize: '0.9375rem' }}>Session {en.academicYear}</div>
-                                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Class ID: {typeof en.academicClassId === 'string' ? en.academicClassId : en.academicClassId._id}</div>
+                                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{templateLabel(en.academicClassId)}</div>
                                                                 </div>
                                                                 <div style={{ textAlign: 'right' }}>
                                                                     <div style={{ color: 'var(--success)', fontWeight: 800 }}>{formatCurrency(en.netFee)}</div>

@@ -11,6 +11,7 @@ const createStudentSchema = zod_1.z.object({
     firstName: zod_1.z.string().min(1).max(100),
     lastName: zod_1.z.string().min(1).max(100),
     phone: zod_1.z.string().min(10).max(15),
+    whatsappNumber: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
     dob: zod_1.z.string().optional().or(zod_1.z.literal('')),
     alternatePhone: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
     motherPhone: zod_1.z.string().max(15).optional().or(zod_1.z.literal('')),
@@ -19,6 +20,7 @@ const createStudentSchema = zod_1.z.object({
     motherName: zod_1.z.string().max(100).optional().or(zod_1.z.literal('')),
     schoolName: zod_1.z.string().max(200).optional().or(zod_1.z.literal('')),
     program: zod_1.z.string().max(100).optional().or(zod_1.z.literal('')),
+    cetBucket: zod_1.z.enum(['PCM', 'PCB']).optional().or(zod_1.z.literal('')),
     bloodGroup: zod_1.z.string().optional().or(zod_1.z.literal('')),
     address: zod_1.z.object({
         street: zod_1.z.string().optional(),
@@ -48,6 +50,8 @@ class StudentController {
             const meta = audit_service_1.auditService.extractRequestMeta(req);
             const student = await student_service_1.studentService.createStudent({
                 ...parsed.data,
+                cetBucket: parsed.data.cetBucket === '' ? undefined : parsed.data.cetBucket,
+                whatsappNumber: parsed.data.whatsappNumber === '' ? undefined : parsed.data.whatsappNumber,
                 createdBy: req.user.userId,
                 ...meta,
             });
@@ -68,7 +72,11 @@ class StudentController {
             const meta = audit_service_1.auditService.extractRequestMeta(req);
             const student = await student_service_1.studentService.updateStudent({
                 studentId: req.params['id'],
-                data: parsed.data,
+                data: {
+                    ...parsed.data,
+                    cetBucket: parsed.data.cetBucket === '' ? undefined : parsed.data.cetBucket,
+                    whatsappNumber: parsed.data.whatsappNumber === '' ? undefined : parsed.data.whatsappNumber,
+                },
                 updatedBy: req.user.userId,
                 ...meta,
             });
@@ -86,7 +94,34 @@ class StudentController {
                 (0, apiResponse_1.sendError)(res, 'Student not found', 404);
                 return;
             }
-            (0, apiResponse_1.sendSuccess)(res, student.toJSON ? student.toJSON() : student);
+            const plain = student.toJSON ? student.toJSON() : student;
+            // Enrich with currentEnrollment (same logic as listStudents)
+            const enrollment = await Enrollment_model_1.Enrollment.findOne({
+                studentId: student._id,
+                status: 'ONGOING',
+            })
+                .sort({ createdAt: -1 })
+                .populate({
+                path: 'academicClassId',
+                populate: { path: 'templateId', select: 'grade stream board' },
+                select: 'templateId section academicYear',
+            })
+                .lean();
+            if (enrollment && enrollment.academicClassId && typeof enrollment.academicClassId === 'object') {
+                const ac = enrollment.academicClassId;
+                const tmpl = ac.templateId;
+                plain.currentEnrollment = {
+                    academicYear: enrollment.academicYear,
+                    className: tmpl
+                        ? `Class ${tmpl.grade}${tmpl.stream ? ' ' + tmpl.stream : ''}${tmpl.board ? ` (${tmpl.board})` : ''}`
+                        : 'N/A',
+                    section: ac.section || '',
+                };
+            }
+            else {
+                plain.currentEnrollment = null;
+            }
+            (0, apiResponse_1.sendSuccess)(res, plain);
         }
         catch {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch student', 500);
@@ -186,6 +221,21 @@ class StudentController {
         }
         catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to update status';
+            (0, apiResponse_1.sendError)(res, message, 400);
+        }
+    }
+    async fullyDeleteStudent(req, res) {
+        try {
+            const meta = audit_service_1.auditService.extractRequestMeta(req);
+            await student_service_1.studentService.fullyDeleteStudentEverything({
+                studentId: req.params['id'],
+                deletedBy: req.user.userId,
+                ...meta,
+            });
+            (0, apiResponse_1.sendSuccess)(res, null, 200, 'Student fully deleted successfully');
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to fully delete student';
             (0, apiResponse_1.sendError)(res, message, 400);
         }
     }
