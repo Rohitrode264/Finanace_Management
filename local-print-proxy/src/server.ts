@@ -64,3 +64,4 @@ app.listen(PORT, () => {
     console.log(`📡 Ready to receive silent print jobs`);
     console.log(`=========================================`);
 });
+
