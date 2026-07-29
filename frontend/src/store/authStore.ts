@@ -29,8 +29,10 @@ export const useAuthStore = create<AuthState>()(
             setAuth: (token, user, permissions) =>
                 set({ token, user, permissions, isAuthenticated: true }),
 
-            logout: () =>
-                set({ token: null, user: null, permissions: [], isAuthenticated: false }),
+            logout: () => {
+                sessionStorage.removeItem('secure_tabs_unlocked');
+                set({ token: null, user: null, permissions: [], isAuthenticated: false });
+            },
 
             hasPermission: (permission: string) => {
                 const { permissions } = get();

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Eye, AlertTriangle, Users, TrendingUp, Search, ChevronDown, ChevronRight, Send, Printer, FileSpreadsheet, Filter, Lock, Unlock, Key } from 'lucide-react';
+import { Eye, AlertTriangle, Users, TrendingUp, Search, ChevronDown, ChevronRight, Send, Printer, FileSpreadsheet, Filter } from 'lucide-react';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { usePermission } from '../../hooks/usePermission';
 import { formatCurrency } from '../../utils/currency';
@@ -248,28 +248,11 @@ export function EagleEyePage() {
     const canView = usePermission('VIEW_REPORT');
     const [search, setSearch] = useState('');
     const [selectedYear, setSelectedYear] = useState('All');
-    const [isMasked, setIsMasked] = useState(true);
-    const [credentialInput, setCredentialInput] = useState('');
-    const [credentialError, setCredentialError] = useState('');
-
-    const handleUnlockSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (credentialInput.trim() === 'ncp1997') {
-            setIsMasked(false);
-            setCredentialInput('');
-            setCredentialError('');
-            toast.success('🔓 Financial revenue unlocked!');
-        } else {
-            const msg = 'Invalid password';
-            setCredentialError(msg);
-            toast.error(msg);
-        }
-    };
 
     const { data: res, isLoading, refetch, isFetching } = useQuery({
         queryKey: ['eagle-eye'],
         queryFn: () => apiClient.get('/reports/eagle-eye'),
-        enabled: canView && !isMasked,
+        enabled: canView,
         staleTime: 2 * 60 * 1000,
     });
 
@@ -398,79 +381,7 @@ export function EagleEyePage() {
                 icon={Eye}
             />
 
-            {/* Full Page Blur & Security Overlay Container */}
-            <div style={{ position: 'relative', minHeight: isMasked ? 'calc(100vh - 160px)' : undefined }}>
-                {/* Embedded Glass Security Overlay when Masked */}
-                {isMasked && (
-                    <div style={{
-                        position: 'absolute',
-                        inset: 0,
-                        zIndex: 10,
-                        background: 'rgba(0, 113, 227, 0.12)', // Blue tint overlay matching the --accent color
-                        backdropFilter: 'blur(4px)',
-                        WebkitBackdropFilter: 'blur(4px)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        padding: 20,
-                        borderRadius: 'var(--radius-lg)',
-                        overflow: 'hidden'
-                    }}>
-                        <div style={{
-                            background: 'var(--bg-surface)',
-                            border: '1px solid rgba(0, 113, 227, 0.3)',
-                            borderRadius: 'var(--radius-2xl)',
-                            padding: '36px 32px',
-                            width: '100%',
-                            maxWidth: 440,
-                            boxShadow: '0 25px 60px rgba(0, 0, 0, 0.18)',
-                            textAlign: 'center',
-                            position: 'relative'
-                        }}>
-                            <div style={{ width: 64, height: 64, borderRadius: '20px', background: 'linear-gradient(135deg, var(--accent), #0058b0)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', margin: '0 auto 20px', boxShadow: '0 10px 25px rgba(0, 113, 227, 0.35)' }}>
-                                <Lock size={32} />
-                            </div>
-                            <h3 style={{ fontSize: '1.45rem', fontWeight: 900, color: 'var(--text-primary)', marginBottom: 8, letterSpacing: '-0.02em' }}>
-                                Confidential Financial Mode
-                            </h3>
-                            <p style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: 1.6, marginBottom: 24, padding: '0 10px' }}>
-                                This section is blurred for privacy. Please enter your passcode to reveal all institutional revenue and student ledgers.
-                            </p>
-                            
-                            <form onSubmit={handleUnlockSubmit}>
-                                <div style={{ marginBottom: 18 }}>
-                                    <input
-                                        type="password"
-                                        value={credentialInput}
-                                        onChange={e => setCredentialInput(e.target.value)}
-                                        placeholder="Enter passcode..."
-                                        className="form-input"
-                                        style={{ width: '100%', height: 50, textAlign: 'center', fontSize: '1.15rem', letterSpacing: '0.1em', fontWeight: 700, borderRadius: '12px', background: 'var(--bg-subtle)' }}
-                                        autoFocus
-                                    />
-                                </div>
-
-                                {credentialError && (
-                                    <div style={{ fontSize: '0.82rem', color: '#dc2626', background: 'rgba(220,38,38,0.08)', padding: '10px 14px', borderRadius: 10, marginBottom: 18, fontWeight: 700 }}>
-                                        {credentialError}
-                                    </div>
-                                )}
-
-                                <button
-                                    type="submit"
-                                    className="btn-primary"
-                                    disabled={!credentialInput.trim()}
-                                    style={{ width: '100%', height: 48, background: 'linear-gradient(135deg, var(--accent), #0058b0)', fontSize: '0.95rem', fontWeight: 800, borderRadius: '12px', boxShadow: '0 8px 20px rgba(0, 113, 227, 0.3)' }}
-                                >
-                                    <Key size={16} style={{ marginRight: 8 }} /> Unlock Dashboard
-                                </button>
-                            </form>
-                        </div>
-                    </div>
-                )}
-
-                {/* Blurred Content Container */}
-                <div style={{ filter: isMasked ? 'blur(4px)' : undefined, opacity: isMasked ? 0.5 : 1, pointerEvents: isMasked ? 'none' : undefined, userSelect: isMasked ? 'none' : undefined, transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}>
+            <div>
                     {/* Action Bar */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24, flexWrap: 'wrap', background: 'var(--bg-surface)', padding: '12px 16px', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
                         <div style={{ position: 'relative', flex: '1 1 200px', maxWidth: 300 }}>
@@ -500,22 +411,8 @@ export function EagleEyePage() {
                         </div>
 
                         <div style={{ display: 'flex', gap: 8, marginLeft: 'auto', flexWrap: 'wrap' }}>
-                            <button
-                                className={isMasked ? "btn-primary" : "btn-secondary"}
-                                onClick={() => {
-                                    if (!isMasked) {
-                                        setIsMasked(true);
-                                        toast.success('🔒 Financial revenue locked for privacy.');
-                                    }
-                                }}
-                                style={{ height: 40, padding: '0 16px', background: isMasked ? 'linear-gradient(135deg, var(--accent), #0058b0)' : undefined, color: isMasked ? '#fff' : undefined }}
-                                title={isMasked ? "Unlock Revenue Data" : "Lock Revenue Data"}
-                            >
-                                {isMasked ? <Lock size={14} style={{ marginRight: 6 }} /> : <Unlock size={14} style={{ marginRight: 6 }} />}
-                                {isMasked ? 'Reveal Financials' : 'Lock Financials'}
-                            </button>
 
-                            <button className="btn-secondary" onClick={() => refetch()} disabled={isFetching} style={{ height: 40, padding: '0 16px' }}>
+                            <button className="btn-secondary" onClick={() => refetch()} disabled={isFetching} style={{ height: 40, padding: '0 16px', marginLeft: 'auto' }}>
                                 <Eye size={14} style={{ marginRight: 6 }} /> {isFetching ? '...' : 'Refresh'}
                             </button>
 
@@ -524,9 +421,9 @@ export function EagleEyePage() {
                                 <button
                                     className="btn-ghost"
                                     onClick={handleDownloadPdf}
-                                    disabled={!report || isMasked}
-                                    title={isMasked ? "Unlock data to download PDF" : "Download PDF"}
-                                    style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600, opacity: isMasked ? 0.5 : 1 }}
+                                    disabled={!report}
+                                    title="Download PDF"
+                                    style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600 }}
                                 >
                                     <Printer size={14} style={{ marginRight: 6 }} /> PDF
                                 </button>
@@ -534,9 +431,9 @@ export function EagleEyePage() {
                                 <button
                                     className="btn-ghost"
                                     onClick={downloadExcel}
-                                    disabled={!report || isMasked}
-                                    title={isMasked ? "Unlock data to export Excel" : "Export Excel"}
-                                    style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600, opacity: isMasked ? 0.5 : 1 }}
+                                    disabled={!report}
+                                    title="Export Excel"
+                                    style={{ height: 32, padding: '0 12px', fontSize: '0.75rem', fontWeight: 600 }}
                                 >
                                     <FileSpreadsheet size={14} style={{ marginRight: 6 }} /> Excel
                                 </button>
@@ -556,9 +453,7 @@ export function EagleEyePage() {
                     {isLoading ? (
                         <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>Loading Eagle-Eye report...</div>
                     ) : !filteredReport ? (
-                        !isMasked ? (
-                            <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>No data available.</div>
-                        ) : null
+                        <div style={{ padding: 60, textAlign: 'center', color: 'var(--text-muted)' }}>No data available.</div>
                     ) : (
                         <div id="eagle-eye-report">
                             {/* Generated at */}
@@ -574,6 +469,7 @@ export function EagleEyePage() {
                                     color="linear-gradient(90deg,#6366f1,#4f46e5)"
                                     sub="Active students in filter"
                                     isMasked={false}
+
                                 />
                                 <KpiCard
                                     label="Total Fees (Net)"
@@ -581,7 +477,7 @@ export function EagleEyePage() {
                                     color="linear-gradient(90deg,#0284c7,#0369a1)"
                                     isCurrency
                                     sub="After all concessions"
-                                    isMasked={isMasked}
+                                    isMasked={false}
                                 />
                                 <KpiCard
                                     label="Total Collected"
@@ -589,7 +485,7 @@ export function EagleEyePage() {
                                     color="linear-gradient(90deg,#059669,#047857)"
                                     isCurrency
                                     sub={`${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}% of net fees`}
-                                    isMasked={isMasked}
+                                    isMasked={false}
                                 />
                                 <KpiCard
                                     label="Total Outstanding"
@@ -597,7 +493,7 @@ export function EagleEyePage() {
                                     color="linear-gradient(90deg,#dc2626,#b91c1c)"
                                     isCurrency
                                     sub={`${pct(filteredReport.institution.totalOutstanding, filteredReport.institution.totalFees)}% of net fees pending`}
-                                    isMasked={isMasked}
+                                    isMasked={false}
                                 />
                             </div>
 
@@ -660,7 +556,7 @@ export function EagleEyePage() {
                                         Overall Collection Progress
                                     </div>
                                     <div style={{ fontWeight: 800, fontSize: '1rem', color: '#059669' }}>
-                                        {isMasked ? '••%' : `${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%`}
+                                        {`${pct(filteredReport.institution.totalCollected, filteredReport.institution.totalFees)}%`}
                                     </div>
                                 </div>
                                 <div style={{ height: 8, background: 'var(--border)', borderRadius: 99, overflow: 'hidden' }}>
@@ -673,8 +569,8 @@ export function EagleEyePage() {
                                     }} />
                                 </div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6, fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                                    <span>Collected: {isMasked ? '₹ ••••••' : formatCurrency(filteredReport.institution.totalCollected)}</span>
-                                    <span>Remaining: {isMasked ? '₹ ••••••' : formatCurrency(filteredReport.institution.totalOutstanding)}</span>
+                                    <span>Collected: {formatCurrency(filteredReport.institution.totalCollected)}</span>
+                                    <span>Remaining: {formatCurrency(filteredReport.institution.totalOutstanding)}</span>
                                 </div>
                             </div>
 
@@ -709,7 +605,7 @@ export function EagleEyePage() {
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{s.admissionNumber} · {s.className} · {s.academicYear}</div>
                                                     </div>
                                                     <div style={{ fontWeight: 800, fontSize: '0.88rem', color: '#dc2626', flexShrink: 0 }}>
-                                                        {isMasked ? '₹ ••••••' : formatCurrency(s.outstanding)}
+                                                        {formatCurrency(s.outstanding)}
                                                     </div>
                                                 </div>
                                             ))}
@@ -740,8 +636,8 @@ export function EagleEyePage() {
                                                             <td style={{ padding: '9px 12px', fontWeight: 600, color: 'var(--text-muted)', fontSize: '0.7rem' }}>{g.academicYear}</td>
                                                             <td style={{ padding: '9px 12px', fontWeight: 600 }}>{g.className}</td>
                                                             <td style={{ padding: '9px 12px', textAlign: 'right', color: 'var(--text-muted)' }}>{g.enrolled}</td>
-                                                            <td style={{ padding: '9px 12px', textAlign: 'right', color: '#059669', fontWeight: 600 }}>{isMasked ? '₹ ••••••' : formatCurrency(g.collected)}</td>
-                                                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: p >= 80 ? '#059669' : p >= 50 ? '#d97706' : '#dc2626' }}>{isMasked ? '••%' : `${p}%`}</td>
+                                                            <td style={{ padding: '9px 12px', textAlign: 'right', color: '#059669', fontWeight: 600 }}>{formatCurrency(g.collected)}</td>
+                                                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: p >= 80 ? '#059669' : p >= 50 ? '#d97706' : '#dc2626' }}>{`${p}%`}</td>
                                                         </tr>
                                                     );
                                                 })}
@@ -758,11 +654,10 @@ export function EagleEyePage() {
                                 <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>— click to expand</span>
                             </div>
                             {filteredReport.byClass.map((group, i) => (
-                                <ClassSection key={i} group={group} search={search} isMasked={isMasked} />
+                                <ClassSection key={i} group={group} search={search} isMasked={false} />
                             ))}
                         </div>
                     )}
-                </div>
             </div>
         </div>
     );

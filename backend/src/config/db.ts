@@ -1,28 +1,63 @@
-import mongoose from 'mongoose';
-import { env } from './env';
+import mongoose from "mongoose";
+import dns from "dns";
+import { env } from "./env";
 
 let isConnected = false;
 
-export async function connectDB(): Promise<void> {
-    if (isConnected && mongoose.connection.readyState === 1) {
-        return;
-    }
-
+export async function connectDB(): Promise<typeof mongoose> {
     try {
-        const conn = await mongoose.connect(process.env.MONGODB_URI!);
+        // Reuse existing connection
+        if (isConnected && mongoose.connection.readyState === 1) {
+            return mongoose;
+        }
 
-        isConnected = true;
-        console.log(`MongoDB connected: ${conn.connection.host}`);
+        // Fix Windows/local router DNS querySrv ECONNREFUSED issues
+        // when using mongodb+srv://
+        try {
+            dns.setServers(["8.8.8.8", "8.8.4.4", "1.1.1.1"]);
+            console.log("Using custom DNS servers.");
+        } catch (dnsErr) {
+            console.warn("Could not set custom DNS servers:", dnsErr);
+        }
 
-        mongoose.connection.on('disconnected', () => {
-            console.warn('MongoDB disconnected.');
-            isConnected = false;
+        if (!env.MONGODB_URI) {
+            throw new Error("MONGODB_URI is not defined in the environment.");
+        }
+
+        const connection = await mongoose.connect(env.MONGODB_URI, {
+            serverSelectionTimeoutMS: 10000,
         });
 
-    } catch (err) {
-        console.error(`MongoDB connection failed:`, err);
+        isConnected = true;
+
+        console.log(
+            `✅ MongoDB connected successfully: ${connection.connection.host}`
+        );
+
+        // Register listeners only once
+        if (mongoose.connection.listenerCount("disconnected") === 0) {
+            mongoose.connection.on("disconnected", () => {
+                console.warn("⚠️ MongoDB disconnected.");
+                isConnected = false;
+            });
+
+            mongoose.connection.on("error", (err) => {
+                console.error("❌ MongoDB error:", err);
+            });
+        }
+
+        return connection;
+    } catch (error) {
         isConnected = false;
-        // Don't process.exit(1) in Lambda; throw the error so the invocation fails
-        throw err;
+
+        console.error("❌ Error connecting to MongoDB:");
+
+        if (error instanceof Error) {
+            console.error(error.message);
+        } else {
+            console.error(error);
+        }
+
+        throw error;
     }
 }

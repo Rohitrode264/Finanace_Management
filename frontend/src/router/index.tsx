@@ -1,6 +1,7 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { AppLayout } from '../layouts/AppLayout';
 import { ProtectedRoute } from './ProtectedRoute';
+import { LockedPageGuard } from '../components/ui/LockedPageGuard';
 import { lazy, Suspense } from 'react';
 
 // Pages — lazy imports for code splitting
@@ -75,9 +76,9 @@ export const router = createBrowserRouter([
                     { path: '/enrollments', element: <SuspenseWrapper><EnrollmentsPage /></SuspenseWrapper> },
                     { path: '/payments', element: <SuspenseWrapper><PaymentEntryPage /></SuspenseWrapper> },
                     { path: '/receipts/:id', element: <SuspenseWrapper><ReceiptPage /></SuspenseWrapper> },
-                    { path: '/reports', element: <SuspenseWrapper><ReportsPage /></SuspenseWrapper> },
-                    { path: '/eagle-eye', element: <SuspenseWrapper><EagleEyePage /></SuspenseWrapper> },
-                    { path: '/transactions', element: <SuspenseWrapper><TransactionsPage /></SuspenseWrapper> },
+                    { path: '/reports', element: <LockedPageGuard><SuspenseWrapper><ReportsPage /></SuspenseWrapper></LockedPageGuard> },
+                    { path: '/eagle-eye', element: <LockedPageGuard><SuspenseWrapper><EagleEyePage /></SuspenseWrapper></LockedPageGuard> },
+                    { path: '/transactions', element: <LockedPageGuard><SuspenseWrapper><TransactionsPage /></SuspenseWrapper></LockedPageGuard> },
                     { path: '/users', element: <SuspenseWrapper><UsersPage /></SuspenseWrapper> },
                     { path: '/rbac', element: <SuspenseWrapper><RBACPage /></SuspenseWrapper> },
                     { path: '/audit', element: <SuspenseWrapper><AuditLogsPage /></SuspenseWrapper> },
