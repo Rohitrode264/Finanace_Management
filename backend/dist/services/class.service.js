@@ -4,6 +4,7 @@ exports.classService = exports.ClassService = void 0;
 const AcademicClass_model_1 = require("../models/AcademicClass.model");
 const ClassTemplate_model_1 = require("../models/ClassTemplate.model");
 const audit_service_1 = require("./audit.service");
+const Enrollment_model_1 = require("../models/Enrollment.model");
 const mongoose_1 = require("mongoose");
 class ClassService {
     async createTemplate(params) {
@@ -63,6 +64,27 @@ class ClassService {
             entityId: params.classId,
             before: { isActive: true },
             after: { isActive: false },
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+        });
+    }
+    async deleteClass(params) {
+        const cls = await AcademicClass_model_1.AcademicClass.findById(params.classId);
+        if (!cls)
+            throw new Error('AcademicClass not found');
+        // Safety check: Ensure no active or completed enrollments are attached to this class
+        const enrollmentCount = await Enrollment_model_1.Enrollment.countDocuments({ academicClassId: params.classId });
+        if (enrollmentCount > 0) {
+            throw new Error(`Cannot delete class. There are ${enrollmentCount} enrollments associated with it.`);
+        }
+        await AcademicClass_model_1.AcademicClass.findByIdAndDelete(params.classId);
+        audit_service_1.auditService.logAsync({
+            actorId: params.deletedBy,
+            action: 'CLASS_DELETED',
+            entityType: 'CLASS',
+            entityId: params.classId,
+            before: cls.toObject(),
+            after: null,
             ipAddress: params.ipAddress,
             userAgent: params.userAgent,
         });

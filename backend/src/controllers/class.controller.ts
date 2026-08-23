@@ -78,6 +78,20 @@ export class ClassController {
             sendSuccess(res, sessions);
         } catch { sendError(res, 'Failed to fetch sessions', 500); }
     }
+
+    async deleteClass(req: Request, res: Response): Promise<void> {
+        try {
+            const meta = auditService.extractRequestMeta(req);
+            await classService.deleteClass({
+                classId: req.params['id']!,
+                deletedBy: req.user!.userId,
+                ...meta
+            });
+            sendSuccess(res, { message: 'Class deleted successfully' });
+        } catch (err) {
+            sendError(res, err instanceof Error ? err.message : 'Failed to delete class', 400);
+        }
+    }
 }
 
 export const classController = new ClassController();

@@ -13,6 +13,7 @@ router.get('/', permissionMiddleware('VIEW_CLASS', 'CLASS'), (req, res) => class
 router.get('/:id', permissionMiddleware('VIEW_CLASS', 'CLASS'), (req, res) => classController.getClass(req, res));
 router.post('/', permissionMiddleware('CREATE_CLASS', 'CLASS'), (req, res) => classController.createClass(req, res));
 router.post('/templates', permissionMiddleware('CREATE_CLASS', 'CLASS'), (req, res) => classController.createTemplate(req, res));
+router.delete('/:id', permissionMiddleware('DELETE_CLASS', 'CLASS'), (req, res) => classController.deleteClass(req, res));
 
 export default router;
 

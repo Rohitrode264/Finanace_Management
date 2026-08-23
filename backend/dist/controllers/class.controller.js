@@ -97,6 +97,20 @@ class ClassController {
             (0, apiResponse_1.sendError)(res, 'Failed to fetch sessions', 500);
         }
     }
+    async deleteClass(req, res) {
+        try {
+            const meta = audit_service_1.auditService.extractRequestMeta(req);
+            await class_service_1.classService.deleteClass({
+                classId: req.params['id'],
+                deletedBy: req.user.userId,
+                ...meta
+            });
+            (0, apiResponse_1.sendSuccess)(res, { message: 'Class deleted successfully' });
+        }
+        catch (err) {
+            (0, apiResponse_1.sendError)(res, err instanceof Error ? err.message : 'Failed to delete class', 400);
+        }
+    }
 }
 exports.ClassController = ClassController;
 exports.classController = new ClassController();

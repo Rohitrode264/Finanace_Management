@@ -32,5 +32,9 @@ export const classesService = {
         totalFee: number;
         installmentPlan: Array<{ installmentNo: number; dueDate: string; amount: number }>;
     }) => apiClient.post<ApiResponse<AcademicClass>>('/classes', data),
+
+    // DELETE /classes/:id
+    deleteClass: (id: string) =>
+        apiClient.delete<ApiResponse<{ message: string }>>(`/classes/${id}`),
 };
 

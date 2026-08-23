@@ -26,6 +26,12 @@ export declare class ClassService {
         ipAddress: string;
         userAgent: string;
     }): Promise<void>;
+    deleteClass(params: {
+        classId: string;
+        deletedBy: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<void>;
     countTotal(): Promise<number>;
     getUniqueSessions(): Promise<string[]>;
 }

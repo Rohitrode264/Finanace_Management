@@ -47,6 +47,7 @@ export function ClassesPage() {
     const [academicYear, setAcademicYear] = useState(CURRENT_YEAR);
     const navigate = useNavigate();
     const canCreate = usePermission('CREATE_CLASS');
+    const canDelete = usePermission('DELETE_CLASS');
     const theme = useThemeStore((s) => s.theme);
 
     const { data: classesRes, isLoading: cLoading } = useQuery({
@@ -114,6 +115,23 @@ export function ClassesPage() {
         },
         onError: (e: any) => toast.error(e?.response?.data?.error ?? e?.message ?? 'Failed to create class'),
     });
+
+    const deleteMutation = useMutation({
+        mutationFn: (id: string) => classesService.deleteClass(id),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ['academic-classes'] });
+            qc.invalidateQueries({ queryKey: ['class-sessions'] });
+            toast.success('Class deleted successfully');
+        },
+        onError: (e: any) => toast.error(e?.response?.data?.error ?? 'Failed to delete class'),
+    });
+
+    const handleDeleteClass = (e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        if (window.confirm('Are you sure you want to delete this class? This action cannot be undone.')) {
+            deleteMutation.mutate(id);
+        }
+    };
 
     const { register: regTemplate, handleSubmit: hsTemplate, formState: { errors: tErrors }, reset: resetTemplate } = useForm<TemplateForm>({
         resolver: zodResolver(templateSchema),
@@ -245,6 +263,7 @@ export function ClassesPage() {
                                     <th style={{ textAlign: 'right' }}>Total Fee</th>
                                     <th>Installments</th>
                                     <th>Status</th>
+                                    {canDelete && <th style={{ textAlign: 'right' }}>Actions</th>}
                                 </tr>
                             </thead>
                             <tbody>
@@ -256,7 +275,7 @@ export function ClassesPage() {
                                     ))
                                 ) : classes.length === 0 ? (
                                     <tr>
-                                        <td colSpan={6}>
+                                        <td colSpan={canDelete ? 7 : 6}>
                                             <EmptyState
                                                 type="classes"
                                                 title={`No Classes for ${academicYear}`}
@@ -293,6 +312,19 @@ export function ClassesPage() {
                                                         {c.isActive ? 'Active' : 'Inactive'}
                                                     </span>
                                                 </td>
+                                                {canDelete && (
+                                                    <td style={{ textAlign: 'right' }} onClick={e => e.stopPropagation()}>
+                                                        <button 
+                                                            className="icon-btn" 
+                                                            style={{ color: 'var(--error)' }} 
+                                                            title="Delete Class"
+                                                            disabled={deleteMutation.isPending}
+                                                            onClick={(e) => handleDeleteClass(e, c._id)}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </button>
+                                                    </td>
+                                                )}
                                             </tr>
                                         );
                                     })

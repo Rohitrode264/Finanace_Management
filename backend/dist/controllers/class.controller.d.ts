@@ -6,6 +6,7 @@ export declare class ClassController {
     getClassesByYear(req: Request, res: Response): Promise<void>;
     getClass(req: Request, res: Response): Promise<void>;
     listSessions(_req: Request, res: Response): Promise<void>;
+    deleteClass(req: Request, res: Response): Promise<void>;
 }
 export declare const classController: ClassController;
 //# sourceMappingURL=class.controller.d.ts.map

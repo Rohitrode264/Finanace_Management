@@ -12,5 +12,6 @@ router.get('/', (0, permission_middleware_1.permissionMiddleware)('VIEW_CLASS', 
 router.get('/:id', (0, permission_middleware_1.permissionMiddleware)('VIEW_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.getClass(req, res));
 router.post('/', (0, permission_middleware_1.permissionMiddleware)('CREATE_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.createClass(req, res));
 router.post('/templates', (0, permission_middleware_1.permissionMiddleware)('CREATE_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.createTemplate(req, res));
+router.delete('/:id', (0, permission_middleware_1.permissionMiddleware)('DELETE_CLASS', 'CLASS'), (req, res) => class_controller_1.classController.deleteClass(req, res));
 exports.default = router;
 //# sourceMappingURL=class.routes.js.map

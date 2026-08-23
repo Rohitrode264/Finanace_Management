@@ -1,6 +1,7 @@
 import { AcademicClass, IAcademicClass } from '../models/AcademicClass.model';
 import { ClassTemplate, IClassTemplate } from '../models/ClassTemplate.model';
 import { auditService } from './audit.service';
+import { Enrollment } from '../models/Enrollment.model';
 import { Types } from 'mongoose';
 
 export class ClassService {
@@ -88,6 +89,35 @@ export class ClassService {
             entityId: params.classId,
             before: { isActive: true },
             after: { isActive: false },
+            ipAddress: params.ipAddress,
+            userAgent: params.userAgent,
+        });
+    }
+
+    async deleteClass(params: {
+        classId: string;
+        deletedBy: string;
+        ipAddress: string;
+        userAgent: string;
+    }): Promise<void> {
+        const cls = await AcademicClass.findById(params.classId);
+        if (!cls) throw new Error('AcademicClass not found');
+
+        // Safety check: Ensure no active or completed enrollments are attached to this class
+        const enrollmentCount = await Enrollment.countDocuments({ academicClassId: params.classId });
+        if (enrollmentCount > 0) {
+            throw new Error(`Cannot delete class. There are ${enrollmentCount} enrollments associated with it.`);
+        }
+
+        await AcademicClass.findByIdAndDelete(params.classId);
+
+        auditService.logAsync({
+            actorId: params.deletedBy,
+            action: 'CLASS_DELETED',
+            entityType: 'CLASS',
+            entityId: params.classId,
+            before: cls.toObject() as unknown as Record<string, unknown>,
+            after: null,
             ipAddress: params.ipAddress,
             userAgent: params.userAgent,
         });
